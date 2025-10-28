@@ -1,12 +1,18 @@
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { dashboard, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Flame, Trophy, Star, Target } from 'lucide-react';
+import { Flame, Star, Target, Trophy } from 'lucide-react';
 
 interface WelcomeProps {
   canRegister?: boolean;
@@ -28,9 +34,10 @@ export default function Welcome({
           rel="stylesheet"
         />
       </Head>
-      <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a] relative">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:32px_32px] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)]"></div>
-        <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
+      <div className="relative flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:32px_32px] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)]"></div>
+
+        <header className="relative z-10 mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
           <nav className="flex items-center justify-end gap-4">
             {auth.user ? (
               <Link
@@ -59,7 +66,7 @@ export default function Welcome({
             )}
           </nav>
         </header>
-        <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0 relative z-10">
+        <div className="relative z-20 flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
           <main className="w-full">
             {/* Hero Section */}
             <section className="mx-auto max-w-6xl px-4 py-12 text-center lg:py-20">
@@ -68,7 +75,10 @@ export default function Welcome({
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
                 </span>
-                <Badge variant="secondary" className="bg-transparent border-0 p-0 text-sm font-medium">
+                <Badge
+                  variant="secondary"
+                  className="border-0 bg-transparent p-0 text-sm font-medium"
+                >
                   Join {userCount} learners worldwide
                 </Badge>
               </div>
@@ -88,7 +98,11 @@ export default function Welcome({
               </p>
 
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-xl">
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-emerald-600 text-white shadow-lg hover:bg-emerald-700 hover:shadow-xl"
+                >
                   <Link href={register()}>
                     Start Learning Now
                     <svg
@@ -135,7 +149,7 @@ export default function Welcome({
                       clipRule="evenodd"
                     />
                   </svg>
-                  14-day free trial
+                  One-time payment
                 </div>
                 <div className="flex items-center gap-2">
                   <svg
@@ -223,8 +237,9 @@ export default function Welcome({
                     </CardHeader>
                     <CardContent>
                       <CardDescription className="mb-4 text-gray-600 dark:text-gray-400">
-                        Get personalized guidance from expert tutors who adapt to
-                        your learning style and pace. Real humans, real results.
+                        Get personalized guidance from expert tutors who adapt
+                        to your learning style and pace. Real humans, real
+                        results.
                       </CardDescription>
                     </CardContent>
                   </Card>
@@ -254,7 +269,8 @@ export default function Welcome({
                     <CardContent>
                       <CardDescription className="mb-4 text-gray-600 dark:text-gray-400">
                         Build consistency with bite-sized daily tasks. Maintain
-                        your streak, earn rewards, and watch your skills compound.
+                        your streak, earn rewards, and watch your skills
+                        compound.
                       </CardDescription>
                     </CardContent>
                   </Card>
@@ -372,15 +388,15 @@ export default function Welcome({
                     <CardContent>
                       <div className="space-y-6">
                         <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Daily Streak
-                          </span>
-                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <Flame className="h-4 w-4" />
-                            14 days
-                          </span>
-                        </div>
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Daily Streak
+                            </span>
+                            <span className="flex items-center gap-1 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                              <Flame className="h-4 w-4" />
+                              14 days
+                            </span>
+                          </div>
                           <Progress value={70} className="h-3" />
                         </div>
 
@@ -411,7 +427,7 @@ export default function Welcome({
 
                       <div className="mt-8 grid grid-cols-3 gap-4">
                         <Card className="flex flex-col items-center rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-                          <CardContent className="p-0 flex flex-col items-center gap-2">
+                          <CardContent className="flex flex-col items-center gap-2 p-0">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-50 dark:bg-yellow-900/10">
                               <Trophy className="h-6 w-6 text-yellow-500" />
                             </div>
@@ -421,7 +437,7 @@ export default function Welcome({
                           </CardContent>
                         </Card>
                         <Card className="flex flex-col items-center rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-                          <CardContent className="p-0 flex flex-col items-center gap-2">
+                          <CardContent className="flex flex-col items-center gap-2 p-0">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-50 dark:bg-yellow-900/10">
                               <Star className="h-6 w-6 text-yellow-500" />
                             </div>
@@ -431,7 +447,7 @@ export default function Welcome({
                           </CardContent>
                         </Card>
                         <Card className="flex flex-col items-center rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-                          <CardContent className="p-0 flex flex-col items-center gap-2">
+                          <CardContent className="flex flex-col items-center gap-2 p-0">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/10">
                               <Target className="h-6 w-6 text-blue-500" />
                             </div>
@@ -462,7 +478,7 @@ export default function Welcome({
 
                 <div className="grid gap-6 md:grid-cols-3">
                   <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <CardContent className="p-0 flex flex-col h-full">
+                    <CardContent className="flex h-full flex-col p-0">
                       <div className="mb-4 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <svg
@@ -475,14 +491,16 @@ export default function Welcome({
                           </svg>
                         ))}
                       </div>
-                      <CardDescription className="mb-4 text-gray-700 dark:text-gray-300 grow">
+                      <CardDescription className="mb-4 grow text-gray-700 dark:text-gray-300">
                         "The gamification makes learning actually fun! I've
                         maintained a 30-day streak and learned more in a month
                         than I did in a year of traditional courses."
                       </CardDescription>
-                      <div className="flex items-center gap-3 mt-auto">
+                      <div className="mt-auto flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-emerald-500 text-white">SJ</AvatarFallback>
+                          <AvatarFallback className="bg-emerald-500 text-white">
+                            SJ
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-gray-100">
@@ -497,7 +515,7 @@ export default function Welcome({
                   </Card>
 
                   <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <CardContent className="p-0 flex flex-col h-full">
+                    <CardContent className="flex h-full flex-col p-0">
                       <div className="mb-4 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <svg
@@ -510,14 +528,16 @@ export default function Welcome({
                           </svg>
                         ))}
                       </div>
-                      <CardDescription className="mb-4 text-gray-700 dark:text-gray-300 grow">
-                        "Having a personal tutor who understands my pace and style
-                        has been game-changing. Best investment in my career
-                        development."
+                      <CardDescription className="mb-4 grow text-gray-700 dark:text-gray-300">
+                        "Having a personal tutor who understands my pace and
+                        style has been game-changing. Best investment in my
+                        career development."
                       </CardDescription>
-                      <div className="flex items-center gap-3 mt-auto">
+                      <div className="mt-auto flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-blue-500 text-white">MC</AvatarFallback>
+                          <AvatarFallback className="bg-blue-500 text-white">
+                            MC
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-gray-100">
@@ -532,7 +552,7 @@ export default function Welcome({
                   </Card>
 
                   <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <CardContent className="p-0 flex flex-col h-full">
+                    <CardContent className="flex h-full flex-col p-0">
                       <div className="mb-4 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <svg
@@ -545,14 +565,16 @@ export default function Welcome({
                           </svg>
                         ))}
                       </div>
-                      <CardDescription className="mb-4 text-gray-700 dark:text-gray-300 grow">
+                      <CardDescription className="mb-4 grow text-gray-700 dark:text-gray-300">
                         "The achievement system keeps me motivated every single
                         day. I actually look forward to completing my daily
                         challenges!"
                       </CardDescription>
-                      <div className="flex items-center gap-3 mt-auto">
+                      <div className="mt-auto flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-purple-500 text-white">ER</AvatarFallback>
+                          <AvatarFallback className="bg-purple-500 text-white">
+                            ER
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-gray-100">
@@ -573,7 +595,7 @@ export default function Welcome({
             <section className="py-16 lg:py-24">
               <div className="mx-auto max-w-4xl px-4">
                 <div className="relative overflow-hidden rounded-3xl bg-emerald-600 p-8 shadow-2xl lg:p-16">
-                  <div className="bg-grid-white/[0.05] absolute inset-0 bg-[length:16px_16px]"></div>
+                  <div className="bg-grid-white/[0.05] pointer-events-none absolute inset-0 bg-[length:16px_16px]"></div>
                   <div className="relative z-10 text-center text-white">
                     <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:text-5xl">
                       Ready to Start Your Journey?
@@ -586,7 +608,12 @@ export default function Welcome({
                     </p>
 
                     <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                      <Button asChild size="lg" variant="secondary" className="bg-white text-emerald-600 hover:bg-gray-50 shadow-xl hover:shadow-2xl">
+                      <Button
+                        asChild
+                        size="lg"
+                        variant="secondary"
+                        className="bg-white text-emerald-600 shadow-xl hover:bg-gray-50 hover:shadow-2xl"
+                      >
                         <Link href={register()}>
                           Get Started Free
                           <svg
@@ -605,10 +632,13 @@ export default function Welcome({
                         </Link>
                       </Button>
 
-                      <Button asChild variant="outline" size="lg" className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm">
-                        <Link href={login()}>
-                          Sign In
-                        </Link>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="lg"
+                        className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                      >
+                        <Link href={login()}>Sign In</Link>
                       </Button>
                     </div>
 
@@ -625,7 +655,7 @@ export default function Welcome({
                             clipRule="evenodd"
                           />
                         </svg>
-                        Free 14-day trial
+                        One-time payment
                       </div>
                       <div className="flex items-center gap-2">
                         <svg
