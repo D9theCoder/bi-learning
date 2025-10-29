@@ -28,7 +28,7 @@ import React, { memo } from 'react';
 
 // Constants for magic numbers
 const XP_PER_LEVEL = 1000;
-const CHART_HEIGHT = 60;
+const CHART_HEIGHT = 120;
 
 // Error boundary component for dashboard sections
 interface DashboardErrorBoundaryState {
@@ -187,6 +187,12 @@ const DashboardActivityChartSection = memo(
             data={weeklyActivityData}
             type="area"
             height={CHART_HEIGHT}
+            xAxisLabel="Day"
+            yAxisLabel="XP"
+            showGrid
+            showAxes
+            showAxisLabels
+            compact
           />
         </CardContent>
       </Card>
@@ -267,7 +273,7 @@ const DashboardSidebar = memo(
         <section aria-labelledby="achievements-heading">
           <Card>
             <CardHeader>
-              <CardTitle id="achievements-heading">
+              <CardTitle id="achievements-heading" className="pt-6">
                 Recent Achievements
               </CardTitle>
             </CardHeader>
@@ -283,7 +289,7 @@ const DashboardSidebar = memo(
                     />
                   ))}
                   {nextMilestone && (
-                    <p className="mt-4 text-sm text-muted-foreground">
+                    <p className="mt-4 pb-6 text-sm text-muted-foreground">
                       Next: {nextMilestone.name}
                     </p>
                   )}

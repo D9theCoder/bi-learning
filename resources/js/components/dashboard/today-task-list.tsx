@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { DailyTask } from '@/types';
@@ -14,7 +13,6 @@ interface TodayTaskListProps {
 
 export function TodayTaskList({
   tasks,
-  onToggle,
   className,
 }: TodayTaskListProps) {
   const completedCount = tasks.filter((task) => task.is_completed).length;
@@ -44,16 +42,8 @@ export function TodayTaskList({
                     task.is_completed && 'opacity-60',
                   )}
                 >
-                  <Checkbox
-                    id={`task-${task.id}`}
-                    checked={task.is_completed}
-                    onCheckedChange={() => onToggle?.(task.id)}
-                    className="mt-0.5"
-                    aria-label={`Mark "${task.title}" as ${task.is_completed ? 'incomplete' : 'complete'}`}
-                  />
                   <div className="flex-1">
                     <label
-                      htmlFor={`task-${task.id}`}
                       className={cn(
                         'cursor-pointer text-sm font-medium',
                         task.is_completed && 'line-through',
