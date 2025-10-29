@@ -25,23 +25,20 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // Get enrolled courses with relationships
+        // Get enrolled courses with relationships and compute next_lesson per enrollment
+        // Returns arrays preserving nested `course` while adding computed `next_lesson`
         $enrolledCourses = $user->enrollments()
             ->with(['course.lessons', 'course.instructor'])
             ->where('status', 'active')
             ->latest('last_activity_at')
             ->get()
             ->map(function ($enrollment) use ($user) {
-                return [
-                    'id' => $enrollment->id,
-                    'course_id' => $enrollment->course->id,
-                    'title' => $enrollment->course->title,
-                    'thumbnail' => $enrollment->course->thumbnail,
-                    'progress_percentage' => (int) $enrollment->progress_percentage,
-                    'last_activity_at' => $enrollment->last_activity_at,
-                    'status' => $enrollment->status,
-                    'next_lesson' => $user->nextLessonForEnrollment($enrollment),
-                ];
+                $data = $enrollment->toArray();
+                $nextLesson = $user->nextLessonForEnrollment($enrollment);
+                $data['next_lesson'] = $nextLesson ? $nextLesson->toArray() : null;
+                // Ensure numeric type on progress_percentage for frontend typings
+                $data['progress_percentage'] = (float) ($enrollment->progress_percentage ?? 0);
+                return $data;
             });
 
         // Get today's tasks

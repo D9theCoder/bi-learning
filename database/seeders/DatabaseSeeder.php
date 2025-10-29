@@ -29,8 +29,8 @@ class DatabaseSeeder extends Seeder
             ]);
         });
 
-        // Create main test user
-        $testUser = User::factory()->create([
+        // Create main test user (without 2FA for easier testing)
+        $testUser = User::factory()->withoutTwoFactor()->create([
             'name' => 'Test Student',
             'email' => 'student@example.com',
             'cohort_id' => $cohorts->first()->id,
@@ -76,10 +76,18 @@ class DatabaseSeeder extends Seeder
             ]);
         });
 
-        // Create daily tasks for test user
+        // Create daily tasks for test user (today)
         \App\Models\DailyTask::factory(5)->create([
             'user_id' => $testUser->id,
             'due_date' => today(),
+        ]);
+
+        // Create some completed tasks this week to drive hoursThisWeek()
+        \App\Models\DailyTask::factory(3)->create([
+            'user_id' => $testUser->id,
+            'is_completed' => true,
+            'completed_at' => now()->subDays(fake()->numberBetween(0, 6)),
+            'due_date' => now()->subDays(fake()->numberBetween(0, 6)),
         ]);
 
         // Create tutor messages for test user
@@ -91,10 +99,19 @@ class DatabaseSeeder extends Seeder
         // Create rewards
         $rewards = \App\Models\Reward::factory(12)->create();
 
-        // Create activities for test user
+        // Create mixed activities for test user
         \App\Models\Activity::factory(15)->create([
             'user_id' => $testUser->id,
         ]);
+
+        // Ensure some lesson_completed activities this week to drive xpThisWeek()
+        for ($i = 0; $i < 5; $i++) {
+            \App\Models\Activity::factory()->create([
+                'user_id' => $testUser->id,
+                'type' => 'lesson_completed',
+                'created_at' => now()->subDays($i),
+            ]);
+        }
 
         // Create some random students for leaderboard
         User::factory(20)->create()->each(function ($user) use ($cohorts) {

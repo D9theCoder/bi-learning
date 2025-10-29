@@ -8,6 +8,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { TodayTaskList } from '@/components/dashboard/today-task-list';
 import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type {
@@ -74,6 +75,26 @@ class DashboardErrorBoundary extends React.Component<
 }
 
 // Memoized components for performance optimization
+const StatsSkeleton = memo(() => (
+  <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" aria-label="Loading statistics">
+    {[0, 1, 2, 3].map((i) => (
+      <Card key={i}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </section>
+));
+
+StatsSkeleton.displayName = 'StatsSkeleton';
+
 const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
   <section
     className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
@@ -96,6 +117,30 @@ const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
 ));
 
 DashboardStatsSection.displayName = 'DashboardStatsSection';
+
+const CoursesSkeleton = memo(() => (
+  <section aria-labelledby="courses-heading">
+    <h2 id="courses-heading" className="mb-4 text-xl font-semibold">
+      My Courses
+    </h2>
+    <div className="grid gap-4 md:grid-cols-2">
+      {[0, 1].map((i) => (
+        <Card key={i}>
+          <CardHeader className="relative p-0">
+            <Skeleton className="aspect-video w-full rounded-t-lg" />
+          </CardHeader>
+          <CardContent className="space-y-3 p-4">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-40" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </section>
+));
+
+CoursesSkeleton.displayName = 'CoursesSkeleton';
 
 const DashboardCoursesSection = memo(
   ({ enrolledCourses }: { enrolledCourses: Enrollment[] }) => (
@@ -150,6 +195,39 @@ const DashboardActivityChartSection = memo(
 );
 
 DashboardActivityChartSection.displayName = 'DashboardActivityChartSection';
+
+const ActivityChartSkeleton = memo(() => (
+  <section aria-labelledby="activity-heading">
+    <h2 id="activity-heading" className="mb-4 text-xl font-semibold">
+      Weekly Activity
+    </h2>
+    <Card>
+      <CardContent className="p-6">
+        <Skeleton className="h-16 w-full" />
+      </CardContent>
+    </Card>
+  </section>
+));
+
+ActivityChartSkeleton.displayName = 'ActivityChartSkeleton';
+
+const TodayTasksSkeleton = memo(() => (
+  <Card>
+    <CardContent className="space-y-3 p-6">
+      <Skeleton className="h-5 w-40" />
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center gap-3">
+          <Skeleton className="h-4 w-4 rounded-sm" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="ml-auto h-4 w-16" />
+        </div>
+      ))}
+      <Skeleton className="h-2 w-full" />
+    </CardContent>
+  </Card>
+));
+
+TodayTasksSkeleton.displayName = 'TodayTasksSkeleton';
 
 const DashboardSidebar = memo(
   ({
@@ -283,6 +361,12 @@ export default function Dashboard({
   cohort_leaderboard,
   weekly_activity_data,
 }: DashboardProps) {
+  const [isLoading, setIsLoading] = React.useState(true);
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 250);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
@@ -290,7 +374,7 @@ export default function Dashboard({
       <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
         {/* KPI Overview Section */}
         <DashboardErrorBoundary>
-          <DashboardStatsSection stats={stats} />
+          {isLoading ? <StatsSkeleton /> : <DashboardStatsSection stats={stats} />}
         </DashboardErrorBoundary>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -298,34 +382,92 @@ export default function Dashboard({
           <div className="flex flex-col gap-6 lg:col-span-2">
             {/* Today Widget */}
             <DashboardErrorBoundary>
-              <TodayTaskList tasks={today_tasks} />
+              {isLoading ? (
+                <TodayTasksSkeleton />
+              ) : (
+                <TodayTaskList tasks={today_tasks} />
+              )}
             </DashboardErrorBoundary>
 
             {/* Enrolled Courses */}
             <DashboardErrorBoundary>
-              <DashboardCoursesSection enrolledCourses={enrolled_courses} />
+              {isLoading ? (
+                <CoursesSkeleton />
+              ) : (
+                <DashboardCoursesSection enrolledCourses={enrolled_courses} />
+              )}
             </DashboardErrorBoundary>
 
             {/* Weekly Activity Chart */}
-            {weekly_activity_data.length > 0 && (
-              <DashboardErrorBoundary>
-                <DashboardActivityChartSection
-                  weeklyActivityData={weekly_activity_data}
-                />
-              </DashboardErrorBoundary>
+            {isLoading ? (
+              <ActivityChartSkeleton />
+            ) : (
+              weekly_activity_data.length > 0 && (
+                <DashboardErrorBoundary>
+                  <DashboardActivityChartSection
+                    weeklyActivityData={weekly_activity_data}
+                  />
+                </DashboardErrorBoundary>
+              )
             )}
           </div>
 
           {/* Sidebar - 1 column */}
-          <DashboardSidebar
-            stats={stats}
-            recentAchievements={recent_achievements}
-            nextMilestone={next_milestone}
-            cohortLeaderboard={cohort_leaderboard}
-            tutorMessages={tutor_messages}
-            unreadMessageCount={unread_message_count}
-            recentActivity={recent_activity}
-          />
+          {isLoading ? (
+            <div className="flex flex-col gap-6">
+              <Card>
+                <CardContent className="space-y-3 p-6">
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <Skeleton className="h-5 w-40" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <Skeleton className="h-5 w-32" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-6 w-6 rounded-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="ml-auto h-4 w-10" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <DashboardSidebar
+              stats={stats}
+              recentAchievements={recent_achievements}
+              nextMilestone={next_milestone}
+              cohortLeaderboard={cohort_leaderboard}
+              tutorMessages={tutor_messages}
+              unreadMessageCount={unread_message_count}
+              recentActivity={recent_activity}
+            />
+          )}
         </div>
       </div>
     </AppLayout>
