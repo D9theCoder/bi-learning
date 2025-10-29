@@ -1,0 +1,54 @@
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ProgressRing } from './progress-ring';
+import { Link } from '@inertiajs/react';
+import type { Enrollment } from '@/types';
+import { Play } from 'lucide-react';
+
+interface CourseCardProps {
+    enrollment: Enrollment;
+    onResume?: () => void;
+}
+
+export function CourseCard({ enrollment, onResume }: CourseCardProps) {
+    const { course, progress_percentage, last_activity_at, next_lesson } = enrollment;
+
+    return (
+        <Card>
+            <CardHeader className="relative p-0">
+                {course?.thumbnail && (
+                    <img 
+                        src={course.thumbnail} 
+                        alt={course.title}
+                        className="aspect-video w-full rounded-t-lg object-cover"
+                    />
+                )}
+                <div className="absolute right-2 top-2">
+                    <ProgressRing progress={progress_percentage} size={48} strokeWidth={4} />
+                </div>
+            </CardHeader>
+            <CardContent className="p-4">
+                <CardTitle className="line-clamp-2 text-base">{course?.title}</CardTitle>
+                {last_activity_at && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                        Last activity: {new Date(last_activity_at).toLocaleDateString()}
+                    </p>
+                )}
+                {next_lesson && (
+                    <Badge variant="secondary" className="mt-2">
+                        Next: {next_lesson.title}
+                    </Badge>
+                )}
+            </CardContent>
+            <CardFooter className="p-4 pt-0">
+                <Button asChild className="w-full" onClick={onResume}>
+                    <Link href={`/courses/${course?.id}`} prefetch>
+                        <Play className="mr-2 size-4" />
+                        Resume
+                    </Link>
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}

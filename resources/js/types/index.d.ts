@@ -37,7 +37,165 @@ export interface User {
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
+    cohort_id?: number;
+    total_xp?: number;
+    level?: number;
+    points_balance?: number;
     created_at: string;
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
+}
+
+export interface Course {
+    id: number;
+    title: string;
+    description: string;
+    thumbnail?: string;
+    instructor_id: number;
+    instructor?: User;
+    duration_minutes?: number;
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    category?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Lesson {
+    id: number;
+    course_id: number;
+    title: string;
+    description?: string;
+    content?: string;
+    duration_minutes: number;
+    order: number;
+    video_url?: string;
+    is_completed?: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Enrollment {
+    id: number;
+    user_id: number;
+    course_id: number;
+    course?: Course;
+    progress_percentage: number;
+    status: 'active' | 'completed' | 'paused';
+    last_activity_at?: string;
+    enrolled_at: string;
+    completed_at?: string;
+    next_lesson?: Lesson;
+}
+
+export interface Achievement {
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    rarity: 'bronze' | 'silver' | 'gold' | 'platinum';
+    criteria?: string;
+    xp_reward: number;
+    earned_at?: string;
+    created_at: string;
+}
+
+export interface Badge {
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    criteria: string;
+    created_at: string;
+}
+
+export interface Streak {
+    current_streak: number;
+    longest_streak: number;
+    last_activity_date: string;
+}
+
+export interface DailyTask {
+    id: number;
+    user_id: number;
+    title: string;
+    description?: string;
+    type: 'lesson' | 'quiz' | 'practice' | 'reading';
+    lesson_id?: number;
+    lesson?: Lesson;
+    estimated_minutes: number;
+    xp_reward: number;
+    is_completed: boolean;
+    completed_at?: string;
+    due_date: string;
+    created_at: string;
+}
+
+export interface TutorMessage {
+    id: number;
+    tutor_id: number;
+    user_id: number;
+    tutor?: User;
+    content: string;
+    is_read: boolean;
+    sent_at: string;
+    created_at: string;
+}
+
+export interface LearningStats {
+    streak: number;
+    xp_this_week: number;
+    hours_learned: number;
+    active_courses: number;
+    total_xp: number;
+    level: number;
+    points_balance: number;
+}
+
+export interface Reward {
+    id: number;
+    name: string;
+    description: string;
+    cost: number;
+    icon: string;
+    category?: string;
+    rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+    is_active: boolean;
+    stock?: number;
+    is_claimed?: boolean;
+    created_at: string;
+}
+
+export interface LeaderboardEntry {
+    id: number;
+    name: string;
+    avatar?: string;
+    xp: number;
+    level: number;
+    rank: number;
+    isCurrentUser?: boolean;
+}
+
+export interface Activity {
+    id: number;
+    user_id: number;
+    type: 'lesson_completed' | 'achievement_earned' | 'course_enrolled' | 'reward_claimed' | 'level_up';
+    title?: string;
+    description: string;
+    xp_earned: number;
+    icon?: string;
+    metadata?: Record<string, unknown>;
+    created_at: string;
+}
+
+export interface Cohort {
+    id: number;
+    name: string;
+    description?: string;
+    created_at: string;
+}
+
+export interface WeeklyActivityDataPoint {
+    day: string;
+    minutes: number;
+    xp: number;
 }

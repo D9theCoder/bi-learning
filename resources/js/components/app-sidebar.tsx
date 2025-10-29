@@ -10,17 +10,64 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { 
+    dashboard, 
+    courses, 
+    achievements, 
+    rewards, 
+    tutors, 
+    calendar, 
+    messages 
+} from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { 
+    LayoutGrid, 
+    BookOpen, 
+    Trophy, 
+    Gift, 
+    Users, 
+    Calendar as CalendarIcon, 
+    MessageSquare,
+    Folder
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: dashboard().url,
         icon: LayoutGrid,
+    },
+    {
+        title: 'My Courses',
+        href: courses().url,
+        icon: BookOpen,
+    },
+    {
+        title: 'Achievements',
+        href: achievements().url,
+        icon: Trophy,
+    },
+    {
+        title: 'Rewards',
+        href: rewards().url,
+        icon: Gift,
+    },
+    {
+        title: 'Tutors',
+        href: tutors().url,
+        icon: Users,
+    },
+    {
+        title: 'Calendar',
+        href: calendar().url,
+        icon: CalendarIcon,
+    },
+    {
+        title: 'Messages',
+        href: messages().url,
+        icon: MessageSquare,
     },
 ];
 
@@ -44,7 +91,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard().url} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

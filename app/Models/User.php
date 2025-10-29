@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -22,6 +25,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar',
+        'cohort_id',
+        'total_xp',
+        'level',
+        'points_balance',
+        'current_streak',
+        'longest_streak',
+        'last_activity_date',
     ];
 
     /**
@@ -47,6 +58,144 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'last_activity_date' => 'date',
         ];
+    }
+
+    public function cohort(): BelongsTo
+    {
+        return $this->belongsTo(Cohort::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function activeEnrollments(): HasMany
+    {
+        return $this->enrollments()->where('status', 'active');
+    }
+
+    public function achievements(): BelongsToMany
+    {
+        return $this->belongsToMany(Achievement::class)->withTimestamps()->withPivot('earned_at');
+    }
+
+    public function rewards(): BelongsToMany
+    {
+        return $this->belongsToMany(Reward::class)->withTimestamps()->withPivot('points_spent', 'claimed_at');
+    }
+
+    public function dailyTasks(): HasMany
+    {
+        return $this->hasMany(DailyTask::class);
+    }
+
+    public function tutorMessages(): HasMany
+    {
+        return $this->hasMany(TutorMessage::class);
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(Activity::class);
+    }
+
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(TutorMessage::class, 'tutor_id');
+    }
+
+    // Helper methods for dashboard statistics
+    public function currentStreak(): int
+    {
+        return $this->current_streak ?? 0;
+    }
+
+    public function xpThisWeek(): int
+    {
+        $weekStart = now()->startOfWeek();
+
+        return $this->activities()
+            ->where('type', 'lesson_completed')
+            ->where('created_at', '>=', $weekStart)
+            ->count() * 50; // Assume 50 XP per lesson
+    }
+
+    public function hoursThisWeek(): float
+    {
+        $weekStart = now()->startOfWeek();
+
+        $minutes = $this->dailyTasks()
+            ->where('is_completed', true)
+            ->where('completed_at', '>=', $weekStart)
+            ->sum('estimated_minutes');
+
+        return round($minutes / 60, 1);
+    }
+
+    public function nextAchievementMilestone(): ?Achievement
+    {
+        $earnedIds = $this->achievements()->pluck('achievements.id');
+
+        return Achievement::whereNotIn('id', $earnedIds)
+            ->orderBy('xp_reward')
+            ->first();
+    }
+
+    public function weeklyActivityChartData(): array
+    {
+        $data = [];
+        $weekStart = now()->startOfWeek();
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = $weekStart->copy()->addDays($i);
+            $dayName = $date->format('D');
+
+            $minutes = $this->dailyTasks()
+                ->where('is_completed', true)
+                ->whereDate('completed_at', $date)
+                ->sum('estimated_minutes');
+
+            $xp = $this->activities()
+                ->where('type', 'lesson_completed')
+                ->whereDate('created_at', $date)
+                ->count() * 50;
+
+            $data[] = [
+                'day' => $dayName,
+                'minutes' => $minutes,
+                'xp' => $xp,
+            ];
+        }
+
+        return $data;
+    }
+
+    public function cohortRank(): ?int
+    {
+        if (! $this->cohort_id) {
+            return null;
+        }
+
+        $rank = User::where('cohort_id', $this->cohort_id)
+            ->where('total_xp', '>', $this->total_xp)
+            ->count() + 1;
+
+        return $rank;
+    }
+
+    public function nextLessonForEnrollment(Enrollment $enrollment): ?Lesson
+    {
+        return $enrollment->course->lessons()
+            ->whereNotIn('id', function ($query) {
+                $query->select('lesson_id')
+                    ->from('daily_tasks')
+                    ->where('user_id', $this->id)
+                    ->where('is_completed', true);
+            })
+            ->orderBy('order')
+            ->first();
     }
 }

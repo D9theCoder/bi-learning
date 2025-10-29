@@ -13,15 +13,97 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create cohorts
+        $cohorts = \App\Models\Cohort::factory(5)->create();
 
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => 'password',
-                'email_verified_at' => now(),
-            ]
+        // Create instructors
+        $instructors = User::factory(10)->create()->each(function ($user) use ($cohorts) {
+            $user->update([
+                'cohort_id' => $cohorts->random()->id,
+                'total_xp' => fake()->numberBetween(1000, 50000),
+                'level' => fake()->numberBetween(5, 30),
+                'points_balance' => fake()->numberBetween(0, 5000),
+                'current_streak' => fake()->numberBetween(0, 30),
+                'longest_streak' => fake()->numberBetween(0, 100),
+                'last_activity_date' => fake()->dateTimeBetween('-7 days', 'now'),
+            ]);
+        });
+
+        // Create main test user
+        $testUser = User::factory()->create([
+            'name' => 'Test Student',
+            'email' => 'student@example.com',
+            'cohort_id' => $cohorts->first()->id,
+            'total_xp' => 2500,
+            'level' => 8,
+            'points_balance' => 850,
+            'current_streak' => 5,
+            'longest_streak' => 12,
+            'last_activity_date' => today(),
+        ]);
+
+        // Create achievements
+        $achievements = \App\Models\Achievement::factory(12)->create();
+
+        // Award some achievements to test user
+        $testUser->achievements()->attach(
+            $achievements->random(3)->pluck('id'),
+            ['earned_at' => now()]
         );
+
+        // Create courses
+        $courses = \App\Models\Course::factory(15)->create([
+            'instructor_id' => $instructors->random()->id,
+        ]);
+
+        // Create lessons for each course
+        $courses->each(function ($course) {
+            \App\Models\Lesson::factory(fake()->numberBetween(5, 15))->create([
+                'course_id' => $course->id,
+            ])->each(function ($lesson, $index) {
+                $lesson->update(['order' => $index + 1]);
+            });
+        });
+
+        // Create enrollments for test user
+        $enrolledCourses = $courses->random(4);
+        $enrolledCourses->each(function ($course) use ($testUser) {
+            \App\Models\Enrollment::factory()->create([
+                'user_id' => $testUser->id,
+                'course_id' => $course->id,
+                'progress_percentage' => fake()->numberBetween(10, 85),
+                'status' => 'active',
+            ]);
+        });
+
+        // Create daily tasks for test user
+        \App\Models\DailyTask::factory(5)->create([
+            'user_id' => $testUser->id,
+            'due_date' => today(),
+        ]);
+
+        // Create tutor messages for test user
+        \App\Models\TutorMessage::factory(8)->create([
+            'user_id' => $testUser->id,
+            'tutor_id' => $instructors->random()->id,
+        ]);
+
+        // Create rewards
+        $rewards = \App\Models\Reward::factory(12)->create();
+
+        // Create activities for test user
+        \App\Models\Activity::factory(15)->create([
+            'user_id' => $testUser->id,
+        ]);
+
+        // Create some random students for leaderboard
+        User::factory(20)->create()->each(function ($user) use ($cohorts) {
+            $user->update([
+                'cohort_id' => $cohorts->random()->id,
+                'total_xp' => fake()->numberBetween(500, 8000),
+                'level' => fake()->numberBetween(1, 15),
+                'points_balance' => fake()->numberBetween(0, 3000),
+            ]);
+        });
     }
 }
