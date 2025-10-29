@@ -18,8 +18,9 @@ export function LevelProgressBar({
     totalXp,
     className 
 }: LevelProgressBarProps) {
-    const progress = (currentXp / xpForNextLevel) * 100;
-    const xpRemaining = xpForNextLevel - currentXp;
+    // Prevent division by zero
+    const progress = xpForNextLevel > 0 ? (currentXp / xpForNextLevel) * 100 : 0;
+    const xpRemaining = xpForNextLevel > 0 ? xpForNextLevel - currentXp : 0;
 
     return (
         <Card className={className}>

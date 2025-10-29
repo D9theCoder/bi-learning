@@ -11,7 +11,7 @@ interface AchievementBadgeProps {
     className?: string;
 }
 
-export function AchievementBadge({ achievement, unlocked = false, unlockedAt, className }: AchievementBadgeProps) {
+export function AchievementBadge({ achievement, unlocked = !!achievement.earned_at, unlockedAt = achievement.earned_at, className }: AchievementBadgeProps) {
     return (
         <Card className={cn(
             'transition-all hover:shadow-md',

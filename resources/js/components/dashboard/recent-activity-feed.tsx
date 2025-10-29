@@ -2,13 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Activity } from '@/types';
-import { 
-    BookOpen, 
-    Award, 
-    CheckCircle2, 
-    Trophy, 
-    Target,
-    MessageSquare,
+import {
+    BookOpen,
+    Award,
+    Trophy,
     LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,29 +17,26 @@ interface RecentActivityFeedProps {
 
 const activityIcons: Record<string, LucideIcon> = {
     'lesson_completed': BookOpen,
-    'achievement_unlocked': Award,
-    'task_completed': CheckCircle2,
+    'achievement_earned': Award,
+    'course_enrolled': BookOpen,
+    'reward_claimed': Trophy,
     'level_up': Trophy,
-    'goal_achieved': Target,
-    'message_sent': MessageSquare,
 };
 
 const activityColors: Record<string, string> = {
     'lesson_completed': 'text-blue-500 bg-blue-500/10',
-    'achievement_unlocked': 'text-yellow-500 bg-yellow-500/10',
-    'task_completed': 'text-green-500 bg-green-500/10',
-    'level_up': 'text-purple-500 bg-purple-500/10',
-    'goal_achieved': 'text-orange-500 bg-orange-500/10',
-    'message_sent': 'text-pink-500 bg-pink-500/10',
+    'achievement_earned': 'text-yellow-500 bg-yellow-500/10',
+    'course_enrolled': 'text-green-500 bg-green-500/10',
+    'reward_claimed': 'text-purple-500 bg-purple-500/10',
+    'level_up': 'text-orange-500 bg-orange-500/10',
 };
 
 const activityTitles: Record<string, string> = {
     'lesson_completed': 'Completed Lesson',
-    'achievement_unlocked': 'Achievement Unlocked',
-    'task_completed': 'Task Completed',
+    'achievement_earned': 'Achievement Earned',
+    'course_enrolled': 'Course Enrolled',
+    'reward_claimed': 'Reward Claimed',
     'level_up': 'Level Up!',
-    'goal_achieved': 'Goal Achieved',
-    'message_sent': 'Message Sent',
 };
 
 export function RecentActivityFeed({ activities, className }: RecentActivityFeedProps) {

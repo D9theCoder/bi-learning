@@ -45,22 +45,22 @@ export function TutorChatWidget({ messages, unreadCount = 0, className }: TutorC
                                     key={message.id}
                                     className={cn(
                                         'flex gap-3 rounded-lg border p-3 transition-all hover:bg-muted/50',
-                                        !message.read && 'border-primary bg-primary/5'
+                                        !message.is_read && 'border-primary bg-primary/5'
                                     )}
                                 >
                                     <Avatar className="size-8 shrink-0">
-                                        <AvatarImage src={message.sender_avatar} alt={message.sender_name} />
+                                        <AvatarImage src={message.tutor?.avatar} alt={message.tutor?.name || 'AI Tutor'} />
                                         <AvatarFallback>
-                                            {message.sender_name?.charAt(0) || 'AI'}
+                                            {message.tutor?.name?.charAt(0) || 'AI'}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 space-y-1">
                                         <div className="flex items-center justify-between">
-                                            <p className="text-xs font-medium">{message.sender_name}</p>
+                                            <p className="text-xs font-medium">{message.tutor?.name || 'AI Tutor'}</p>
                                             <time className="text-xs text-muted-foreground">
-                                                {new Date(message.created_at).toLocaleTimeString([], { 
-                                                    hour: '2-digit', 
-                                                    minute: '2-digit' 
+                                                {new Date(message.created_at).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
                                                 })}
                                             </time>
                                         </div>
