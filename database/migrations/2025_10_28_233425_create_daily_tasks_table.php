@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('type', ['lesson', 'quiz', 'practice', 'reading'])->default('lesson');
             $table->foreignId('lesson_id')->nullable()->constrained()->onDelete('cascade');
             $table->integer('estimated_minutes')->default(15);
+            $table->integer('xp_reward')->default(10);
             $table->boolean('is_completed')->default(false);
             $table->timestamp('completed_at')->nullable();
             $table->date('due_date');

@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['lesson_completed', 'achievement_earned', 'course_enrolled', 'reward_claimed', 'level_up']);
+            $table->string('title')->nullable();
             $table->string('description');
+            $table->integer('xp_earned')->default(0);
             $table->string('icon')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();

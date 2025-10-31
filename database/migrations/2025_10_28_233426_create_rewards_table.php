@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('cost');
             $table->string('icon');
             $table->string('category')->nullable();
+            $table->enum('rarity', ['common', 'rare', 'epic', 'legendary'])->default('common');
             $table->boolean('is_active')->default(true);
             $table->integer('stock')->nullable();
             $table->timestamps();

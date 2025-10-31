@@ -11,6 +11,7 @@
 /storage/pail
 /vendor
 /.github/prompts
+/.kilocode
 .DS_Store
 .env
 .env.backup
