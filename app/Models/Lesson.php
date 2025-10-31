@@ -25,6 +25,8 @@ class Lesson extends Model
     protected function casts(): array
     {
         return [
+            'duration_minutes' => 'integer',
+            'order' => 'integer',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

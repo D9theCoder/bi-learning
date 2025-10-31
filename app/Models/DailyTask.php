@@ -30,6 +30,7 @@ class DailyTask extends Model
             'is_completed' => 'boolean',
             'completed_at' => 'datetime',
             'due_date' => 'date',
+            'xp_reward' => 'integer',
             'created_at' => 'datetime',
         ];
     }

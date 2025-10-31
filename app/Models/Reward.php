@@ -26,6 +26,7 @@ class Reward extends Model
     {
         return [
             'is_active' => 'boolean',
+            'rarity' => 'string',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

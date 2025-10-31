@@ -28,6 +28,7 @@ class Enrollment extends Model
             'last_activity_at' => 'datetime',
             'enrolled_at' => 'datetime',
             'completed_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 

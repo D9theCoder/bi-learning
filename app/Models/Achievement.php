@@ -23,6 +23,8 @@ class Achievement extends Model
     protected function casts(): array
     {
         return [
+            'rarity' => 'string',
+            'xp_reward' => 'integer',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

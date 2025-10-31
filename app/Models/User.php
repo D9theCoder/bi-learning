@@ -58,6 +58,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'cohort_id' => 'integer',
+            'total_xp' => 'integer',
+            'level' => 'integer',
+            'points_balance' => 'integer',
+            'current_streak' => 'integer',
+            'longest_streak' => 'integer',
             'last_activity_date' => 'date',
         ];
     }

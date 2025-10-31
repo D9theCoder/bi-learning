@@ -26,6 +26,7 @@ class Course extends Model
     protected function casts(): array
     {
         return [
+            'duration_minutes' => 'integer',
             'is_published' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

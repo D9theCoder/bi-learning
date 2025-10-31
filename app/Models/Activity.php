@@ -25,6 +25,7 @@ class Activity extends Model
     {
         return [
             'metadata' => 'array',
+            'xp_earned' => 'integer',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
