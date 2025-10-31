@@ -1,8 +1,10 @@
 {
     "agents": [
+        "copilot",
         "cursor"
     ],
     "editors": [
+        "vscode",
         "cursor"
     ],
     "guidelines": [
