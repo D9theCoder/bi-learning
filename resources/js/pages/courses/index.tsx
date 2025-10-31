@@ -21,6 +21,7 @@ import { courses as coursesRoute } from '@/routes';
 import type { BreadcrumbItem, CoursesPageProps } from '@/types';
 import { Form, Head, router } from '@inertiajs/react';
 import { BookOpen, Play } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -35,21 +36,51 @@ const difficultyColors = {
   advanced: 'bg-red-500/20 text-red-400',
 };
 
+const sortLabels: Record<string, string> = {
+  latest: 'Latest',
+  popular: 'Popular',
+  progress: 'Progress',
+};
+
 export default function CoursesPage({ courses, filters }: CoursesPageProps) {
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
-    // Remove the filter if it's set to "all"
-    const updatedFilters: Record<string, string> = { ...filters };
-    if (value === 'all') {
-      delete updatedFilters[key];
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
+    // Always start from current props, then inject the latest search term
+    const updatedFilters: Record<string, string> = { ...filters } as Record<string, string>;
+
+    // Keep the current input value in the query (trimmed). If empty, drop it.
+    const currentTerm = (key === 'search' ? value : searchTerm).trim();
+    if (currentTerm) {
+      updatedFilters.search = currentTerm;
     } else {
-      updatedFilters[key] = value;
+      delete updatedFilters.search;
+    }
+
+    // For non-search filters, treat "all" as unset (remove from query)
+    if (key !== 'search') {
+      if (value === 'all') {
+        delete updatedFilters[key as string];
+      } else {
+        updatedFilters[key as string] = value;
+      }
     }
 
     router.get(coursesRoute().url, updatedFilters, {
       preserveState: true,
       preserveScroll: true,
     });
-  };
+  }, [filters, searchTerm]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchTerm !== (filters.search || '')) {
+        handleFilterChange('search', searchTerm);
+      }
+    }, 100);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, filters.search, handleFilterChange]);
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -71,8 +102,8 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
           <Input
             type="search"
             placeholder="Search courses..."
-            value={filters.search || ''}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-xs"
           />
           <Select
@@ -90,11 +121,17 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
             </SelectContent>
           </Select>
           <Select
-            value={filters.sort || 'latest'}
+            value={filters.sort ?? 'latest'}
             onValueChange={(value) => handleFilterChange('sort', value)}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Sort by" />
+              {/* Show a human-friendly label even when using a controlled value */}
+              <SelectValue>
+                {(() => {
+                  const current = filters.sort ?? 'latest';
+                  return sortLabels[current] ?? 'Latest';
+                })()}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="latest">Latest</SelectItem>
@@ -195,11 +232,22 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
                   }
                   size="sm"
                   onClick={() => {
-                    router.get(
-                      coursesRoute().url,
-                      { ...filters, page: page.toString() },
-                      { preserveState: true, preserveScroll: true },
-                    );
+                    const params: Record<string, string> = {
+                      ...filters,
+                      page: page.toString(),
+                    } as Record<string, string>;
+
+                    const term = searchTerm.trim();
+                    if (term) {
+                      params.search = term;
+                    } else {
+                      delete params.search;
+                    }
+
+                    router.get(coursesRoute().url, params, {
+                      preserveState: true,
+                      preserveScroll: true,
+                    });
                   }}
                 >
                   {page}
