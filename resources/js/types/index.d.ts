@@ -204,3 +204,140 @@ export interface WeeklyActivityDataPoint {
   minutes: number;
   xp: number;
 }
+
+// Page Props Interfaces
+
+export interface AchievementsPageProps {
+  achievements: Array<Achievement & { earned: boolean; earned_at?: string }>;
+  summary: {
+    total: number;
+    earned: number;
+    nextMilestone?: {
+      id: number;
+      title: string;
+      progress: number;
+    };
+  };
+}
+
+export interface CalendarPageProps {
+  tasksByDate: Record<
+    string,
+    Array<{
+      id: number;
+      title: string;
+      due_date: string;
+      completed: boolean;
+      xp_reward?: number;
+    }>
+  >;
+  stats: {
+    total: number;
+    completed: number;
+    overdue: number;
+  };
+  cursor?: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface CoursesPageProps {
+  filters: {
+    search?: string;
+    category?: string;
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    sort?: string;
+  };
+  courses: {
+    data: Array<
+      Course & {
+        lessons_count: number;
+        user_progress?: {
+          progress_percentage: number;
+          next_lesson?: Lesson;
+        };
+      }
+    >;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface MessagesPageProps {
+  threads: Array<{
+    partner: {
+      id: number;
+      name: string;
+      avatar?: string;
+    };
+    latest_message_at: string;
+    unread_count: number;
+  }>;
+  activeThread?: {
+    partner: {
+      id: number;
+      name: string;
+      avatar?: string;
+    };
+    messages: {
+      data: Array<{
+        id: number;
+        body: string;
+        sender_id: number;
+        created_at: string;
+        read_at?: string;
+      }>;
+      current_page: number;
+      last_page: number;
+    };
+  };
+}
+
+export interface RewardsPageProps {
+  user: {
+    points_balance: number;
+  };
+  rewards: {
+    data: Array<
+      Reward & {
+        can_redeem: boolean;
+        remaining_stock?: number;
+      }
+    >;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+  filters?: {
+    rarity?: string;
+  };
+}
+
+export interface TutorsPageProps {
+  filters: {
+    search?: string;
+    expertise?: string;
+    cohort_id?: number;
+  };
+  tutors: {
+    data: Array<{
+      id: number;
+      name: string;
+      avatar?: string;
+      cohort?: {
+        id: number;
+        name: string;
+      };
+      expertise?: string[];
+      rating?: number;
+    }>;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}

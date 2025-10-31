@@ -11,10 +11,7 @@ interface TodayTaskListProps {
   className?: string;
 }
 
-export function TodayTaskList({
-  tasks,
-  className,
-}: TodayTaskListProps) {
+export function TodayTaskList({ tasks, className }: TodayTaskListProps) {
   const completedCount = tasks.filter((task) => task.is_completed).length;
   const totalCount = tasks.length;
 

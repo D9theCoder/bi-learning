@@ -10,6 +10,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/.github/prompts
 .DS_Store
 .env
 .env.backup

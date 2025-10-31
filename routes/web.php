@@ -1,6 +1,15 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\DailyTaskController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\RewardController;
+use App\Http\Controllers\RewardRedemptionController;
+use App\Http\Controllers\TutorController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,24 +25,27 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Course routes (placeholder for future implementation)
-    Route::get('courses', fn () => Inertia::render('courses/index'))->name('courses');
-    Route::get('courses/{course}', fn () => Inertia::render('courses/show'))->name('courses.show');
+    // Achievement routes
+    Route::get('achievements', [AchievementController::class, 'index'])->name('achievements');
 
-    // Achievement routes (placeholder)
-    Route::get('achievements', fn () => Inertia::render('achievements/index'))->name('achievements');
+    // Calendar routes
+    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks');
 
-    // Reward routes (placeholder)
-    Route::get('rewards', fn () => Inertia::render('rewards/index'))->name('rewards');
+    // Course routes
+    Route::get('courses', [CourseController::class, 'index'])->name('courses');
+    Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
 
-    // Tutor routes (placeholder)
-    Route::get('tutors', fn () => Inertia::render('tutors/index'))->name('tutors');
+    // Message routes
+    Route::get('messages', [MessageController::class, 'index'])->name('messages');
+    Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 
-    // Calendar routes (placeholder)
-    Route::get('calendar', fn () => Inertia::render('calendar/index'))->name('calendar');
+    // Reward routes
+    Route::get('rewards', [RewardController::class, 'index'])->name('rewards');
+    Route::post('rewards/{reward}/redeem', [RewardRedemptionController::class, 'store'])->name('rewards.redeem');
 
-    // Message routes (placeholder)
-    Route::get('messages', fn () => Inertia::render('messages/index'))->name('messages');
+    // Tutor routes
+    Route::get('tutors', [TutorController::class, 'index'])->name('tutors');
 });
 
 require __DIR__.'/settings.php';

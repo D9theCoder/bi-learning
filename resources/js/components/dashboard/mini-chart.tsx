@@ -2,13 +2,13 @@ import { cn } from '@/lib/utils';
 import {
   Area,
   AreaChart,
+  CartesianGrid,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
 } from 'recharts';
 
 interface DataPoint {
@@ -65,167 +65,185 @@ export function MiniChart({
     // clipped at the top/bottom).
     <div style={{ height, overflow: 'visible' }} className={cn(className)}>
       <ResponsiveContainer width="100%" height="100%">
-      {type === 'area' ? (
-        <AreaChart
-          data={data}
-          margin={
-            showAxes
-              ? {
-                  top: compact ? 4 : 6,
-                  right: compact ? 4 : 6,
-                  left: compact ? 6 : 8,
-                  bottom: compact ? 16 : 28,
+        {type === 'area' ? (
+          <AreaChart
+            data={data}
+            margin={
+              showAxes
+                ? {
+                    top: compact ? 4 : 6,
+                    right: compact ? 4 : 6,
+                    left: compact ? 6 : 8,
+                    bottom: compact ? 16 : 28,
+                  }
+                : { top: 0, right: 0, left: 0, bottom: 0 }
+            }
+          >
+            {showGrid && (
+              <CartesianGrid stroke="var(--border)" strokeOpacity={0.06} />
+            )}
+            {showAxes && (
+              <XAxis
+                dataKey="name"
+                tick={{
+                  fill: 'var(--muted-foreground)',
+                  fontSize: compact ? 11 : 12,
+                }}
+                tickMargin={compact ? 2 : 4}
+                axisLine={{ stroke: 'var(--border)' }}
+                tickLine={false}
+                label={
+                  showAxisLabels && xAxisLabel
+                    ? {
+                        value: xAxisLabel,
+                        position: 'bottom',
+                        offset: compact ? 6 : 8,
+                        fill: 'var(--muted-foreground)',
+                        style: { fontSize: compact ? 11 : 12 },
+                      }
+                    : undefined
                 }
-              : { top: 0, right: 0, left: 0, bottom: 0 }
-          }
-        >
-          {showGrid && (
-            <CartesianGrid stroke="var(--border)" strokeOpacity={0.06} />
-          )}
-          {showAxes && (
-            <XAxis
-              dataKey="name"
-              tick={{ fill: 'var(--muted-foreground)', fontSize: compact ? 11 : 12 }}
-              tickMargin={compact ? 2 : 4}
-              axisLine={{ stroke: 'var(--border)' }}
-              tickLine={false}
-              label={
-                showAxisLabels && xAxisLabel
-                  ? {
-                      value: xAxisLabel,
-                      position: 'bottom',
-                      offset: compact ? 6 : 8,
-                      fill: 'var(--muted-foreground)',
-                      style: { fontSize: compact ? 11 : 12 },
-                    }
-                  : undefined
-              }
-            />
-          )}
-          {showAxes && (
-            <YAxis
-              tick={{ fill: 'var(--muted-foreground)', fontSize: compact ? 11 : 12 }}
-              axisLine={false}
-              tickLine={false}
-              tickMargin={compact ? 2 : 4}
-              tickCount={4}
-              domain={[0, 'auto']}
-              label={
-                showAxisLabels && yAxisLabel
-                  ? {
-                      value: yAxisLabel,
-                      angle: -90,
-                      position: 'insideLeft',
-                      offset: compact ? -4 : -8,
-                      fill: 'var(--muted-foreground)',
-                      style: { fontSize: compact ? 11 : 12 },
-                    }
-                  : undefined
-              }
-            />
-          )}
-          <defs>
-            <linearGradient id="miniChartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Tooltip
-            contentStyle={{
-              // Use the CSS variables directly. These are defined as oklch(...)
-              // in the stylesheet so wrapping them in another color fn breaks them.
-              background: 'var(--background)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              fontSize: '12px',
-            }}
-            labelStyle={{ color: 'var(--foreground)' }}
-          />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke={color}
-            strokeWidth={2}
-            fill="url(#miniChartGradient)"
-          />
-        </AreaChart>
-      ) : (
-        <LineChart
-          data={data}
-          margin={
-            showAxes
-              ? {
-                  top: compact ? 4 : 6,
-                  right: compact ? 4 : 6,
-                  left: compact ? 6 : 8,
-                  bottom: compact ? 16 : 28,
+              />
+            )}
+            {showAxes && (
+              <YAxis
+                tick={{
+                  fill: 'var(--muted-foreground)',
+                  fontSize: compact ? 11 : 12,
+                }}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={compact ? 2 : 4}
+                tickCount={4}
+                domain={[0, 'auto']}
+                label={
+                  showAxisLabels && yAxisLabel
+                    ? {
+                        value: yAxisLabel,
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: compact ? -4 : -8,
+                        fill: 'var(--muted-foreground)',
+                        style: { fontSize: compact ? 11 : 12 },
+                      }
+                    : undefined
                 }
-              : { top: 0, right: 0, left: 0, bottom: 0 }
-          }
-        >
-          {showGrid && (
-            <CartesianGrid stroke="var(--border)" strokeOpacity={0.06} />
-          )}
-          {showAxes && (
-            <XAxis
-              dataKey="name"
-              tick={{ fill: 'var(--muted-foreground)', fontSize: compact ? 11 : 12 }}
-              tickMargin={compact ? 2 : 4}
-              axisLine={{ stroke: 'var(--border)' }}
-              tickLine={false}
-              label={
-                showAxisLabels && xAxisLabel
-                  ? {
-                      value: xAxisLabel,
-                      position: 'bottom',
-                      offset: compact ? 6 : 8,
-                      fill: 'var(--muted-foreground)',
-                      style: { fontSize: compact ? 11 : 12 },
-                    }
-                  : undefined
-              }
+              />
+            )}
+            <defs>
+              <linearGradient
+                id="miniChartGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Tooltip
+              contentStyle={{
+                // Use the CSS variables directly. These are defined as oklch(...)
+                // in the stylesheet so wrapping them in another color fn breaks them.
+                background: 'var(--background)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                fontSize: '12px',
+              }}
+              labelStyle={{ color: 'var(--foreground)' }}
             />
-          )}
-          {showAxes && (
-            <YAxis
-              tick={{ fill: 'var(--muted-foreground)', fontSize: compact ? 11 : 12 }}
-              axisLine={false}
-              tickLine={false}
-              tickMargin={compact ? 2 : 4}
-              tickCount={4}
-              domain={[0, 'auto']}
-              label={
-                showAxisLabels && yAxisLabel
-                  ? {
-                      value: yAxisLabel,
-                      angle: -90,
-                      position: 'insideLeft',
-                      offset: compact ? -4 : -8,
-                      fill: 'var(--muted-foreground)',
-                      style: { fontSize: compact ? 11 : 12 },
-                    }
-                  : undefined
-              }
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fill="url(#miniChartGradient)"
             />
-          )}
-          <Tooltip
-            contentStyle={{
-              background: 'var(--background)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              fontSize: '12px',
-            }}
-            labelStyle={{ color: 'var(--foreground)' }}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={color}
-            strokeWidth={2}
-            dot={false}
-          />
-        </LineChart>
-      )}
+          </AreaChart>
+        ) : (
+          <LineChart
+            data={data}
+            margin={
+              showAxes
+                ? {
+                    top: compact ? 4 : 6,
+                    right: compact ? 4 : 6,
+                    left: compact ? 6 : 8,
+                    bottom: compact ? 16 : 28,
+                  }
+                : { top: 0, right: 0, left: 0, bottom: 0 }
+            }
+          >
+            {showGrid && (
+              <CartesianGrid stroke="var(--border)" strokeOpacity={0.06} />
+            )}
+            {showAxes && (
+              <XAxis
+                dataKey="name"
+                tick={{
+                  fill: 'var(--muted-foreground)',
+                  fontSize: compact ? 11 : 12,
+                }}
+                tickMargin={compact ? 2 : 4}
+                axisLine={{ stroke: 'var(--border)' }}
+                tickLine={false}
+                label={
+                  showAxisLabels && xAxisLabel
+                    ? {
+                        value: xAxisLabel,
+                        position: 'bottom',
+                        offset: compact ? 6 : 8,
+                        fill: 'var(--muted-foreground)',
+                        style: { fontSize: compact ? 11 : 12 },
+                      }
+                    : undefined
+                }
+              />
+            )}
+            {showAxes && (
+              <YAxis
+                tick={{
+                  fill: 'var(--muted-foreground)',
+                  fontSize: compact ? 11 : 12,
+                }}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={compact ? 2 : 4}
+                tickCount={4}
+                domain={[0, 'auto']}
+                label={
+                  showAxisLabels && yAxisLabel
+                    ? {
+                        value: yAxisLabel,
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: compact ? -4 : -8,
+                        fill: 'var(--muted-foreground)',
+                        style: { fontSize: compact ? 11 : 12 },
+                      }
+                    : undefined
+                }
+              />
+            )}
+            <Tooltip
+              contentStyle={{
+                background: 'var(--background)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                fontSize: '12px',
+              }}
+              labelStyle={{ color: 'var(--foreground)' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        )}
       </ResponsiveContainer>
     </div>
   );

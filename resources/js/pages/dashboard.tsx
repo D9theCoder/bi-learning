@@ -76,7 +76,10 @@ class DashboardErrorBoundary extends React.Component<
 
 // Memoized components for performance optimization
 const StatsSkeleton = memo(() => (
-  <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" aria-label="Loading statistics">
+  <section
+    className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+    aria-label="Loading statistics"
+  >
     {[0, 1, 2, 3].map((i) => (
       <Card key={i}>
         <CardContent className="p-6">
@@ -160,8 +163,8 @@ const DashboardCoursesSection = memo(
             <BookOpen className="mb-4 size-12 text-muted-foreground" />
             <h3 className="mb-2 font-semibold">No courses yet</h3>
             <p className="text-sm text-muted-foreground">
-              Start your learning journey by enrolling in a course!
-              Welcome to bi-lear
+              Start your learning journey by enrolling in a course! Welcome to
+              bi-lear
             </p>
           </CardContent>
         </Card>
@@ -381,7 +384,11 @@ export default function Dashboard({
       <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
         {/* KPI Overview Section */}
         <DashboardErrorBoundary>
-          {isLoading ? <StatsSkeleton /> : <DashboardStatsSection stats={stats} />}
+          {isLoading ? (
+            <StatsSkeleton />
+          ) : (
+            <DashboardStatsSection stats={stats} />
+          )}
         </DashboardErrorBoundary>
 
         <div className="grid gap-6 lg:grid-cols-3">
