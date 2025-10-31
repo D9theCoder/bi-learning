@@ -6,7 +6,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('requires authentication', function () {
-    $response = $this->get(route('courses.index'));
+    $response = $this->get(route('courses'));
     $response->assertRedirect(route('login'));
 });
 
@@ -14,7 +14,7 @@ it('renders courses index page', function () {
     $user = User::factory()->create();
     Course::factory()->count(5)->create();
 
-    $response = $this->actingAs($user)->get(route('courses.index'));
+    $response = $this->actingAs($user)->get(route('courses'));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -28,7 +28,7 @@ it('filters courses by difficulty', function () {
     Course::factory()->create(['difficulty' => 'beginner']);
     Course::factory()->create(['difficulty' => 'advanced']);
 
-    $response = $this->actingAs($user)->get(route('courses.index', ['difficulty' => 'beginner']));
+    $response = $this->actingAs($user)->get(route('courses', ['difficulty' => 'beginner']));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->has('courses.data', 1)
@@ -40,7 +40,7 @@ it('shows user progress for enrolled courses', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($user)->for($course)->create(['progress_percentage' => 50]);
 
-    $response = $this->actingAs($user)->get(route('courses.index'));
+    $response = $this->actingAs($user)->get(route('courses'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->where('courses.data.0.user_progress.progress_percentage', 50.0)

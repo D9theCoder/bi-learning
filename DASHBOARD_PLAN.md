@@ -394,17 +394,17 @@ Routes (web.php):
 <?php
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+    Route::get('/courses', [CourseController::class, 'index'])->name('courses');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
     Route::get('/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
     Route::post('/lessons/{lesson}/complete', [LessonController::class, 'complete'])->name('lessons.complete');
-    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
-    Route::get('/rewards', [RewardController::class, 'index'])->name('rewards.index');
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('/rewards', [RewardController::class, 'index'])->name('rewards');
     Route::post('/rewards/{reward}/claim', [RewardController::class, 'claim'])->name('rewards.claim');
-    Route::get('/tutors', [TutorController::class, 'index'])->name('tutors.index');
-    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
-    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::get('/tutors', [TutorController::class, 'index'])->name('tutors');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages');
     Route::post('/tasks/{task}/toggle', [DailyTaskController::class, 'toggle'])->name('tasks.toggle');
 });
 ```

@@ -5,7 +5,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('requires authentication', function () {
-    $response = $this->get(route('achievements.index'));
+    $response = $this->get(route('achievements'));
     $response->assertRedirect(route('login'));
 });
 
@@ -13,7 +13,7 @@ it('renders achievements index page', function () {
     $user = User::factory()->create();
     Achievement::factory()->count(5)->create();
 
-    $response = $this->actingAs($user)->get(route('achievements.index'));
+    $response = $this->actingAs($user)->get(route('achievements'));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -28,7 +28,7 @@ it('shows earned achievements with earned_at date', function () {
     $achievement = Achievement::factory()->create();
     $user->achievements()->attach($achievement->id, ['earned_at' => now()]);
 
-    $response = $this->actingAs($user)->get(route('achievements.index'));
+    $response = $this->actingAs($user)->get(route('achievements'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->where('achievements.0.earned', true)
@@ -42,7 +42,7 @@ it('shows summary statistics', function () {
     $earned = Achievement::factory()->create();
     $user->achievements()->attach($earned->id, ['earned_at' => now()]);
 
-    $response = $this->actingAs($user)->get(route('achievements.index'));
+    $response = $this->actingAs($user)->get(route('achievements'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->where('summary.total', 11)

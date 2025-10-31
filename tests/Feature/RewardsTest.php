@@ -5,7 +5,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('requires authentication', function () {
-    $response = $this->get(route('rewards.index'));
+    $response = $this->get(route('rewards'));
     $response->assertRedirect(route('login'));
 });
 
@@ -13,7 +13,7 @@ it('renders rewards index page', function () {
     $user = User::factory()->create();
     Reward::factory()->count(5)->create(['is_active' => true]);
 
-    $response = $this->actingAs($user)->get(route('rewards.index'));
+    $response = $this->actingAs($user)->get(route('rewards'));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -28,7 +28,7 @@ it('shows can_redeem flag based on user points', function () {
     Reward::factory()->create(['cost' => 50, 'is_active' => true]);
     Reward::factory()->create(['cost' => 150, 'is_active' => true]);
 
-    $response = $this->actingAs($user)->get(route('rewards.index'));
+    $response = $this->actingAs($user)->get(route('rewards'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->where('rewards.data.0.can_redeem', true)

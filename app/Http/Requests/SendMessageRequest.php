@@ -16,7 +16,7 @@ class SendMessageRequest extends FormRequest
     {
         return [
             'partner_id' => ['required', 'exists:users,id'],
-            'body' => ['required', 'string', 'min:1', 'max:2000'],
+            'content' => ['required', 'string', 'min:1', 'max:2000'],
         ];
     }
 }

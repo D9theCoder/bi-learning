@@ -5,7 +5,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('requires authentication', function () {
-    $response = $this->get(route('calendar.index'));
+    $response = $this->get(route('calendar'));
     $response->assertRedirect(route('login'));
 });
 
@@ -13,7 +13,7 @@ it('renders calendar index page', function () {
     $user = User::factory()->create();
     DailyTask::factory()->for($user)->create(['due_date' => today()]);
 
-    $response = $this->actingAs($user)->get(route('calendar.index'));
+    $response = $this->actingAs($user)->get(route('calendar'));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -28,7 +28,7 @@ it('groups tasks by date', function () {
     DailyTask::factory()->for($user)->count(3)->create(['due_date' => today()]);
     DailyTask::factory()->for($user)->count(2)->create(['due_date' => today()->addDay()]);
 
-    $response = $this->actingAs($user)->get(route('calendar.index'));
+    $response = $this->actingAs($user)->get(route('calendar'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->has('tasksByDate.'.today()->format('Y-m-d'), 3)
