@@ -1,18 +1,15 @@
-import { AchievementBadge } from '@/components/dashboard/achievement-badge';
-import { CohortLeaderboard } from '@/components/dashboard/cohort-leaderboard';
 import { CourseCard } from '@/components/dashboard/course-card';
-import { LevelProgressBar } from '@/components/dashboard/level-progress-bar';
+import { DashboardSidebar } from '@/components/dashboard/sidebar';
+import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
 import { MiniChart } from '@/components/dashboard/mini-chart';
-import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { TodayTaskList } from '@/components/dashboard/today-task-list';
-import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
 import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
 import { CoursesSkeleton } from '@/components/dashboard/skeletons/courses-skeleton';
 import { SidebarSkeleton } from '@/components/dashboard/skeletons/sidebar-skeleton';
 import { StatsSkeleton } from '@/components/dashboard/skeletons/stats-skeleton';
 import { TodayTasksSkeleton } from '@/components/dashboard/skeletons/today-tasks-skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type {
@@ -31,52 +28,7 @@ import { BookOpen, Clock, Flame, Zap } from 'lucide-react';
 import React, { memo } from 'react';
 
 // Constants for magic numbers
-const XP_PER_LEVEL = 1000;
 const CHART_HEIGHT = 200;
-
-// Error boundary component for dashboard sections
-interface DashboardErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
-
-interface DashboardErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-class DashboardErrorBoundary extends React.Component<
-  DashboardErrorBoundaryProps,
-  DashboardErrorBoundaryState
-> {
-  constructor(props: DashboardErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): DashboardErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Dashboard section error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Unable to load this section. Please try refreshing the page.
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 // Memoized components for performance optimization
 
@@ -164,103 +116,6 @@ const DashboardActivityChartSection = memo(
 
 DashboardActivityChartSection.displayName = 'DashboardActivityChartSection';
 
-const DashboardSidebar = memo(
-  ({
-    stats,
-    recentAchievements,
-    nextMilestone,
-    cohortLeaderboard,
-    tutorMessages,
-    unreadMessageCount,
-    recentActivity,
-  }: {
-    stats: LearningStats;
-    recentAchievements: Achievement[];
-    nextMilestone: Achievement | null;
-    cohortLeaderboard: LeaderboardEntry[];
-    tutorMessages: TutorMessage[];
-    unreadMessageCount: number;
-    recentActivity: Activity[];
-  }) => (
-    <div
-      className="flex flex-col gap-6"
-      role="complementary"
-      aria-label="Dashboard sidebar"
-    >
-      {/* Level Progress */}
-      <DashboardErrorBoundary>
-        <LevelProgressBar
-          currentLevel={stats.level}
-          currentXp={stats.total_xp}
-          xpForNextLevel={stats.level * XP_PER_LEVEL}
-          totalXp={stats.total_xp}
-        />
-      </DashboardErrorBoundary>
-
-      {/* Achievements */}
-      <DashboardErrorBoundary>
-        <section aria-labelledby="achievements-heading">
-          <Card>
-            <CardHeader>
-              <CardTitle id="achievements-heading" className="pt-6">
-                Recent Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {recentAchievements.length > 0 ? (
-                <>
-                  {recentAchievements.map((achievement) => (
-                    <AchievementBadge
-                      key={achievement.id}
-                      achievement={achievement}
-                      unlocked={!!achievement.earned_at}
-                      unlockedAt={achievement.earned_at}
-                    />
-                  ))}
-                  {nextMilestone && (
-                    <p className="mt-4 pb-6 text-sm text-muted-foreground">
-                      Next: {nextMilestone.name}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-center text-sm text-muted-foreground">
-                  Start learning to earn badges!
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-      </DashboardErrorBoundary>
-
-      {/* Cohort Leaderboard */}
-      {cohortLeaderboard.length > 0 && (
-        <DashboardErrorBoundary>
-          <CohortLeaderboard entries={cohortLeaderboard} />
-        </DashboardErrorBoundary>
-      )}
-
-      {/* Tutor Messages */}
-      {tutorMessages.length > 0 && (
-        <DashboardErrorBoundary>
-          <TutorChatWidget
-            messages={tutorMessages}
-            unreadCount={unreadMessageCount}
-          />
-        </DashboardErrorBoundary>
-      )}
-
-      {/* Recent Activity */}
-      {recentActivity.length > 0 && (
-        <DashboardErrorBoundary>
-          <RecentActivityFeed activities={recentActivity} />
-        </DashboardErrorBoundary>
-      )}
-    </div>
-  ),
-);
-
-DashboardSidebar.displayName = 'DashboardSidebar';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
