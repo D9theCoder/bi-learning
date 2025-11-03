@@ -7,8 +7,12 @@ import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed'
 import { StatCard } from '@/components/dashboard/stat-card';
 import { TodayTaskList } from '@/components/dashboard/today-task-list';
 import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
+import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
+import { CoursesSkeleton } from '@/components/dashboard/skeletons/courses-skeleton';
+import { SidebarSkeleton } from '@/components/dashboard/skeletons/sidebar-skeleton';
+import { StatsSkeleton } from '@/components/dashboard/skeletons/stats-skeleton';
+import { TodayTasksSkeleton } from '@/components/dashboard/skeletons/today-tasks-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type {
@@ -75,28 +79,6 @@ class DashboardErrorBoundary extends React.Component<
 }
 
 // Memoized components for performance optimization
-const StatsSkeleton = memo(() => (
-  <section
-    className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-    aria-label="Loading statistics"
-  >
-    {[0, 1, 2, 3].map((i) => (
-      <Card key={i}>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-6 w-16" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    ))}
-  </section>
-));
-
-StatsSkeleton.displayName = 'StatsSkeleton';
 
 const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
   <section
@@ -120,30 +102,6 @@ const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
 ));
 
 DashboardStatsSection.displayName = 'DashboardStatsSection';
-
-const CoursesSkeleton = memo(() => (
-  <section aria-labelledby="courses-heading">
-    <h2 id="courses-heading" className="mb-4 text-xl font-semibold">
-      My Courses
-    </h2>
-    <div className="grid gap-4 md:grid-cols-2">
-      {[0, 1].map((i) => (
-        <Card key={i}>
-          <CardHeader className="relative p-0">
-            <Skeleton className="aspect-video w-full rounded-t-lg" />
-          </CardHeader>
-          <CardContent className="space-y-3 p-4">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-40" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  </section>
-));
-
-CoursesSkeleton.displayName = 'CoursesSkeleton';
 
 const DashboardCoursesSection = memo(
   ({ enrolledCourses }: { enrolledCourses: Enrollment[] }) => (
@@ -205,39 +163,6 @@ const DashboardActivityChartSection = memo(
 );
 
 DashboardActivityChartSection.displayName = 'DashboardActivityChartSection';
-
-const ActivityChartSkeleton = memo(() => (
-  <section aria-labelledby="activity-heading">
-    <h2 id="activity-heading" className="text-xl font-semibold">
-      Weekly Activity
-    </h2>
-    <Card>
-      <CardContent className="p-6">
-        <Skeleton className="h-16 w-full" />
-      </CardContent>
-    </Card>
-  </section>
-));
-
-ActivityChartSkeleton.displayName = 'ActivityChartSkeleton';
-
-const TodayTasksSkeleton = memo(() => (
-  <Card>
-    <CardContent className="space-y-3 p-6">
-      <Skeleton className="h-5 w-40" />
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center gap-3">
-          <Skeleton className="h-4 w-4 rounded-sm" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="ml-auto h-4 w-16" />
-        </div>
-      ))}
-      <Skeleton className="h-2 w-full" />
-    </CardContent>
-  </Card>
-));
-
-TodayTasksSkeleton.displayName = 'TodayTasksSkeleton';
 
 const DashboardSidebar = memo(
   ({
@@ -428,49 +353,7 @@ export default function Dashboard({
 
           {/* Sidebar - 1 column */}
           {isLoading ? (
-            <div className="flex flex-col gap-6">
-              <Card>
-                <CardContent className="space-y-3 p-6">
-                  <Skeleton className="h-5 w-28" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-5/6" />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Skeleton className="h-5 w-40" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Skeleton className="h-5 w-32" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="h-6 w-6 rounded-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="ml-auto h-4 w-10" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+            <SidebarSkeleton />
           ) : (
             <DashboardSidebar
               stats={stats}
