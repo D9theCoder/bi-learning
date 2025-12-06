@@ -7,11 +7,14 @@ interface TaskStatsProps {
     completed: number;
     overdue: number;
   };
+  className?: string; // Added className prop
 }
 
-export function TaskStats({ stats }: TaskStatsProps) {
+import { cn } from '@/lib/utils'; // Import cn
+
+export function TaskStats({ stats, className }: TaskStatsProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className={cn('grid gap-4 md:grid-cols-3', className)}>
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>

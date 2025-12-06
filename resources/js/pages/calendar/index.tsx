@@ -1,3 +1,4 @@
+import { MiniCalendar } from '@/components/calendar/mini-calendar';
 import { TaskDateCard } from '@/components/calendar/task-date-card';
 import { TaskStats } from '@/components/calendar/task-stats';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -7,6 +8,7 @@ import { calendar as calendarRoute } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Calendar } from 'lucide-react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -15,10 +17,14 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// ! Removed CalendarPageProps
+// ! interface CalendarPageProps {
+// !   tasksByDate: Record<string, Task[]>;
+// !   stats: { total: number; completed: number; overdue: number };
+// !   currentDate: string;
+// ! }
 
 // ! Dummy Data
-const dummyTasksByDate = {
+const dummyTasksByDate: Record<string, any[]> = {
   '2024-05-20': [
     {
       id: 1,
@@ -58,36 +64,76 @@ const dummyStats = {
   overdue: 0,
 };
 
-// ! Modified component to use dummy data
-export default function CalendarPage() {
+export default function CalendarPage(/* ! { tasksByDate, stats, currentDate }: CalendarPageProps */) {
+  // ! const { tasksByDate, stats, currentDate } = usePage<PageProps<CalendarPageProps>>().props;
+
+  // Using dummy data
   const tasksByDate = dummyTasksByDate;
   const stats = dummyStats;
+  // Set dummy date to match dummy data
+  const [currentDate, setCurrentDate] = useState<Date>(new Date('2024-05-20'));
 
   const dates = Object.keys(tasksByDate).sort();
+  const markers = Object.keys(tasksByDate);
+
+  const handleDateSelect = (date: Date) => {
+    setCurrentDate(date);
+    // ! router.get(calendarRoute().url, { date: date.toISOString().split('T')[0] }, { preserveState: true });
+  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Calendar" />
 
-      <div className="flex flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
+      <div className="container mx-auto p-4 lg:p-6">
         <PageHeader
           icon={Calendar}
           title="Calendar"
           description="Track your daily tasks and stay on top of your learning schedule."
+          className="mb-8"
         />
 
-        <TaskStats stats={stats} />
+        <div className="flex flex-col items-start gap-8 lg:flex-row">
+          {/* Sidebar with Stats and Mini Calendar */}
+          <div className="order-1 w-full flex-shrink-0 space-y-6 lg:order-2 lg:w-80">
+            <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+              <h3 className="mb-4 font-semibold">Overview</h3>
+              <TaskStats stats={stats} className="lg:grid-cols-1" />
+            </div>
 
-        <div className="space-y-4">
-          {dates.map((date) => (
-            // @ts-ignore
-            <TaskDateCard key={date} date={date} tasks={tasksByDate[date]} />
-          ))}
+            <MiniCalendar
+              currentDate={currentDate}
+              markers={markers}
+              onDateSelect={handleDateSelect}
+              className="w-full"
+            />
+          </div>
+
+          {/* Main Content */}
+          <div className="order-2 w-full flex-1 space-y-6 lg:order-1">
+            <h2 className="text-xl font-semibold">
+              Tasks for{' '}
+              {currentDate.toLocaleDateString(undefined, {
+                month: 'long',
+                year: 'numeric',
+              })}
+            </h2>
+
+            <div className="space-y-4">
+              {dates.length > 0 ? (
+                dates.map((date) => (
+                  <TaskDateCard
+                    key={date}
+                    date={date}
+                    tasks={tasksByDate[date]}
+                  />
+                ))
+              ) : (
+                <EmptyState message="No tasks scheduled. Your calendar is clear!" />
+              )}
+            </div>
+          </div>
         </div>
-
-        {dates.length === 0 && (
-          <EmptyState message="No tasks scheduled. Your calendar is clear!" />
-        )}
       </div>
     </AppLayout>
   );

@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 interface PageHeaderProps {
@@ -5,6 +6,7 @@ interface PageHeaderProps {
   title: string;
   description: string;
   iconClassName?: string;
+  className?: string;
 }
 
 export function PageHeader({
@@ -12,9 +14,10 @@ export function PageHeader({
   title,
   description,
   iconClassName = 'text-blue-500',
+  className,
 }: PageHeaderProps) {
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', className)}>
       <div className="flex items-center gap-3">
         <Icon className={`size-8 ${iconClassName}`} />
         <h1 className="text-3xl font-bold">{title}</h1>
