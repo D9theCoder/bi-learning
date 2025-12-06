@@ -41,4 +41,9 @@ class Lesson extends Model
     {
         return $this->hasMany(DailyTask::class);
     }
+
+    public function contents(): HasMany
+    {
+        return $this->hasMany(CourseContent::class)->orderBy('order');
+    }
 }

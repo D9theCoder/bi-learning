@@ -5,8 +5,8 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { courses as coursesRoute } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import type { BreadcrumbItem, CoursesPageProps } from '@/types';
+import { Head, router } from '@inertiajs/react';
 import { BookOpen } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -17,87 +17,18 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// ! Removed CoursesPageProps
-
-// ! Dummy Data
-const dummyCourses = {
-  data: [
-    {
-      id: 1,
-      title: 'Introduction to React',
-      slug: 'intro-to-react',
-      description: 'Learn the basics of React.',
-      thumbnail: 'https://placehold.co/600x400/png',
-      level: 'beginner',
-      duration: '5 hours',
-      rating: 4.5,
-      total_students: 1200,
-      modules_count: 5,
-      price: 0,
-      teacher: {
-        id: 1,
-        name: 'John Doe',
-        avatar: 'https://ui-avatars.com/api/?name=John+Doe',
-      },
-      category: {
-        id: 1,
-        name: 'Web Development',
-        slug: 'web-development',
-      },
-      created_at: '2023-01-01',
-      updated_at: '2023-01-01',
-    },
-    {
-      id: 2,
-      title: 'Advanced React Patterns',
-      slug: 'advanced-react-patterns',
-      description: 'Master advanced React concepts.',
-      thumbnail: 'https://placehold.co/600x400/png',
-      level: 'advanced',
-      duration: '8 hours',
-      rating: 4.8,
-      total_students: 500,
-      modules_count: 8,
-      price: 0,
-      teacher: {
-        id: 2,
-        name: 'Jane Smith',
-        avatar: 'https://ui-avatars.com/api/?name=Jane+Smith',
-      },
-      category: {
-        id: 1,
-        name: 'Web Development',
-        slug: 'web-development',
-      },
-      created_at: '2023-01-01',
-      updated_at: '2023-01-01',
-    },
-  ],
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 2,
-};
-
-const dummyFilters = {
-  search: '',
-  difficulty: 'all',
-  category: 'all',
-  sort: 'newest',
-};
-
-// ! Modified component to use dummy data
-export default function CoursesPage() {
-  const courses = dummyCourses;
-  const filters = dummyFilters;
+export default function CoursesPage({ courses, filters }: CoursesPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
 
   const handleFilterChange = useCallback(
     (key: keyof typeof filters, value: string) => {
-      // ! Disabled router visits for prototyping
-      console.log('Filter changed:', key, value);
+      router.get(
+        coursesRoute().url,
+        { ...filters, [key]: value, page: 1 },
+        { preserveState: true, replace: true },
+      );
     },
-    [filters, searchTerm],
+    [filters],
   );
 
   useEffect(() => {
@@ -105,7 +36,7 @@ export default function CoursesPage() {
       if (searchTerm !== (filters.search || '')) {
         handleFilterChange('search', searchTerm);
       }
-    }, 100);
+    }, 300);
 
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, filters.search, handleFilterChange]);

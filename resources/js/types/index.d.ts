@@ -178,6 +178,21 @@ export interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
+export interface CourseContent {
+  id: number;
+  lesson_id: number;
+  title: string;
+  type: 'file' | 'video' | 'link' | 'quiz' | 'attendance';
+  file_path?: string;
+  url?: string;
+  description?: string;
+  duration_minutes?: number;
+  is_required: boolean;
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Activity {
   id: number;
   user_id: number;

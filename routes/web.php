@@ -34,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Course routes
     Route::get('courses', [CourseController::class, 'index'])->name('courses');
+    Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
 
     // Message routes

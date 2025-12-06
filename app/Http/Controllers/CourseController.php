@@ -75,4 +75,23 @@ class CourseController extends Controller
             'courses' => $courses,
         ]);
     }
+
+    public function show(Course $course): Response
+    {
+        $course->load(['instructor', 'lessons.contents']);
+
+        $user = auth()->user();
+        $isEnrolled = false;
+
+        if ($user) {
+            $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
+        }
+
+        return Inertia::render('courses/show', [
+            'course' => $course,
+            'isEnrolled' => $isEnrolled,
+        ]);
+    }
+
+
 }

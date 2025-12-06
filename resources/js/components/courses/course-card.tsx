@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import type { Course, User } from '@/types';
-import { Form } from '@inertiajs/react';
+import { Form, Link } from '@inertiajs/react';
 import { Play } from 'lucide-react';
 
 const difficultyColors = {
@@ -73,9 +73,11 @@ export function CourseCard({ course }: CourseCardProps) {
       </CardContent>
       <CardFooter>
         {course.user_progress ? (
-          <Button className="w-full" size="sm">
-            <Play className="mr-2 size-4" />
-            Continue Learning
+          <Button className="w-full" size="sm" asChild>
+            <Link href={`/courses/${course.id}`}>
+              <Play className="mr-2 size-4" />
+              Continue Learning
+            </Link>
           </Button>
         ) : (
           <Form
