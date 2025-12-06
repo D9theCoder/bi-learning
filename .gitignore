@@ -12,6 +12,7 @@
 /vendor
 /.github/prompts
 /.kilocode
+/.gemini
 .DS_Store
 .env
 .env.backup
