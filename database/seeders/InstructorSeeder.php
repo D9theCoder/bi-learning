@@ -6,7 +6,7 @@ use App\Models\Cohort;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class TutorsSeeder extends Seeder
+class InstructorSeeder extends Seeder
 {
     /** 
      * Run the database seeds.

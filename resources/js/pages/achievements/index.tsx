@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { achievements } from '@/routes';
-import type { AchievementsPageProps, BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Trophy } from 'lucide-react';
 
@@ -14,11 +14,65 @@ const breadcrumbs: BreadcrumbItem[] = [
     href: achievements().url,
   },
 ];
+// ! Removed AchievementsPageProps
 
-export default function AchievementsPage({
-  achievements: achievementsData,
-  summary,
-}: AchievementsPageProps) {
+// ! Dummy Data
+const dummyAchievements = [
+  {
+    id: 1,
+    name: 'Fast Learner',
+    description: 'Completed 5 lessons in a day',
+    icon: 'zap',
+    updated_at: '2024-05-15',
+    progress: 100,
+    target: 100,
+    rarity: 'bronze' as const,
+    xp_reward: 50,
+    created_at: '2024-01-01',
+    earned_at: '2024-05-15',
+    earned: true,
+  },
+  {
+    id: 2,
+    name: 'Bookworm',
+    description: 'Read 1,000 articles',
+    icon: 'book',
+    updated_at: '2024-01-01',
+    progress: 45,
+    target: 100,
+    rarity: 'silver' as const,
+    xp_reward: 100,
+    created_at: '2024-01-01',
+    earned: false,
+  },
+  {
+    id: 3,
+    name: 'Trophy Hunter',
+    description: 'Collect 10 trophies',
+    icon: 'trophy',
+    updated_at: '2024-01-01',
+    progress: 2,
+    target: 10,
+    rarity: 'gold' as const,
+    xp_reward: 500,
+    created_at: '2024-01-01',
+    earned: false,
+  },
+];
+
+const dummySummary = {
+  total: 3,
+  earned: 1,
+  nextMilestone: {
+    title: 'Bookworm',
+  },
+};
+
+// ! Modified component to use dummy data
+export default function AchievementsPage() {
+  const achievementsData = dummyAchievements;
+  const summary = dummySummary;
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Achievements" />
