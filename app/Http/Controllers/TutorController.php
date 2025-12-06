@@ -13,8 +13,8 @@ class TutorController extends Controller
     {
         $filters = $request->validated();
 
-        // Query tutors (assuming 'role' field exists or another identifier)
-        $query = User::where('role', 'tutor')
+        // Query tutors using Spatie Laravel Permission
+        $query = User::role('tutor')
             ->with('cohort');
 
         // Apply filters
