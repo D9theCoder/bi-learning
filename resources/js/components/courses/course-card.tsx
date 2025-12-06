@@ -31,10 +31,12 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   return (
-    <Card>
+    <Card className="flex h-full flex-col">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{course.title}</CardTitle>
+          <CardTitle className="line-clamp-2 text-base leading-tight font-semibold">
+            {course.title}
+          </CardTitle>
           {course.difficulty && (
             <Badge
               className={difficultyColors[course.difficulty]}
@@ -44,9 +46,11 @@ export function CourseCard({ course }: CourseCardProps) {
             </Badge>
           )}
         </div>
-        <CardDescription>{course.description}</CardDescription>
+        <CardDescription className="line-clamp-3">
+          {course.description}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="flex-1 space-y-2">
         <div className="text-sm text-muted-foreground">
           {course.lessons_count} lessons
         </div>
@@ -56,7 +60,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
         {course.user_progress && (
-          <div className="space-y-1">
+          <div className="mt-auto space-y-1 pt-2">
             <div className="text-xs text-muted-foreground">
               {Math.round(course.user_progress.progress_percentage)}% complete
             </div>
@@ -71,7 +75,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="pt-2">
         {course.user_progress ? (
           <Button className="w-full" size="sm" asChild>
             <Link href={`/courses/${course.id}`}>
@@ -85,12 +89,7 @@ export function CourseCard({ course }: CourseCardProps) {
             method="post"
             className="w-full"
           >
-            <Button
-              type="submit"
-              className="w-full"
-              size="sm"
-              variant="outline"
-            >
+            <Button type="submit" className="w-full" size="sm">
               Enroll Now
             </Button>
           </Form>

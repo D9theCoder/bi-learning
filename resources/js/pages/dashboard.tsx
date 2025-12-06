@@ -40,14 +40,25 @@ const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
       icon={Flame}
       label="Current Streak"
       value={`${stats.streak} days`}
-      variant="accent"
+      color="orange"
     />
-    <StatCard icon={Zap} label="XP This Week" value={stats.xp_this_week} />
-    <StatCard icon={Clock} label="Hours Learned" value={stats.hours_learned} />
+    <StatCard
+      icon={Zap}
+      label="XP This Week"
+      value={stats.xp_this_week}
+      color="yellow"
+    />
+    <StatCard
+      icon={Clock}
+      label="Hours Learned"
+      value={stats.hours_learned}
+      color="blue"
+    />
     <StatCard
       icon={BookOpen}
       label="Active Courses"
       value={stats.active_courses}
+      color="purple"
     />
   </section>
 ));
@@ -56,10 +67,19 @@ DashboardStatsSection.displayName = 'DashboardStatsSection';
 
 const DashboardCoursesSection = memo(
   ({ enrolledCourses }: { enrolledCourses: Enrollment[] }) => (
-    <section aria-labelledby="courses-heading">
-      <h2 id="courses-heading" className="mb-4 text-xl font-semibold">
-        My Courses
-      </h2>
+    <section aria-labelledby="courses-heading" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2
+          id="courses-heading"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground"
+        >
+          <BookOpen className="size-5 text-primary" />
+          My Courses
+        </h2>
+        <span className="cursor-pointer text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+          View All
+        </span>
+      </div>
       {enrolledCourses.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2" role="list">
           {enrolledCourses.map((enrollment) => (
@@ -90,10 +110,16 @@ const DashboardActivityChartSection = memo(
   }: {
     weeklyActivityData: { name: string; value: number }[];
   }) => (
-    <section aria-labelledby="activity-heading">
-      <h2 id="activity-heading" className="mb-4 text-xl font-semibold">
-        Weekly Activity
-      </h2>
+    <section aria-labelledby="activity-heading" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <ActivityIcon className="size-5 text-primary" />
+        <h2
+          id="activity-heading"
+          className="text-xl font-bold tracking-tight text-foreground"
+        >
+          Weekly Activity
+        </h2>
+      </div>
       <Card>
         <CardContent>
           <MiniChart
@@ -348,6 +374,9 @@ const dummyWeeklyActivityData = [
   { name: 'Sun', value: 50 },
 ];
 
+// Local component for Activity Icon to avoid import issues or just import it at top if possible, but for now lets rename the icon used in header
+import { Activity as ActivityIcon } from 'lucide-react';
+
 // ! Modified component to use dummy data
 export default function Dashboard() {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -360,7 +389,17 @@ export default function Dashboard() {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
 
-      <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
+      <div className="flex h-full flex-1 flex-col gap-8 overflow-x-auto p-4 lg:p-8">
+        {/* Welcome Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight lg:text-4xl">
+            Welcome back, Kevin!
+          </h1>
+          <p className="text-muted-foreground">
+            Ready to continue your learning streak? You're doing great!
+          </p>
+        </div>
+
         {/* KPI Overview Section */}
         <DashboardErrorBoundary>
           {isLoading ? (
@@ -370,9 +409,9 @@ export default function Dashboard() {
           )}
         </DashboardErrorBoundary>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content - 2 columns */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="flex flex-col gap-8 lg:col-span-2">
             {/* Today Widget */}
             <DashboardErrorBoundary>
               {isLoading ? (

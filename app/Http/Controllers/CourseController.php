@@ -19,7 +19,7 @@ class CourseController extends Controller
         // Build query with eager loading
         $query = Course::query()
             ->with(['instructor'])
-            ->withCount('lessons');
+            ->withCount(['lessons', 'enrollments']);
 
         // Apply filters
         if (! empty($filters['search'])) {
