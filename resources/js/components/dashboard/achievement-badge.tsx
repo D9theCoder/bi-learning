@@ -1,12 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types';
 import { Award, Lock } from 'lucide-react';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
-  unlocked?: boolean;
+  unlocked?: boolean; // Optional, defaults to !!earned_at
   unlockedAt?: string;
   className?: string;
 }
@@ -17,18 +18,23 @@ export function AchievementBadge({
   unlockedAt = achievement.earned_at,
   className,
 }: AchievementBadgeProps) {
+  const progressPercent =
+    achievement.progress && achievement.target
+      ? Math.min((achievement.progress / achievement.target) * 100, 100)
+      : 0;
+
   return (
     <Card
       className={cn(
         'transition-all hover:shadow-md',
-        !unlocked && 'opacity-50 grayscale',
+        !unlocked && !achievement.progress && 'opacity-50 grayscale', // Only gray out if completely locked/no progress
         className,
       )}
     >
       <CardContent className="flex items-center gap-4 p-4">
         <div
           className={cn(
-            'flex size-14 items-center justify-center rounded-full',
+            'flex size-14 shrink-0 items-center justify-center rounded-full',
             unlocked
               ? 'bg-yellow-500/10 text-yellow-500 dark:bg-yellow-500/20'
               : 'bg-muted text-muted-foreground',
@@ -40,18 +46,32 @@ export function AchievementBadge({
             <Lock className="size-7" />
           )}
         </div>
-        <div className="flex-1">
-          <h4 className="font-semibold">{achievement.name}</h4>
+        <div className="flex-1 space-y-1">
+          <h4 className="leading-none font-semibold">{achievement.name}</h4>
           <p className="text-xs text-muted-foreground">
             {achievement.description}
           </p>
+
           {unlocked && unlockedAt && (
-            <Badge variant="outline" className="mt-2">
+            <Badge variant="outline" className="mt-2 text-[10px] font-normal">
               Unlocked {new Date(unlockedAt).toLocaleDateString()}
             </Badge>
           )}
-          {achievement.xp_reward && (
-            <Badge variant="secondary" className="mt-2">
+
+          {!unlocked && achievement.target ? (
+            <div className="mt-2 space-y-1.5">
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>Progress</span>
+                <span>
+                  {achievement.progress ?? 0} / {achievement.target}
+                </span>
+              </div>
+              <Progress value={progressPercent} className="h-1.5" />
+            </div>
+          ) : null}
+
+          {!unlocked && !achievement.target && achievement.xp_reward && (
+            <Badge variant="secondary" className="mt-2 text-[10px] font-normal">
               +{achievement.xp_reward} XP
             </Badge>
           )}

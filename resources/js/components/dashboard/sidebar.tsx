@@ -1,9 +1,9 @@
 import { AchievementBadge } from '@/components/dashboard/achievement-badge';
 import { CohortLeaderboard } from '@/components/dashboard/cohort-leaderboard';
+import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
 import { LevelProgressBar } from '@/components/dashboard/level-progress-bar';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed';
 import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
-import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type {
   Achievement,
@@ -12,7 +12,7 @@ import type {
   LearningStats,
   TutorMessage,
 } from '@/types';
-import React, { memo } from 'react';
+import { memo } from 'react';
 
 const XP_PER_LEVEL = 1000;
 
@@ -72,9 +72,15 @@ export const DashboardSidebar = memo(
                     />
                   ))}
                   {nextMilestone && (
-                    <p className="mt-4 pb-6 text-sm text-muted-foreground">
-                      Next: {nextMilestone.name}
-                    </p>
+                    <div className="mt-4 border-t pt-4">
+                      <p className="mb-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                        Next Milestone
+                      </p>
+                      <AchievementBadge
+                        achievement={nextMilestone}
+                        unlocked={false}
+                      />
+                    </div>
                   )}
                 </>
               ) : (
@@ -115,4 +121,3 @@ export const DashboardSidebar = memo(
 );
 
 DashboardSidebar.displayName = 'DashboardSidebar';
-

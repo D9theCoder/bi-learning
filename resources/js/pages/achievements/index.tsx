@@ -2,11 +2,14 @@ import { AchievementCard } from '@/components/achievements/achievement-card';
 import { AchievementsSummary } from '@/components/achievements/achievements-summary';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { achievements } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Trophy } from 'lucide-react';
+import { Search, Trophy } from 'lucide-react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -31,6 +34,7 @@ const dummyAchievements = [
     created_at: '2024-01-01',
     earned_at: '2024-05-15',
     earned: true,
+    category: 'Learning',
   },
   {
     id: 2,
@@ -44,6 +48,7 @@ const dummyAchievements = [
     xp_reward: 100,
     created_at: '2024-01-01',
     earned: false,
+    category: 'Learning',
   },
   {
     id: 3,
@@ -57,21 +62,48 @@ const dummyAchievements = [
     xp_reward: 500,
     created_at: '2024-01-01',
     earned: false,
+    category: 'Analysis',
+  },
+  {
+    id: 4,
+    name: 'Streak Master',
+    description: 'Maintain a 30-day streak',
+    icon: 'flame',
+    updated_at: '2024-01-01',
+    progress: 12,
+    target: 30,
+    rarity: 'platinum' as const,
+    xp_reward: 1000,
+    created_at: '2024-01-01',
+    earned: false,
+    category: 'Streak',
   },
 ];
 
 const dummySummary = {
-  total: 3,
+  total: 4,
   earned: 1,
   nextMilestone: {
     title: 'Bookworm',
   },
 };
 
-// ! Modified component to use dummy data
+const categories = ['All', 'Learning', 'Analysis', 'Streak'];
+
+// ! Modified component to use dummy data and local filtering
 export default function AchievementsPage() {
-  const achievementsData = dummyAchievements;
-  const summary = dummySummary;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const filteredAchievements = dummyAchievements.filter((achievement) => {
+    const matchesSearch = achievement.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === 'All' || achievement.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -85,16 +117,41 @@ export default function AchievementsPage() {
           iconClassName="text-yellow-500"
         />
 
-        <AchievementsSummary summary={summary} />
+        <AchievementsSummary summary={dummySummary} />
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search achievements..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="whitespace-nowrap"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {achievementsData.map((achievement) => (
+          {filteredAchievements.map((achievement) => (
             <AchievementCard key={achievement.id} achievement={achievement} />
           ))}
         </div>
 
-        {achievementsData.length === 0 && (
-          <EmptyState message="No achievements yet. Start learning to unlock them!" />
+        {filteredAchievements.length === 0 && (
+          <EmptyState message="No achievements found matching your criteria." />
         )}
       </div>
     </AppLayout>

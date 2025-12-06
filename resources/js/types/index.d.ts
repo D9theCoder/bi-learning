@@ -97,6 +97,9 @@ export interface Achievement {
   xp_reward: number;
   earned_at?: string;
   created_at: string;
+  category?: string;
+  progress?: number;
+  target?: number;
 }
 
 export interface Badge {

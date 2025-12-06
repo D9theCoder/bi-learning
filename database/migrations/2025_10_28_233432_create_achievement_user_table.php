@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('achievement_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamp('earned_at')->useCurrent();
+            // $table->integer('progress')->default(0); // ! New Column: User's progress towards target
             $table->timestamps();
             $table->unique(['achievement_id', 'user_id']);
         });

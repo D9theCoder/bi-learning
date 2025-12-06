@@ -234,6 +234,9 @@ const dummyRecentAchievements: Achievement[] = [
     xp_reward: 50,
     created_at: '2024-01-01',
     earned_at: '2024-01-02',
+    category: 'Learning',
+    progress: 1,
+    target: 1,
   },
   {
     id: 2,
@@ -245,6 +248,9 @@ const dummyRecentAchievements: Achievement[] = [
     xp_reward: 100,
     created_at: '2024-01-01',
     earned_at: '2024-02-15',
+    category: 'Analysis',
+    progress: 1,
+    target: 1,
   },
 ];
 
@@ -257,6 +263,9 @@ const dummyNextMilestone: Achievement = {
   rarity: 'gold',
   xp_reward: 200,
   created_at: '2024-01-01',
+  category: 'Streak',
+  progress: 5,
+  target: 7,
 };
 
 const dummyRecentActivity: Activity[] = [

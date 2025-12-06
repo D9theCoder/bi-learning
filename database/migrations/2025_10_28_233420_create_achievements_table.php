@@ -19,6 +19,8 @@ return new class extends Migration
             $table->enum('rarity', ['bronze', 'silver', 'gold', 'platinum'])->default('bronze');
             $table->text('criteria')->nullable();
             $table->integer('xp_reward')->default(0);
+            // $table->string('category')->default('General'); // ! New Column
+            // $table->integer('target')->default(1);          // ! New Column
             $table->timestamps();
         });
     }
