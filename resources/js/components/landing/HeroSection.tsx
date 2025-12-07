@@ -1,5 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  Variants,
+} from 'framer-motion';
 import { MouseEvent } from 'react';
 
 export default function HeroSection({ onStart }: { onStart: () => void }) {
@@ -75,7 +80,7 @@ export default function HeroSection({ onStart }: { onStart: () => void }) {
 function AnimatedHeadline({ text }: { text: string }) {
   const words = text.split(' ');
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     visible: (i = 1) => ({
       opacity: 1,
@@ -83,7 +88,7 @@ function AnimatedHeadline({ text }: { text: string }) {
     }),
   };
 
-  const child = {
+  const child: Variants = {
     visible: {
       opacity: 1,
       y: 0,

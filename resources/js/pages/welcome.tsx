@@ -3,6 +3,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import LiveProgressDashboard from '@/components/landing/LiveProgressDashboard';
 import TestimonialsMarquee from '@/components/landing/TestimonialsMarquee';
 import { Button } from '@/components/ui/button';
+import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { dashboard, login, register } from '@/routes';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -101,45 +102,56 @@ export default function Welcome() {
 
         <main className="relative">
           <HeroSection onStart={handleStart} />
-          <FeaturesBento />
-          <LiveProgressDashboard />
-          <TestimonialsMarquee />
+
+          <RevealOnScroll width="100%">
+            <FeaturesBento />
+          </RevealOnScroll>
+
+          <RevealOnScroll width="100%">
+            <LiveProgressDashboard />
+          </RevealOnScroll>
+
+          <RevealOnScroll width="100%">
+            <TestimonialsMarquee />
+          </RevealOnScroll>
 
           {/* Final CTA */}
-          <section className="relative overflow-hidden py-32 text-center">
-            <div className="absolute inset-0 z-0 bg-emerald-600" />
-            <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
+          <RevealOnScroll width="100%">
+            <section className="relative overflow-hidden py-32 text-center">
+              <div className="absolute inset-0 z-0 bg-emerald-600" />
+              <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
 
-            <div className="relative z-10 container mx-auto px-4 text-white">
-              <h2 className="mb-6 text-4xl font-bold tracking-tight md:text-6xl">
-                Ready to level up?
-              </h2>
-              <p className="mb-10 text-lg opacity-90 md:text-xl">
-                Join the community today and start your journey.
-              </p>
-              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Link href={register()}>
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="h-14 px-8 text-lg text-emerald-700"
-                  >
-                    Create Free Account
-                  </Button>
-                </Link>
-                <Link href={login()}>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-14 border-white/20 bg-white/10 px-8 text-lg text-white hover:bg-white/20 hover:text-white"
-                  >
-                    <LogIn className="mr-2 h-5 w-5" />
-                    Sign In
-                  </Button>
-                </Link>
+              <div className="relative z-10 container mx-auto px-4 text-white">
+                <h2 className="mb-6 text-4xl font-bold tracking-tight md:text-6xl">
+                  Ready to level up?
+                </h2>
+                <p className="mb-10 text-lg opacity-90 md:text-xl">
+                  Join the community today and start your journey.
+                </p>
+                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <Link href={register()}>
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      className="h-14 px-8 text-lg text-emerald-700"
+                    >
+                      Create Free Account
+                    </Button>
+                  </Link>
+                  <Link href={login()}>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="h-14 border-white/20 bg-white/10 px-8 text-lg text-white hover:bg-white/20 hover:text-white"
+                    >
+                      <LogIn className="mr-2 h-5 w-5" />
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </RevealOnScroll>
         </main>
 
         <footer className="border-t border-border bg-muted/20 py-12">
