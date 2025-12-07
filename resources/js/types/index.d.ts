@@ -66,6 +66,7 @@ export interface Lesson {
   title: string;
   description?: string;
   content?: string;
+  contents?: CourseContent[];
   duration_minutes: number;
   order: number;
   video_url?: string;
@@ -198,6 +199,7 @@ export interface Activity {
   user_id: number;
   type:
     | 'lesson_completed'
+    | 'task_completed'
     | 'achievement_earned'
     | 'course_enrolled'
     | 'reward_claimed'
@@ -232,7 +234,7 @@ export interface AchievementsPageProps {
     earned: number;
     nextMilestone?: {
       id: number;
-      title: string;
+      name: string;
       progress: number;
     };
   };
@@ -247,6 +249,8 @@ export interface CalendarPageProps {
       due_date: string;
       completed: boolean;
       xp_reward?: number;
+      course_title?: string;
+      type?: string;
     }>
   >;
   stats: {
@@ -254,6 +258,7 @@ export interface CalendarPageProps {
     completed: number;
     overdue: number;
   };
+  currentDate: string;
   cursor?: {
     start: string;
     end: string;

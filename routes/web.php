@@ -30,7 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Calendar routes
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
-    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks');
+    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks.toggle');
 
     // Course routes
     Route::get('courses', [CourseController::class, 'index'])->name('courses');

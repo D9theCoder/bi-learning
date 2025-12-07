@@ -5,10 +5,10 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { calendar as calendarRoute } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import type { BreadcrumbItem, CalendarPageProps } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -17,68 +17,32 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// ! interface CalendarPageProps {
-// !   tasksByDate: Record<string, Task[]>;
-// !   stats: { total: number; completed: number; overdue: number };
-// !   currentDate: string;
-// ! }
+export default function CalendarPage() {
+  const { tasksByDate, stats, currentDate: currentDateString } =
+    usePage<CalendarPageProps>().props;
 
-// ! Dummy Data
-const dummyTasksByDate: Record<string, any[]> = {
-  '2024-05-20': [
-    {
-      id: 1,
-      title: 'Complete Chapter 1 Quiz',
-      course_title: 'Introduction to React',
-      completed: false,
-      xp_reward: 50,
-      due_date: '2024-05-20',
-      type: 'quiz',
-    },
-    {
-      id: 2,
-      title: 'Watch "Hooks in Depth"',
-      course_title: 'Advanced React Patterns',
-      completed: true,
-      xp_reward: 30,
-      due_date: '2024-05-20',
-      type: 'lesson',
-    },
-  ],
-  '2024-05-21': [
-    {
-      id: 3,
-      title: 'Practice Component Composition',
-      course_title: 'Introduction to React',
-      completed: false,
-      xp_reward: 20,
-      due_date: '2024-05-21',
-      type: 'practice',
-    },
-  ],
-};
+  const [currentDate, setCurrentDate] = useState<Date>(
+    new Date(currentDateString),
+  );
 
-const dummyStats = {
-  total: 10,
-  completed: 5,
-  overdue: 0,
-};
+  const dates = useMemo(
+    () => Object.keys(tasksByDate).sort(),
+    [tasksByDate],
+  );
 
-export default function CalendarPage(/* ! { tasksByDate, stats, currentDate }: CalendarPageProps */) {
-  // ! const { tasksByDate, stats, currentDate } = usePage<PageProps<CalendarPageProps>>().props;
-
-  // Using dummy data
-  const tasksByDate = dummyTasksByDate;
-  const stats = dummyStats;
-  // Set dummy date to match dummy data
-  const [currentDate, setCurrentDate] = useState<Date>(new Date('2024-05-20'));
-
-  const dates = Object.keys(tasksByDate).sort();
-  const markers = Object.keys(tasksByDate);
+  const markers = useMemo(
+    () => Object.keys(tasksByDate),
+    [tasksByDate],
+  );
 
   const handleDateSelect = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
     setCurrentDate(date);
-    // ! router.get(calendarRoute().url, { date: date.toISOString().split('T')[0] }, { preserveState: true });
+    router.get(
+      calendarRoute().url,
+      { date: dateString },
+      { preserveState: true, preserveScroll: true, replace: true },
+    );
   };
 
   return (

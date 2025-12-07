@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { achievements } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
+import type { AchievementsPageProps, BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Search, Trophy } from 'lucide-react';
 import { useState } from 'react';
@@ -17,85 +17,26 @@ const breadcrumbs: BreadcrumbItem[] = [
     href: achievements().url,
   },
 ];
-// ! Removed AchievementsPageProps
 
-// ! Dummy Data
-const dummyAchievements = [
-  {
-    id: 1,
-    name: 'Fast Learner',
-    description: 'Completed 5 lessons in a day',
-    icon: 'zap',
-    updated_at: '2024-05-15',
-    progress: 100,
-    target: 100,
-    rarity: 'bronze' as const,
-    xp_reward: 50,
-    created_at: '2024-01-01',
-    earned_at: '2024-05-15',
-    earned: true,
-    category: 'Learning',
-  },
-  {
-    id: 2,
-    name: 'Bookworm',
-    description: 'Read 1,000 articles',
-    icon: 'book',
-    updated_at: '2024-01-01',
-    progress: 45,
-    target: 100,
-    rarity: 'silver' as const,
-    xp_reward: 100,
-    created_at: '2024-01-01',
-    earned: false,
-    category: 'Learning',
-  },
-  {
-    id: 3,
-    name: 'Trophy Hunter',
-    description: 'Collect 10 trophies',
-    icon: 'trophy',
-    updated_at: '2024-01-01',
-    progress: 2,
-    target: 10,
-    rarity: 'gold' as const,
-    xp_reward: 500,
-    created_at: '2024-01-01',
-    earned: false,
-    category: 'Analysis',
-  },
-  {
-    id: 4,
-    name: 'Streak Master',
-    description: 'Maintain a 30-day streak',
-    icon: 'flame',
-    updated_at: '2024-01-01',
-    progress: 12,
-    target: 30,
-    rarity: 'platinum' as const,
-    xp_reward: 1000,
-    created_at: '2024-01-01',
-    earned: false,
-    category: 'Streak',
-  },
-];
-
-const dummySummary = {
-  total: 4,
-  earned: 1,
-  nextMilestone: {
-    title: 'Bookworm',
-  },
-};
-
-const categories = ['All', 'Learning', 'Analysis', 'Streak'];
-
-// ! Modified component to use dummy data and local filtering
-export default function AchievementsPage() {
+export default function AchievementsPage({
+  achievements: achievementsData,
+  summary,
+}: AchievementsPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const filteredAchievements = dummyAchievements.filter((achievement) => {
+  const categories = [
+    'All',
+    ...Array.from(
+      new Set(
+        achievementsData
+          .map((item) => item.category)
+          .filter((category): category is string => Boolean(category)),
+      ),
+    ),
+  ];
+
+  const filteredAchievements = achievementsData.filter((achievement) => {
     const matchesSearch = achievement.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -117,7 +58,7 @@ export default function AchievementsPage() {
           iconClassName="text-yellow-500"
         />
 
-        <AchievementsSummary summary={dummySummary} />
+        <AchievementsSummary summary={summary} />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full max-w-sm">

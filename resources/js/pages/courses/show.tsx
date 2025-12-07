@@ -225,29 +225,21 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                     />
                   </div>
 
-                  {/* Example metadata mimicking the screenshot */}
                   <div className="space-y-4 border-t pt-4">
-                    <div>
-                      <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
-                        Learning Outcome
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Understanding the core concepts of {activeSession.title}
-                        .
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                       <div>
-                        <span className="block text-gray-500">Start</span>
+                        <span className="block text-gray-500">Duration</span>
                         <span className="font-medium">
-                          {new Date().toLocaleDateString()}
+                          {activeSession.duration_minutes
+                            ? `${activeSession.duration_minutes} mins`
+                            : 'Not specified'}
                         </span>
                       </div>
                       <div>
-                        <span className="block text-gray-500">
-                          Delivery Mode
+                        <span className="block text-gray-500">Order</span>
+                        <span className="font-medium">
+                          Session {activeSession.order ?? '-'}
                         </span>
-                        <span className="font-medium">Online</span>
                       </div>
                     </div>
                   </div>

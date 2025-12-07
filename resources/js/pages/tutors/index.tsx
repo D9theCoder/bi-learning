@@ -3,51 +3,53 @@ import { PageHeader } from '@/components/shared/page-header';
 import { TutorCard } from '@/components/tutors/tutor-card';
 import AppLayout from '@/layouts/app-layout';
 import { tutors as tutorsRoute } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import type { BreadcrumbItem, TutorsPageProps } from '@/types';
+import { Head, router } from '@inertiajs/react';
 import { Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Tutors', href: tutorsRoute().url },
 ];
 
-// ! Removed TutorsPageProps
+export default function TutorsPage({ tutors, filters }: TutorsPageProps) {
+  const [searchTerm, setSearchTerm] = useState(filters.search ?? '');
 
-// ! Dummy Data
-const dummyTutors = {
-  data: [
-    {
-      id: 1,
-      name: 'John Doe',
-      avatar: 'https://ui-avatars.com/api/?name=John+Doe',
-      cohort: {
-        id: 1,
-        name: 'Web Dev Cohort 1',
-      },
-      expertise: ['React', 'TypeScript', 'Node.js'],
-      rating: 4.8,
+  const handleFilterChange = useCallback(
+    (key: keyof TutorsPageProps['filters'], value: string | number | undefined) => {
+      router.get(
+        tutorsRoute().url,
+        { ...filters, [key]: value, page: 1 },
+        { preserveState: true, replace: true },
+      );
     },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      avatar: 'https://ui-avatars.com/api/?name=Jane+Smith',
-      cohort: {
-        id: 2,
-        name: 'Data Science Cohort 1',
-      },
-      expertise: ['Python', 'Machine Learning', 'SQL'],
-      rating: 4.9,
-    },
-  ],
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 2,
-};
+    [filters],
+  );
 
-// ! Modified component to use dummy data
-export default function TutorsPage() {
-  const tutors = dummyTutors;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== (filters.search ?? '')) {
+        handleFilterChange('search', searchTerm);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filters.search, handleFilterChange, searchTerm]);
+
+  const hasPagination = useMemo(
+    () => tutors.last_page > 1,
+    [tutors.last_page],
+  );
+
+  const goToPage = (page: number) => {
+    router.get(
+      tutorsRoute().url,
+      { ...filters, page },
+      { preserveState: true, replace: true },
+    );
+  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -60,6 +62,38 @@ export default function TutorsPage() {
           description="Connect with your tutors and get help with your learning."
           iconClassName="text-green-500"
         />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full max-w-sm">
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search tutors..."
+              className="pl-3"
+            />
+          </div>
+          {hasPagination && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={tutors.current_page <= 1}
+                onClick={() => goToPage(tutors.current_page - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {tutors.current_page} of {tutors.last_page}
+              </span>
+              <Button
+                variant="outline"
+                disabled={tutors.current_page >= tutors.last_page}
+                onClick={() => goToPage(tutors.current_page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tutors.data.map((tutor) => (

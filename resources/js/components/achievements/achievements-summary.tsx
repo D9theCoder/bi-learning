@@ -4,11 +4,14 @@ interface AchievementsSummaryProps {
   summary: {
     total: number;
     earned: number;
-    nextMilestone?: { title: string } | null;
+    nextMilestone?: { name: string } | null;
   };
 }
 
 export function AchievementsSummary({ summary }: AchievementsSummaryProps) {
+  const completionPercent =
+    summary.total > 0 ? Math.round((summary.earned / summary.total) * 100) : 0;
+
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
@@ -28,7 +31,7 @@ export function AchievementsSummary({ summary }: AchievementsSummaryProps) {
         <CardContent>
           <div className="text-2xl font-bold">{summary.earned}</div>
           <p className="text-xs text-muted-foreground">
-            {Math.round((summary.earned / summary.total) * 100)}% complete
+            {completionPercent}% complete
           </p>
         </CardContent>
       </Card>
@@ -39,7 +42,7 @@ export function AchievementsSummary({ summary }: AchievementsSummaryProps) {
         <CardContent>
           <div className="text-sm font-medium">
             {summary.nextMilestone
-              ? summary.nextMilestone.title
+              ? summary.nextMilestone.name
               : 'All complete!'}
           </div>
         </CardContent>
