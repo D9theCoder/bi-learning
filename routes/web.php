@@ -38,15 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
 
     // Message routes
-    Route::get('messages', [MessageController::class, 'index'])
-        ->middleware('role:admin|tutor|student')
-        ->name('messages');
-    Route::get('messages/poll', [MessageController::class, 'poll'])
-        ->middleware('role:admin|tutor|student')
-        ->name('messages.poll');
-    Route::post('messages', [MessageController::class, 'store'])
-        ->middleware('role:tutor|student')
-        ->name('messages.store');
+    Route::get('messages', [MessageController::class, 'index'])->name('messages');
+    Route::get('messages/poll', [MessageController::class, 'poll'])->name('messages.poll');
+    Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 
     // Reward routes
     Route::get('rewards', [RewardController::class, 'index'])->name('rewards');

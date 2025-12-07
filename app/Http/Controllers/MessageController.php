@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SendMessageRequest;
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\TutorMessage;
 use App\Models\User;
@@ -281,12 +282,14 @@ class MessageController extends Controller
 
     private function contactsForParticipant(User $user): Collection
     {
-        if ($user->hasRole('student')) {
+        $contacts = collect();
+
+        if ($this->isStudentUser($user)) {
             $enrollments = Enrollment::with('course.instructor')
                 ->where('user_id', $user->id)
                 ->get();
 
-            return $enrollments->pluck('course.instructor')
+            $studentContacts = $enrollments->pluck('course.instructor')
                 ->filter()
                 ->unique('id')
                 ->values()
@@ -296,14 +299,16 @@ class MessageController extends Controller
                     'avatar' => $tutor->avatar,
                     'role' => 'tutor',
                 ]);
+
+            $contacts = $contacts->merge($studentContacts);
         }
 
-        if ($user->hasRole('tutor')) {
+        if ($this->isTutorUser($user)) {
             $enrollments = Enrollment::with('user')
                 ->whereHas('course', fn ($q) => $q->where('instructor_id', $user->id))
                 ->get();
 
-            return $enrollments->pluck('user')
+            $tutorContacts = $enrollments->pluck('user')
                 ->filter()
                 ->unique('id')
                 ->values()
@@ -313,21 +318,37 @@ class MessageController extends Controller
                     'avatar' => $student->avatar,
                     'role' => 'student',
                 ]);
+
+            $contacts = $contacts->merge($tutorContacts);
         }
 
-        return collect();
+        return $contacts->unique('id')->values();
     }
 
     private function roleForConversation(User $user): ?string
     {
-        if ($user->hasRole('tutor')) {
+        if ($this->isTutorUser($user)) {
             return 'tutor';
         }
 
-        if ($user->hasRole('student')) {
+        if ($this->isStudentUser($user)) {
             return 'student';
         }
 
         return null;
+    }
+
+    private function isTutorUser(User $user): bool
+    {
+        if ($user->hasRole('tutor')) {
+            return true;
+        }
+
+        return Course::where('instructor_id', $user->id)->exists();
+    }
+
+    private function isStudentUser(User $user): bool
+    {
+        return $user->hasRole('student');
     }
 }

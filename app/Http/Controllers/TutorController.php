@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FilterTutorsRequest;
+use App\Models\Course;
 use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,10 +13,27 @@ class TutorController extends Controller
     public function index(FilterTutorsRequest $request): Response
     {
         $filters = $request->validated();
+        $user = $request->user();
 
-        // Query tutors using Spatie Laravel Permission
-        $query = User::role('tutor')
-            ->with('cohort');
+        $enrolledCourseIds = $user?->enrollments()->pluck('course_id') ?? collect();
+
+        $instructorIds = Course::query()
+            ->whereIn('id', $enrolledCourseIds)
+            ->whereNotNull('instructor_id')
+            ->pluck('instructor_id')
+            ->unique()
+            ->values();
+
+        // Query tutors using Spatie Laravel Permission or fallback to enrolled instructors
+        $query = User::query()->with('cohort');
+
+        if ($instructorIds->isNotEmpty()) {
+            // Only show instructors tied to the student's enrollments (role is optional)
+            $query->whereIn('id', $instructorIds);
+        } else {
+            // No enrollments yet: show all users with the tutor role
+            $query->role('tutor');
+        }
 
         // Apply filters
         if (! empty($filters['search'])) {

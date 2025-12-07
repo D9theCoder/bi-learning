@@ -187,6 +187,73 @@ it('blocks tutor from messaging a student without enrollment', function () {
     $response->assertForbidden();
 });
 
+it('shows contacts for instructors without tutor role', function () {
+    $instructor = User::factory()->create(); // no tutor role
+    $student = User::factory()->create()->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $instructor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($instructor)->get(route('messages'));
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.0.id', $student->id)
+        ->where('contacts.0.role', 'student')
+    );
+});
+
+it('allows student to message course instructor without tutor role', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $instructor = User::factory()->create(); // no tutor role
+    $course = Course::factory()->create(['instructor_id' => $instructor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($student)->post(route('messages.store'), [
+        'partner_id' => $instructor->id,
+        'content' => 'Hi instructor',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('tutor_messages', [
+        'tutor_id' => $instructor->id,
+        'user_id' => $student->id,
+        'content' => 'Hi instructor',
+    ]);
+});
+
+it('allows course instructor without tutor role to message student', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $instructor = User::factory()->create(); // no tutor role
+    $course = Course::factory()->create(['instructor_id' => $instructor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($instructor)->post(route('messages.store'), [
+        'partner_id' => $student->id,
+        'content' => 'Hello student',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('tutor_messages', [
+        'tutor_id' => $instructor->id,
+        'user_id' => $student->id,
+        'content' => 'Hello student',
+    ]);
+});
+
 it('exposes contacts for students based on enrollments', function () {
     $student = User::factory()->create()->assignRole('student');
     $tutor = User::factory()->create()->assignRole('tutor');

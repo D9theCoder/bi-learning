@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SendMessageRequest extends FormRequest
@@ -18,7 +19,12 @@ class SendMessageRequest extends FormRequest
             return false;
         }
 
-        return $user->hasAnyRole(['tutor', 'student']);
+        if ($user->hasAnyRole(['tutor', 'student'])) {
+            return true;
+        }
+
+        // Allow instructors to reply even if the tutor role is missing
+        return Course::where('instructor_id', $user->id)->exists();
     }
 
     public function rules(): array
