@@ -8,16 +8,34 @@ import { Course, CourseContent, Lesson, User } from '@/types';
 import { Head } from '@inertiajs/react';
 import {
   BookOpen,
+  CalendarCheck,
   CheckCircle,
+  ClipboardList,
   Clock,
   Download,
   FileText,
   Globe,
   Link as LinkIcon,
+  MessageSquare,
+  Scale,
+  Star,
+  Users,
   Video,
   Wifi,
 } from 'lucide-react';
 import { useState } from 'react';
+
+// Import tab components
+import {
+  AssessmentTab,
+  AttendanceTab,
+  ForumTab,
+  GradebookTab,
+  PeopleTab,
+  RubricTab,
+  ScoringTab,
+  SyllabusTab,
+} from './tabs';
 
 interface CourseShowProps {
   course: Course & {
@@ -102,24 +120,77 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
           </div>
         </div>
 
-        {/* Main Tabs */}
+        {/* Main Tabs - All course tabs */}
         <Tabs defaultValue="session" className="w-full">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
-            <TabsTrigger
-              value="session"
-              className="rounded-t-lg border-b-2 border-transparent px-4 py-2 data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-            >
-              Session
-            </TabsTrigger>
-            <TabsTrigger
-              value="syllabus"
-              className="rounded-t-lg border-b-2 border-transparent px-4 py-2 data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-            >
-              Syllabus
-            </TabsTrigger>
-            {/* Add more tabs as needed */}
-          </TabsList>
+          <div className="scrollbar-hide overflow-x-auto border-b">
+            <TabsList className="inline-flex w-max gap-0 rounded-none bg-transparent p-0">
+              <TabsTrigger
+                value="session"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <BookOpen className="mr-1.5 h-4 w-4" />
+                Session
+              </TabsTrigger>
+              <TabsTrigger
+                value="syllabus"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <FileText className="mr-1.5 h-4 w-4" />
+                Syllabus
+              </TabsTrigger>
+              <TabsTrigger
+                value="forum"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <MessageSquare className="mr-1.5 h-4 w-4" />
+                Forum
+              </TabsTrigger>
+              <TabsTrigger
+                value="assessment"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <ClipboardList className="mr-1.5 h-4 w-4" />
+                Assessment
+              </TabsTrigger>
+              <TabsTrigger
+                value="gradebook"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <Star className="mr-1.5 h-4 w-4" />
+                Gradebook
+              </TabsTrigger>
+              <TabsTrigger
+                value="rubric"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <Scale className="mr-1.5 h-4 w-4" />
+                Assessment Rubric
+              </TabsTrigger>
+              <TabsTrigger
+                value="scoring"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <CheckCircle className="mr-1.5 h-4 w-4" />
+                Scoring
+              </TabsTrigger>
+              <TabsTrigger
+                value="people"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <Users className="mr-1.5 h-4 w-4" />
+                People
+              </TabsTrigger>
+              <TabsTrigger
+                value="attendance"
+                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+              >
+                <CalendarCheck className="mr-1.5 h-4 w-4" />
+                Attendance
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Session Tab Content */}
           <TabsContent value="session" className="mt-6 space-y-6">
             {/* Session Navigation (Horizontal Scroll) */}
             <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
@@ -261,6 +332,46 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                 No sessions available for this course.
               </div>
             )}
+          </TabsContent>
+
+          {/* Syllabus Tab Content */}
+          <TabsContent value="syllabus" className="mt-6">
+            <SyllabusTab course={course} />
+          </TabsContent>
+
+          {/* Forum Tab Content */}
+          <TabsContent value="forum" className="mt-6">
+            <ForumTab course={course} isEnrolled={isEnrolled} />
+          </TabsContent>
+
+          {/* Assessment Tab Content */}
+          <TabsContent value="assessment" className="mt-6">
+            <AssessmentTab course={course} />
+          </TabsContent>
+
+          {/* Gradebook Tab Content */}
+          <TabsContent value="gradebook" className="mt-6">
+            <GradebookTab course={course} isEnrolled={isEnrolled} />
+          </TabsContent>
+
+          {/* Assessment Rubric Tab Content */}
+          <TabsContent value="rubric" className="mt-6">
+            <RubricTab course={course} />
+          </TabsContent>
+
+          {/* Scoring Tab Content */}
+          <TabsContent value="scoring" className="mt-6">
+            <ScoringTab course={course} isEnrolled={isEnrolled} />
+          </TabsContent>
+
+          {/* People Tab Content */}
+          <TabsContent value="people" className="mt-6">
+            <PeopleTab course={course} isEnrolled={isEnrolled} />
+          </TabsContent>
+
+          {/* Attendance Tab Content */}
+          <TabsContent value="attendance" className="mt-6">
+            <AttendanceTab course={course} isEnrolled={isEnrolled} />
           </TabsContent>
         </Tabs>
       </div>
