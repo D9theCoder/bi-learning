@@ -2,10 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+  CardContent
 } from '@/components/ui/card';
 import type { Enrollment } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -21,7 +18,6 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
   const {
     course,
     progress_percentage = 0,
-    last_activity_at,
     next_lesson,
   } = enrollment;
 
@@ -31,46 +27,46 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
   }
 
   return (
-    <Card className="!gap-3 p-0 overflow-hidden">
-      <CardHeader className="relative p-0">
-        {course.thumbnail && (
-          <img
-            src={course.thumbnail}
-            alt={course.title || 'Course thumbnail'}
-            className="aspect-video w-full rounded-t-lg object-cover"
-          />
-        )}
-        <div className="absolute top-2 right-2">
-          <ProgressRing
+    <Card className="group relative flex items-center overflow-hidden p-4 transition-all hover:shadow-md">
+      {/* Radial Progress Ring */}
+      <div className="shrink-0">
+         <ProgressRing
             progress={progress_percentage}
-            size={48}
-            strokeWidth={4}
+            size={60}
+            strokeWidth={5}
+            className="text-primary"
           />
+      </div>
+
+      <CardContent className="flex-1 px-4 py-0">
+        <div className="space-y-1">
+             <div className="flex items-center gap-2">
+                 {course.category && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                        {course.category}
+                    </Badge>
+                 )}
+                 <h3 className="line-clamp-1 text-base font-bold leading-none tracking-tight">
+                    {course.title || 'Untitled Course'}
+                 </h3>
+             </div>
+             {next_lesson?.title && (
+                <p className="line-clamp-1 text-xs text-muted-foreground">
+                    Next: <span className="font-medium text-foreground">{next_lesson.title}</span>
+                </p>
+             )}
         </div>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 pt-3">
-        <CardTitle className="line-clamp-2 text-base">
-          {course.title || 'Untitled Course'}
-        </CardTitle>
-        {last_activity_at && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Last activity: {new Date(last_activity_at).toLocaleDateString()}
-          </p>
-        )}
-        {next_lesson?.title && (
-          <Badge variant="secondary" className="mt-2">
-            Next: {next_lesson.title}
-          </Badge>
-        )}
       </CardContent>
-      <CardFooter className="px-4 pb-4 pt-2">
-        <Button asChild className="w-full" onClick={onResume}>
+      
+      {/* Resume Button - Slides up on hover */}
+      <div className="absolute inset-0 flex items-center justify-end bg-gradient-to-l from-background/90 via-background/50 to-transparent p-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
+         <Button asChild onClick={onResume} size="sm" className="translate-y-2 transition-transform duration-300 group-hover:translate-y-0 shadow-lg">
           <Link href={`/courses/${course.id}`} prefetch>
-            <Play className="mr-2 size-4" />
+            <Play className="mr-2 size-3" />
             Resume
           </Link>
         </Button>
-      </CardFooter>
+      </div>
     </Card>
   );
 }

@@ -42,6 +42,7 @@ const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
       label="Current Streak"
       value={`${stats.streak} days`}
       color="orange"
+      animate={stats.streak > 0}
     />
     <StatCard
       icon={Zap}

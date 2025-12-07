@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
+import CountUp from 'react-countup';
 
 export interface StatCardProps {
   icon: LucideIcon;
@@ -11,6 +13,7 @@ export interface StatCardProps {
   variant?: 'default' | 'accent';
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'yellow';
   className?: string;
+  animate?: boolean;
 }
 
 const colorStyles = {
@@ -33,18 +36,22 @@ export function StatCard({
   variant = 'default',
   color,
   className,
+  animate = false,
 }: StatCardProps) {
+  const isNumber = typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)));
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+
   return (
     <Card
       className={cn(
-        'overflow-hidden border-none shadow-md transition-all hover:scale-[1.02]',
+        'overflow-hidden border border-border shadow-sm transition-all hover:scale-[1.02] hover:border-primary/30',
         className,
       )}
     >
       <CardContent className="flex items-center gap-4 p-6">
         <div
           className={cn(
-            'flex size-12 items-center justify-center rounded-xl shadow-sm',
+            'flex size-12 items-center justify-center rounded-xl shadow-sm relative',
             color
               ? colorStyles[color]
               : variant === 'accent'
@@ -52,12 +59,28 @@ export function StatCard({
                 : 'bg-muted text-muted-foreground',
           )}
         >
-          <Icon className="size-6" />
+          {animate && label.toLowerCase().includes('streak') && numericValue > 0 ? (
+             <motion.div
+               animate={{ scale: [1, 1.2, 1] }}
+               transition={{ repeat: Infinity, duration: 1.5 }}
+               className="absolute inset-0 flex items-center justify-center"
+             >
+                <Icon className="size-6" />
+             </motion.div>
+          ) : (
+             <Icon className="size-6" />
+          )}
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-2xl font-bold tracking-tight">
+               {isNumber ? (
+                 <CountUp end={numericValue as number} duration={2} separator="," />
+               ) : (
+                 value
+               )}
+            </p>
             {trend !== undefined && (
               <Badge
                 variant={trend >= 0 ? 'default' : 'secondary'}
