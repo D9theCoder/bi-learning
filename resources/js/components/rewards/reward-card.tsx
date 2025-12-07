@@ -47,7 +47,7 @@ export function RewardCard({ reward }: RewardCardProps) {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <Card>
+      <Card className="flex h-full flex-col">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-base">{reward.name}</CardTitle>
@@ -59,16 +59,14 @@ export function RewardCard({ reward }: RewardCardProps) {
           </div>
           <CardDescription>{reward.description}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-lg font-bold">
             <Coins className="size-5 text-yellow-500" />
             {reward.cost} points
           </div>
-          {stockText && (
-            <p className="mt-2 text-xs text-muted-foreground">{stockText}</p>
-          )}
+          {stockText && <p className="text-xs text-muted-foreground">{stockText}</p>}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="mt-auto">
           <DialogTrigger asChild>
             <Button
               type="button"
