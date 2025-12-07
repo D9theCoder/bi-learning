@@ -20,10 +20,11 @@ import type {
   Enrollment,
   LeaderboardEntry,
   LearningStats,
+  Reward,
   TutorMessage,
 } from '@/types';
 import { Head } from '@inertiajs/react';
-import { BookOpen, Clock, Flame, Zap } from 'lucide-react';
+import { Activity as ActivityIcon, BookOpen, Clock, Flame, Zap } from 'lucide-react';
 import React, { memo } from 'react';
 
 // Constants for magic numbers
@@ -148,242 +149,60 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-// ! Removed DashboardProps interface
+interface DashboardPageProps {
+  stats: LearningStats;
+  today_tasks: DailyTask[];
+  enrolled_courses: Enrollment[];
+  recent_achievements: Achievement[];
+  next_milestone: Achievement | null;
+  recent_activity: Activity[];
+  tutor_messages: TutorMessage[];
+  unread_message_count: number;
+  cohort_leaderboard: LeaderboardEntry[];
+  weekly_activity_data: { name: string; value: number }[];
+  available_rewards?: Reward[];
+  current_user_rank?: number | null;
+}
 
-// ! Dummy Data
-const dummyStats: LearningStats = {
-  streak: 5,
-  xp_this_week: 1250,
-  hours_learned: 12.5,
-  active_courses: 2,
-  total_xp: 5000,
-  level: 10,
-  points_balance: 500,
-};
-
-const dummyTodayTasks: DailyTask[] = [
-  {
-    id: 1,
-    user_id: 1,
-    title: 'Complete Chapter 1 Quiz',
-    is_completed: false,
-    xp_reward: 50,
-    due_date: '2024-05-20',
-    type: 'quiz',
-    estimated_minutes: 15,
-    created_at: '2024-05-19',
-  },
-  {
-    id: 2,
-    user_id: 1,
-    title: 'Watch "Hooks in Depth"',
-    is_completed: true,
-    xp_reward: 30,
-    due_date: '2024-05-20',
-    type: 'lesson',
-    estimated_minutes: 20,
-    created_at: '2024-05-19',
-  },
-];
-
-const dummyEnrolledCourses: Enrollment[] = [
-  {
-    id: 1,
-    course_id: 1,
-    user_id: 1,
-    progress_percentage: 45,
-    status: 'active',
-    enrolled_at: '2024-01-01',
-    last_activity_at: '2024-05-19',
-    course: {
-      id: 1,
-      title: 'Introduction to React',
-      description: 'Learn the basics of React.',
-      thumbnail: 'https://placehold.co/600x400/png',
-      difficulty: 'beginner',
-      duration_minutes: 300,
-      instructor_id: 1,
-      instructor: {
-        id: 1,
-        name: 'John Doe',
-        avatar: 'https://ui-avatars.com/api/?name=John+Doe',
-        email: 'john@example.com',
-        email_verified_at: '2023-01-01',
-        created_at: '2023-01-01',
-        updated_at: '2023-01-01',
-      },
-      category: 'Web Development',
-      created_at: '2023-01-01',
-      updated_at: '2023-01-01',
-    },
-  },
-  {
-    id: 2,
-    course_id: 2,
-    user_id: 1,
-    progress_percentage: 10,
-    status: 'active',
-    enrolled_at: '2024-03-01',
-    last_activity_at: '2024-05-18',
-    course: {
-      id: 2,
-      title: 'Advanced React Patterns',
-      description: 'Master advanced React concepts.',
-      thumbnail: 'https://placehold.co/600x400/png',
-      difficulty: 'advanced',
-      duration_minutes: 480,
-      instructor_id: 2,
-      instructor: {
-        id: 2,
-        name: 'Jane Smith',
-        avatar: 'https://ui-avatars.com/api/?name=Jane+Smith',
-        email: 'jane@example.com',
-        email_verified_at: '2023-01-01',
-        created_at: '2023-01-01',
-        updated_at: '2023-01-01',
-      },
-      category: 'Web Development',
-      created_at: '2023-01-01',
-      updated_at: '2023-01-01',
-    },
-  },
-];
-
-const dummyRecentAchievements: Achievement[] = [
-  {
-    id: 1,
-    name: 'First Steps',
-    description: 'Complete your first lesson',
-    icon: 'trophy',
-    criteria: 'Complete 1 lesson',
-    rarity: 'bronze',
-    xp_reward: 50,
-    created_at: '2024-01-01',
-    earned_at: '2024-01-02',
-    category: 'Learning',
-    progress: 1,
-    target: 1,
-  },
-  {
-    id: 2,
-    name: 'Quiz Master',
-    description: 'Score 100% on a quiz',
-    icon: 'star',
-    criteria: 'Score 100% on a quiz',
-    rarity: 'silver',
-    xp_reward: 100,
-    created_at: '2024-01-01',
-    earned_at: '2024-02-15',
-    category: 'Analysis',
-    progress: 1,
-    target: 1,
-  },
-];
-
-const dummyNextMilestone: Achievement = {
-  id: 3,
-  name: 'Dedicated Learner',
-  description: 'Maintain a 7-day streak',
-  icon: 'flame',
-  criteria: '7 day streak',
-  rarity: 'gold',
-  xp_reward: 200,
-  created_at: '2024-01-01',
-  category: 'Streak',
-  progress: 5,
-  target: 7,
-};
-
-const dummyRecentActivity: Activity[] = [
-  {
-    id: 1,
-    user_id: 1,
-    type: 'lesson_completed',
-    description: 'Completed lesson "React Components"',
-    xp_earned: 50,
-    created_at: '2 hours ago',
-  },
-  {
-    id: 2,
-    user_id: 1,
-    type: 'achievement_earned',
-    description: 'Unlocked "Night Owl"',
-    xp_earned: 100,
-    created_at: '5 hours ago',
-  },
-];
-
-const dummyTutorMessages: TutorMessage[] = [
-  {
-    id: 1,
-    tutor_id: 1,
-    user_id: 1,
-    content: 'Great job on the last assignment!',
-    is_read: false,
-    sent_at: '10 mins ago',
-    created_at: '10 mins ago',
-    tutor: {
-      id: 1,
-      name: 'John Doe',
-      avatar: 'https://ui-avatars.com/api/?name=John+Doe',
-      email: 'john@example.com',
-      email_verified_at: '2023-01-01',
-      created_at: '2023-01-01',
-      updated_at: '2023-01-01',
-    },
-  },
-];
-
-const dummyCohortLeaderboard: LeaderboardEntry[] = [
-  {
-    id: 1,
-    name: 'Kevin',
-    avatar: 'https://ui-avatars.com/api/?name=Kevin',
-    xp: 1500,
-    level: 5,
-    rank: 1,
-    isCurrentUser: true,
-  },
-  {
-    id: 2,
-    name: 'Alice',
-    avatar: 'https://ui-avatars.com/api/?name=Alice',
-    xp: 1450,
-    level: 4,
-    rank: 2,
-    isCurrentUser: false,
-  },
-  {
-    id: 3,
-    name: 'Bob',
-    avatar: 'https://ui-avatars.com/api/?name=Bob',
-    xp: 1300,
-    level: 4,
-    rank: 3,
-    isCurrentUser: false,
-  },
-];
-
-const dummyWeeklyActivityData = [
-  { name: 'Mon', value: 120 },
-  { name: 'Tue', value: 200 },
-  { name: 'Wed', value: 150 },
-  { name: 'Thu', value: 300 },
-  { name: 'Fri', value: 250 },
-  { name: 'Sat', value: 180 },
-  { name: 'Sun', value: 50 },
-];
-
-// Local component for Activity Icon to avoid import issues or just import it at top if possible, but for now lets rename the icon used in header
-import { Activity as ActivityIcon } from 'lucide-react';
-
-// ! Modified component to use dummy data
-export default function Dashboard() {
+export default function Dashboard({
+  stats,
+  today_tasks,
+  enrolled_courses,
+  recent_achievements,
+  next_milestone,
+  recent_activity,
+  tutor_messages,
+  unread_message_count,
+  cohort_leaderboard,
+  weekly_activity_data,
+}: DashboardPageProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   React.useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 250);
     return () => clearTimeout(t);
   }, []);
+
+  const safeStats: LearningStats = {
+    streak: stats?.streak ?? 0,
+    xp_this_week: stats?.xp_this_week ?? 0,
+    hours_learned: stats?.hours_learned ?? 0,
+    active_courses: stats?.active_courses ?? 0,
+    total_xp: stats?.total_xp ?? 0,
+    level: stats?.level ?? 1,
+    points_balance: stats?.points_balance ?? 0,
+  };
+
+  const todayTasks = today_tasks ?? [];
+  const enrolledCourses = enrolled_courses ?? [];
+  const recentAchievements = recent_achievements ?? [];
+  const cohortLeaderboard = cohort_leaderboard ?? [];
+  const tutorMessages = tutor_messages ?? [];
+  const recentActivity = recent_activity ?? [];
+  const weeklyActivityData = weekly_activity_data ?? [];
+  const nextMilestone = next_milestone ?? null;
+  const unreadMessageCount =
+    unread_message_count ??
+    tutorMessages.filter((message) => message.is_read === false).length;
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -405,7 +224,7 @@ export default function Dashboard() {
           {isLoading ? (
             <StatsSkeleton />
           ) : (
-            <DashboardStatsSection stats={dummyStats} />
+            <DashboardStatsSection stats={safeStats} />
           )}
         </DashboardErrorBoundary>
 
@@ -417,7 +236,7 @@ export default function Dashboard() {
               {isLoading ? (
                 <TodayTasksSkeleton />
               ) : (
-                <TodayTaskList tasks={dummyTodayTasks} />
+                <TodayTaskList tasks={todayTasks} />
               )}
             </DashboardErrorBoundary>
 
@@ -426,9 +245,7 @@ export default function Dashboard() {
               {isLoading ? (
                 <CoursesSkeleton />
               ) : (
-                <DashboardCoursesSection
-                  enrolledCourses={dummyEnrolledCourses}
-                />
+                <DashboardCoursesSection enrolledCourses={enrolledCourses} />
               )}
             </DashboardErrorBoundary>
 
@@ -436,10 +253,10 @@ export default function Dashboard() {
             {isLoading ? (
               <ActivityChartSkeleton />
             ) : (
-              dummyWeeklyActivityData.length > 0 && (
+              weeklyActivityData.length > 0 && (
                 <DashboardErrorBoundary>
                   <DashboardActivityChartSection
-                    weeklyActivityData={dummyWeeklyActivityData}
+                    weeklyActivityData={weeklyActivityData}
                   />
                 </DashboardErrorBoundary>
               )
@@ -451,13 +268,13 @@ export default function Dashboard() {
             <SidebarSkeleton />
           ) : (
             <DashboardSidebar
-              stats={dummyStats}
-              recentAchievements={dummyRecentAchievements}
-              nextMilestone={dummyNextMilestone}
-              cohortLeaderboard={dummyCohortLeaderboard}
-              tutorMessages={dummyTutorMessages}
-              unreadMessageCount={1}
-              recentActivity={dummyRecentActivity}
+              stats={safeStats}
+              recentAchievements={recentAchievements}
+              nextMilestone={nextMilestone}
+              cohortLeaderboard={cohortLeaderboard}
+              tutorMessages={tutorMessages}
+              unreadMessageCount={unreadMessageCount}
+              recentActivity={recentActivity}
             />
           )}
         </div>
