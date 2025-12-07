@@ -6,7 +6,7 @@ use App\Models\Cohort;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class TutorsSeeder extends Seeder
+class InstructorSeeder extends Seeder
 {
     /** 
      * Run the database seeds.
@@ -15,7 +15,7 @@ class TutorsSeeder extends Seeder
     {
         $cohorts = Cohort::all();
 
-        User::factory(10)->create()->each(function ($user) use ($cohorts) {
+        User::factory(10)->withoutTwoFactor()->create()->each(function ($user) use ($cohorts) {
             $user->update([
                 'cohort_id' => $cohorts->random()->id,
                 'total_xp' => fake()->numberBetween(1000, 50000),

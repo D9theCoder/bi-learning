@@ -43,7 +43,7 @@ it('shows user progress for enrolled courses', function () {
     $response = $this->actingAs($user)->get(route('courses'));
 
     $response->assertInertia(fn (Assert $page) => $page
-        ->where('courses.data.0.user_progress.progress_percentage', 50.0)
+        ->where('courses.data.0.user_progress.progress_percentage', 50)
     );
 });
 

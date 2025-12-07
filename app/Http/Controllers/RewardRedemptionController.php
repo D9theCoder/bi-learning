@@ -43,7 +43,7 @@ class RewardRedemptionController extends Controller
             // Log activity
             Activity::create([
                 'user_id' => $user->id,
-                'type' => 'reward_redeemed',
+                'type' => 'reward_claimed',
                 'description' => "Redeemed: {$reward->name}",
                 'xp_earned' => 0,
             ]);

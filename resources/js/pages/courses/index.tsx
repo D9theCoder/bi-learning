@@ -22,35 +22,13 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
 
   const handleFilterChange = useCallback(
     (key: keyof typeof filters, value: string) => {
-      // Always start from current props, then inject the latest search term
-      const updatedFilters: Record<string, string> = { ...filters } as Record<
-        string,
-        string
-      >;
-
-      // Keep the current input value in the query (trimmed). If empty, drop it.
-      const currentTerm = (key === 'search' ? value : searchTerm).trim();
-      if (currentTerm) {
-        updatedFilters.search = currentTerm;
-      } else {
-        delete updatedFilters.search;
-      }
-
-      // For non-search filters, treat "all" as unset (remove from query)
-      if (key !== 'search') {
-        if (value === 'all') {
-          delete updatedFilters[key as string];
-        } else {
-          updatedFilters[key as string] = value;
-        }
-      }
-
-      router.get(coursesRoute().url, updatedFilters, {
-        preserveState: true,
-        preserveScroll: true,
-      });
+      router.get(
+        coursesRoute().url,
+        { ...filters, [key]: value, page: 1 },
+        { preserveState: true, replace: true },
+      );
     },
-    [filters, searchTerm],
+    [filters],
   );
 
   useEffect(() => {
@@ -58,7 +36,7 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
       if (searchTerm !== (filters.search || '')) {
         handleFilterChange('search', searchTerm);
       }
-    }, 100);
+    }, 300);
 
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, filters.search, handleFilterChange]);
@@ -83,6 +61,7 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {courses.data.map((course) => (
+            // @ts-ignore
             <CourseCard key={course.id} course={course} />
           ))}
         </div>

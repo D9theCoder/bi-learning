@@ -66,6 +66,7 @@ export interface Lesson {
   title: string;
   description?: string;
   content?: string;
+  contents?: CourseContent[];
   duration_minutes: number;
   order: number;
   video_url?: string;
@@ -97,6 +98,9 @@ export interface Achievement {
   xp_reward: number;
   earned_at?: string;
   created_at: string;
+  category?: string;
+  progress?: number;
+  target?: number;
 }
 
 export interface Badge {
@@ -175,11 +179,27 @@ export interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
+export interface CourseContent {
+  id: number;
+  lesson_id: number;
+  title: string;
+  type: 'file' | 'video' | 'link' | 'quiz' | 'attendance';
+  file_path?: string;
+  url?: string;
+  description?: string;
+  duration_minutes?: number;
+  is_required: boolean;
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Activity {
   id: number;
   user_id: number;
   type:
     | 'lesson_completed'
+    | 'task_completed'
     | 'achievement_earned'
     | 'course_enrolled'
     | 'reward_claimed'
@@ -214,13 +234,13 @@ export interface AchievementsPageProps {
     earned: number;
     nextMilestone?: {
       id: number;
-      title: string;
+      name: string;
       progress: number;
     };
   };
 }
 
-export interface CalendarPageProps {
+export interface CalendarPageProps extends SharedData {
   tasksByDate: Record<
     string,
     Array<{
@@ -229,6 +249,8 @@ export interface CalendarPageProps {
       due_date: string;
       completed: boolean;
       xp_reward?: number;
+      course_title?: string;
+      type?: string;
     }>
   >;
   stats: {
@@ -236,10 +258,12 @@ export interface CalendarPageProps {
     completed: number;
     overdue: number;
   };
+  currentDate: string;
   cursor?: {
     start: string;
     end: string;
   };
+  [key: string]: unknown;
 }
 
 export interface CoursesPageProps {

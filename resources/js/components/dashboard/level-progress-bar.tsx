@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { TrendingUp, Zap } from 'lucide-react';
 
 interface LevelProgressBarProps {
   currentLevel: number;
@@ -23,39 +23,58 @@ export function LevelProgressBar({
   const xpRemaining = xpForNextLevel > 0 ? xpForNextLevel - currentXp : 0;
 
   return (
-    <Card className={className}>
-      <CardContent className="p-6">
+    <Card
+      className={cn(
+        'relative overflow-hidden rounded-2xl border border-border shadow-sm bg-gradient-to-br from-card to-card/50',
+        className,
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-50" />
+      <CardContent className="relative p-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md ring-2 ring-primary/20">
               <TrendingUp className="size-6" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Current Level</p>
-              <p className="text-2xl font-bold">Level {currentLevel}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Level</p>
+              <div className="flex items-baseline gap-1">
+                 <span className="text-3xl font-black tracking-tight text-primary">{currentLevel}</span>
+                 <span className="text-xs text-muted-foreground font-medium">Lvl</span>
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">XP Progress</p>
-            <p className="text-lg font-semibold">
-              {currentXp.toLocaleString()} / {xpForNextLevel.toLocaleString()}
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                <Zap className="size-3 fill-primary" />
+                XP Progress
+            </div>
+            <p className="mt-1 text-lg font-bold">
+              {currentXp.toLocaleString()} <span className="text-muted-foreground font-medium text-sm">/ {xpForNextLevel.toLocaleString()}</span>
             </p>
           </div>
         </div>
 
-        <div className="mt-4 space-y-2">
-          <Progress
-            value={progress}
-            className="h-3"
-            aria-label={`${Math.round(progress)}% progress to next level`}
-          />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="mt-5 space-y-2">
+          <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/50">
+             <div 
+                className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-1000 ease-out" 
+                style={{ width: `${progress}%` }}
+             />
+             {/* Glow effect */}
+             <div 
+                className="absolute top-0 bottom-0 right-0 w-4 bg-white/30 blur-sm translate-x-full" 
+                style={{ left: `${progress}%`, transform: 'translateX(-50%)' }}
+             />
+          </div>
+          
+          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>
               {xpRemaining.toLocaleString()} XP to Level {currentLevel + 1}
             </span>
             {totalXp !== undefined && (
-              <Badge variant="outline">
-                Total: {totalXp.toLocaleString()} XP
+              <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                Total: {totalXp.toLocaleString()}
               </Badge>
             )}
           </div>

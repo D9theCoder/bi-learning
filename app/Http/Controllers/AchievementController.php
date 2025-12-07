@@ -28,7 +28,7 @@ class AchievementController extends Controller
 
             return [
                 'id' => $achievement->id,
-                'title' => $achievement->title,
+                'name' => $achievement->name,
                 'description' => $achievement->description,
                 'rarity' => $achievement->rarity,
                 'xp_reward' => $achievement->xp_reward,
@@ -47,7 +47,7 @@ class AchievementController extends Controller
                 'earned' => $earnedAchievements->count(),
                 'nextMilestone' => $nextMilestone ? [
                     'id' => $nextMilestone->id,
-                    'title' => $nextMilestone->title,
+                    'name' => $nextMilestone->name,
                     'progress' => 0, // Can be computed based on activity if needed
                 ] : null,
             ],

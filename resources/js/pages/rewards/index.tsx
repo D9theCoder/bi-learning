@@ -13,6 +13,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function RewardsPage({ user, rewards }: RewardsPageProps) {
+  const balance = user?.points_balance ?? 0;
+  const rewardItems = rewards?.data ?? [];
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Rewards" />
@@ -25,15 +28,15 @@ export default function RewardsPage({ user, rewards }: RewardsPageProps) {
           iconClassName="text-pink-500"
         />
 
-        <PointsBalanceCard balance={user.points_balance} />
+        <PointsBalanceCard balance={balance} />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rewards.data.map((reward) => (
+          {rewardItems.map((reward) => (
             <RewardCard key={reward.id} reward={reward} />
           ))}
         </div>
 
-        {rewards.data.length === 0 && (
+        {rewardItems.length === 0 && (
           <EmptyState message="No rewards available at the moment." />
         )}
       </div>

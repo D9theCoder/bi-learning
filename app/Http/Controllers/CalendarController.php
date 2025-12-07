@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -12,12 +13,18 @@ class CalendarController extends Controller
     {
         $user = $request->user();
 
-        // Get date range (current month ± 1 week buffer)
-        $start = now()->startOfMonth()->subWeek();
-        $end = now()->endOfMonth()->addWeek();
+        // Parse date from query or default to now
+        $date = $request->input('date')
+            ? Carbon::parse($request->input('date'))
+            : now();
+
+        // Get date range for the full calendar view (start of first week to end of last week)
+        $start = $date->copy()->startOfMonth()->startOfWeek();
+        $end = $date->copy()->endOfMonth()->endOfWeek();
 
         // Load user tasks in date window
         $tasks = $user->dailyTasks()
+            ->with('lesson.course')
             ->whereBetween('due_date', [$start, $end])
             ->orderBy('due_date')
             ->orderBy('is_completed')
@@ -34,27 +41,31 @@ class CalendarController extends Controller
                     'due_date' => $task->due_date->format('Y-m-d'),
                     'completed' => (bool) $task->is_completed,
                     'xp_reward' => $task->xp_reward,
+                    'course_title' => $task->lesson?->course?->title ?? 'General',
+                    'type' => 'task', // basic type for now
                 ];
             })->values();
         });
 
-        // Compute stats
-        $completedCount = $tasks->where('is_completed', true)->count();
-        $overdueCount = $tasks->filter(function ($task) {
+        // Compute stats for the current month context
+        $monthTasks = $user->dailyTasks()
+            ->whereMonth('due_date', $date->month)
+            ->whereYear('due_date', $date->year)
+            ->get();
+
+        $completedCount = $monthTasks->where('is_completed', true)->count();
+        $overdueCount = $monthTasks->filter(function ($task) {
             return ! $task->is_completed && $task->due_date->isPast();
         })->count();
 
         return Inertia::render('calendar/index', [
             'tasksByDate' => $tasksByDate,
             'stats' => [
-                'total' => $tasks->count(),
+                'total' => $monthTasks->count(),
                 'completed' => $completedCount,
                 'overdue' => $overdueCount,
             ],
-            'cursor' => [
-                'start' => $start->format('Y-m-d'),
-                'end' => $end->format('Y-m-d'),
-            ],
+            'currentDate' => $date->format('Y-m-d'),
         ]);
     }
 }

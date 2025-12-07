@@ -2,14 +2,29 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SendMessageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Users can message any other user
-        return true;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['tutor', 'student'])) {
+            return true;
+        }
+
+        // Allow instructors to reply even if the tutor role is missing
+        return Course::where('instructor_id', $user->id)->exists();
     }
 
     public function rules(): array

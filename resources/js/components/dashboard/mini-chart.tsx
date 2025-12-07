@@ -73,7 +73,7 @@ export function MiniChart({
                 ? {
                     top: compact ? 4 : 6,
                     right: compact ? 4 : 6,
-                    left: compact ? 6 : 8,
+                    left: compact ? 7 : 8,
                     bottom: compact ? 16 : 28,
                   }
                 : { top: 0, right: 0, left: 0, bottom: 0 }
@@ -121,8 +121,8 @@ export function MiniChart({
                     ? {
                         value: yAxisLabel,
                         angle: -90,
-                        position: 'insideLeft',
-                        offset: compact ? -4 : -8,
+                        position: 'left',
+                        offset: 0,
                         fill: 'var(--muted-foreground)',
                         style: { fontSize: compact ? 11 : 12 },
                       }
@@ -169,7 +169,7 @@ export function MiniChart({
                 ? {
                     top: compact ? 4 : 6,
                     right: compact ? 4 : 6,
-                    left: compact ? 6 : 8,
+                    left: compact ? 28 : 36, // extra space for y-axis label
                     bottom: compact ? 16 : 28,
                   }
                 : { top: 0, right: 0, left: 0, bottom: 0 }
@@ -217,8 +217,8 @@ export function MiniChart({
                     ? {
                         value: yAxisLabel,
                         angle: -90,
-                        position: 'insideLeft',
-                        offset: compact ? -4 : -8,
+                        position: 'left',
+                        offset: 0,
                         fill: 'var(--muted-foreground)',
                         style: { fontSize: compact ? 11 : 12 },
                       }

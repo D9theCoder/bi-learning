@@ -1,5 +1,4 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { tasks } from '@/routes';
 import { useForm } from '@inertiajs/react';
 
 interface TaskCheckboxProps {
@@ -19,7 +18,7 @@ export function TaskCheckbox({ task }: TaskCheckboxProps) {
   const handleChange = (checked: boolean | 'indeterminate') => {
     const newValue = checked === true;
     setData('completed', newValue);
-    patch(tasks({ task: task.id }).url, {
+    patch(route('tasks.toggle', { task: task.id }), {
       preserveScroll: true,
     });
   };

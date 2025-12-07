@@ -17,10 +17,18 @@ class ActivityFactory extends Factory
      */
     public function definition(): array
     {
-        $type = fake()->randomElement(['lesson_completed', 'achievement_earned', 'course_enrolled', 'reward_claimed', 'level_up']);
+        $type = fake()->randomElement([
+            'lesson_completed',
+            'task_completed',
+            'achievement_earned',
+            'course_enrolled',
+            'reward_claimed',
+            'level_up',
+        ]);
 
         $descriptions = [
             'lesson_completed' => 'Completed lesson: '.fake()->sentence(3),
+            'task_completed' => 'Completed task: '.fake()->sentence(3),
             'achievement_earned' => 'Earned achievement: '.fake()->words(2, true),
             'course_enrolled' => 'Enrolled in '.fake()->sentence(3),
             'reward_claimed' => 'Claimed reward: '.fake()->words(2, true),
@@ -29,6 +37,7 @@ class ActivityFactory extends Factory
 
         $icons = [
             'lesson_completed' => '✅',
+            'task_completed' => '🗒️',
             'achievement_earned' => '🏆',
             'course_enrolled' => '📚',
             'reward_claimed' => '🎁',

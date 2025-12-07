@@ -30,14 +30,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Calendar routes
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
-    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks');
+    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks.toggle');
 
     // Course routes
     Route::get('courses', [CourseController::class, 'index'])->name('courses');
+    Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
 
     // Message routes
     Route::get('messages', [MessageController::class, 'index'])->name('messages');
+    Route::get('messages/poll', [MessageController::class, 'poll'])->name('messages.poll');
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 
     // Reward routes

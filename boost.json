@@ -1,11 +1,13 @@
 {
     "agents": [
         "copilot",
-        "cursor"
+        "cursor",
+        "gemini"
     ],
     "editors": [
-        "vscode",
-        "cursor"
+        "copilot",
+        "cursor",
+        "gemini"
     ],
     "guidelines": [
         "laravel/fortify"

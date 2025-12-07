@@ -18,6 +18,8 @@ class Achievement extends Model
         'rarity',
         'criteria',
         'xp_reward',
+        // 'category', // ! New field: Category of the achievement
+        // 'target',   // ! New field: Target value to reach (e.g., 100 for "Read 100 books")
     ];
 
     protected function casts(): array
@@ -32,6 +34,8 @@ class Achievement extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withTimestamps()->withPivot('earned_at');
+        return $this->belongsToMany(User::class)
+            ->withTimestamps()
+            ->withPivot('earned_at' /*, 'progress' */);
     }
 }

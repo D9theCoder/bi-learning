@@ -19,7 +19,7 @@ class CourseController extends Controller
         // Build query with eager loading
         $query = Course::query()
             ->with(['instructor'])
-            ->withCount('lessons');
+            ->withCount(['lessons', 'enrollments']);
 
         // Apply filters
         if (! empty($filters['search'])) {
@@ -56,7 +56,7 @@ class CourseController extends Controller
             ->keyBy('course_id');
 
         // Add user progress to courses
-        $courses->through(function ($course) use ($enrollments, $user) {
+        $courses = $courses->through(function ($course) use ($enrollments, $user) {
             $courseData = $course->toArray();
 
             if ($enrollments->has($course->id)) {
@@ -75,4 +75,23 @@ class CourseController extends Controller
             'courses' => $courses,
         ]);
     }
+
+    public function show(Course $course): Response
+    {
+        $course->load(['instructor', 'lessons.contents']);
+
+        $user = auth()->user();
+        $isEnrolled = false;
+
+        if ($user) {
+            $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
+        }
+
+        return Inertia::render('courses/show', [
+            'course' => $course,
+            'isEnrolled' => $isEnrolled,
+        ]);
+    }
+
+
 }

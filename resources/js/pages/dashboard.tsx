@@ -1,14 +1,14 @@
 import { CourseCard } from '@/components/dashboard/course-card';
-import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
 import { MiniChart } from '@/components/dashboard/mini-chart';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { TodayTaskList } from '@/components/dashboard/today-task-list';
+import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
 import { CoursesSkeleton } from '@/components/dashboard/skeletons/courses-skeleton';
 import { SidebarSkeleton } from '@/components/dashboard/skeletons/sidebar-skeleton';
 import { StatsSkeleton } from '@/components/dashboard/skeletons/stats-skeleton';
 import { TodayTasksSkeleton } from '@/components/dashboard/skeletons/today-tasks-skeleton';
+import { StatCard } from '@/components/dashboard/stat-card';
+import { TodayTaskList } from '@/components/dashboard/today-task-list';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
@@ -24,7 +24,7 @@ import type {
   TutorMessage,
 } from '@/types';
 import { Head } from '@inertiajs/react';
-import { BookOpen, Clock, Flame, Zap } from 'lucide-react';
+import { Activity as ActivityIcon, BookOpen, Clock, Coins, Flame, Zap } from 'lucide-react';
 import React, { memo } from 'react';
 
 // Constants for magic numbers
@@ -41,14 +41,26 @@ const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
       icon={Flame}
       label="Current Streak"
       value={`${stats.streak} days`}
-      variant="accent"
+      color="orange"
+      animate={stats.streak > 0}
     />
-    <StatCard icon={Zap} label="XP This Week" value={stats.xp_this_week} />
-    <StatCard icon={Clock} label="Hours Learned" value={stats.hours_learned} />
+    <StatCard
+      icon={Zap}
+      label="XP This Week"
+      value={stats.xp_this_week}
+      color="yellow"
+    />
+    <StatCard
+      icon={Clock}
+      label="Hours Learned"
+      value={stats.hours_learned}
+      color="blue"
+    />
     <StatCard
       icon={BookOpen}
       label="Active Courses"
       value={stats.active_courses}
+      color="purple"
     />
   </section>
 ));
@@ -57,10 +69,19 @@ DashboardStatsSection.displayName = 'DashboardStatsSection';
 
 const DashboardCoursesSection = memo(
   ({ enrolledCourses }: { enrolledCourses: Enrollment[] }) => (
-    <section aria-labelledby="courses-heading">
-      <h2 id="courses-heading" className="mb-4 text-xl font-semibold">
-        My Courses
-      </h2>
+    <section aria-labelledby="courses-heading" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2
+          id="courses-heading"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground"
+        >
+          <BookOpen className="size-5 text-primary" />
+          My Courses
+        </h2>
+        <span className="cursor-pointer text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+          View All
+        </span>
+      </div>
       {enrolledCourses.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2" role="list">
           {enrolledCourses.map((enrollment) => (
@@ -91,10 +112,16 @@ const DashboardActivityChartSection = memo(
   }: {
     weeklyActivityData: { name: string; value: number }[];
   }) => (
-    <section aria-labelledby="activity-heading">
-      <h2 id="activity-heading" className="mb-4 text-xl font-semibold">
-        Weekly Activity
-      </h2>
+    <section aria-labelledby="activity-heading" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <ActivityIcon className="size-5 text-primary" />
+        <h2
+          id="activity-heading"
+          className="text-xl font-bold tracking-tight text-foreground"
+        >
+          Weekly Activity
+        </h2>
+      </div>
       <Card>
         <CardContent>
           <MiniChart
@@ -116,7 +143,6 @@ const DashboardActivityChartSection = memo(
 
 DashboardActivityChartSection.displayName = 'DashboardActivityChartSection';
 
-
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: 'Dashboard',
@@ -124,7 +150,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-interface DashboardProps {
+interface DashboardPageProps {
   stats: LearningStats;
   today_tasks: DailyTask[];
   enrolled_courses: Enrollment[];
@@ -134,9 +160,9 @@ interface DashboardProps {
   tutor_messages: TutorMessage[];
   unread_message_count: number;
   cohort_leaderboard: LeaderboardEntry[];
-  current_user_rank: number | null;
   weekly_activity_data: { name: string; value: number }[];
-  available_rewards: Reward[];
+  available_rewards?: Reward[];
+  current_user_rank?: number | null;
 }
 
 export default function Dashboard({
@@ -150,36 +176,75 @@ export default function Dashboard({
   unread_message_count,
   cohort_leaderboard,
   weekly_activity_data,
-}: DashboardProps) {
+}: DashboardPageProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   React.useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 250);
     return () => clearTimeout(t);
   }, []);
 
+  const safeStats: LearningStats = {
+    streak: stats?.streak ?? 0,
+    xp_this_week: stats?.xp_this_week ?? 0,
+    hours_learned: stats?.hours_learned ?? 0,
+    active_courses: stats?.active_courses ?? 0,
+    total_xp: stats?.total_xp ?? 0,
+    level: stats?.level ?? 1,
+    points_balance: stats?.points_balance ?? 0,
+  };
+
+  const todayTasks = today_tasks ?? [];
+  const enrolledCourses = enrolled_courses ?? [];
+  const recentAchievements = recent_achievements ?? [];
+  const cohortLeaderboard = cohort_leaderboard ?? [];
+  const tutorMessages = tutor_messages ?? [];
+  const recentActivity = recent_activity ?? [];
+  const weeklyActivityData = weekly_activity_data ?? [];
+  const nextMilestone = next_milestone ?? null;
+  const unreadMessageCount =
+    unread_message_count ??
+    tutorMessages.filter((message) => message.is_read === false).length;
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
 
-      <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
+      <div className="flex h-full flex-1 flex-col gap-8 overflow-x-auto p-4 lg:p-8">
+        {/* Welcome Header */}
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight lg:text-4xl">
+              Welcome back, Kevin!
+            </h1>
+            <p className="text-muted-foreground">
+              Ready to continue your learning streak? You're doing great!
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
+            <Coins className="size-4 text-primary" />
+            <span className="text-foreground">Points</span>
+            <span className="text-lg font-bold text-foreground">{safeStats.points_balance}</span>
+          </div>
+        </div>
+
         {/* KPI Overview Section */}
         <DashboardErrorBoundary>
           {isLoading ? (
             <StatsSkeleton />
           ) : (
-            <DashboardStatsSection stats={stats} />
+            <DashboardStatsSection stats={safeStats} />
           )}
         </DashboardErrorBoundary>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content - 2 columns */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="flex flex-col gap-8 lg:col-span-2">
             {/* Today Widget */}
             <DashboardErrorBoundary>
               {isLoading ? (
                 <TodayTasksSkeleton />
               ) : (
-                <TodayTaskList tasks={today_tasks} />
+                <TodayTaskList tasks={todayTasks} />
               )}
             </DashboardErrorBoundary>
 
@@ -188,7 +253,7 @@ export default function Dashboard({
               {isLoading ? (
                 <CoursesSkeleton />
               ) : (
-                <DashboardCoursesSection enrolledCourses={enrolled_courses} />
+                <DashboardCoursesSection enrolledCourses={enrolledCourses} />
               )}
             </DashboardErrorBoundary>
 
@@ -196,10 +261,10 @@ export default function Dashboard({
             {isLoading ? (
               <ActivityChartSkeleton />
             ) : (
-              weekly_activity_data.length > 0 && (
+              weeklyActivityData.length > 0 && (
                 <DashboardErrorBoundary>
                   <DashboardActivityChartSection
-                    weeklyActivityData={weekly_activity_data}
+                    weeklyActivityData={weeklyActivityData}
                   />
                 </DashboardErrorBoundary>
               )
@@ -211,13 +276,13 @@ export default function Dashboard({
             <SidebarSkeleton />
           ) : (
             <DashboardSidebar
-              stats={stats}
-              recentAchievements={recent_achievements}
-              nextMilestone={next_milestone}
-              cohortLeaderboard={cohort_leaderboard}
-              tutorMessages={tutor_messages}
-              unreadMessageCount={unread_message_count}
-              recentActivity={recent_activity}
+              stats={safeStats}
+              recentAchievements={recentAchievements}
+              nextMilestone={nextMilestone}
+              cohortLeaderboard={cohortLeaderboard}
+              tutorMessages={tutorMessages}
+              unreadMessageCount={unreadMessageCount}
+              recentActivity={recentActivity}
             />
           )}
         </div>

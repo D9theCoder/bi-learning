@@ -29,7 +29,7 @@ interface TutorCardProps {
 
 export function TutorCard({ tutor }: TutorCardProps) {
   return (
-    <Card>
+    <Card className="flex h-full flex-col">
       <CardHeader>
         <div className="flex items-start gap-3">
           <Avatar className="size-12">
@@ -44,7 +44,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="flex-1 space-y-2">
         {tutor.rating && (
           <div className="flex items-center gap-1 text-sm">
             <Star className="size-4 fill-yellow-500 text-yellow-500" />
@@ -61,7 +61,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="mt-auto">
         <Link href={`${messages().url}?partner=${tutor.id}`} className="w-full">
           <Button className="w-full" size="sm">
             <MessageSquare className="mr-2 size-4" />

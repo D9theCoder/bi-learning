@@ -12,6 +12,7 @@ interface RecentActivityFeedProps {
 
 const activityIcons: Record<string, LucideIcon> = {
   lesson_completed: BookOpen,
+  task_completed: BookOpen,
   achievement_earned: Award,
   course_enrolled: BookOpen,
   reward_claimed: Trophy,
@@ -20,6 +21,7 @@ const activityIcons: Record<string, LucideIcon> = {
 
 const activityColors: Record<string, string> = {
   lesson_completed: 'text-blue-500 bg-blue-500/10',
+  task_completed: 'text-amber-500 bg-amber-500/10',
   achievement_earned: 'text-yellow-500 bg-yellow-500/10',
   course_enrolled: 'text-green-500 bg-green-500/10',
   reward_claimed: 'text-purple-500 bg-purple-500/10',
@@ -28,6 +30,7 @@ const activityColors: Record<string, string> = {
 
 const activityTitles: Record<string, string> = {
   lesson_completed: 'Completed Lesson',
+  task_completed: 'Completed Task',
   achievement_earned: 'Achievement Earned',
   course_enrolled: 'Course Enrolled',
   reward_claimed: 'Reward Claimed',
