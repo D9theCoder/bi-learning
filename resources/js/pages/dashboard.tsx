@@ -24,7 +24,7 @@ import type {
   TutorMessage,
 } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Activity as ActivityIcon, BookOpen, Clock, Flame, Zap } from 'lucide-react';
+import { Activity as ActivityIcon, BookOpen, Clock, Coins, Flame, Zap } from 'lucide-react';
 import React, { memo } from 'react';
 
 // Constants for magic numbers
@@ -210,13 +210,20 @@ export default function Dashboard({
 
       <div className="flex h-full flex-1 flex-col gap-8 overflow-x-auto p-4 lg:p-8">
         {/* Welcome Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight lg:text-4xl">
-            Welcome back, Kevin!
-          </h1>
-          <p className="text-muted-foreground">
-            Ready to continue your learning streak? You're doing great!
-          </p>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight lg:text-4xl">
+              Welcome back, Kevin!
+            </h1>
+            <p className="text-muted-foreground">
+              Ready to continue your learning streak? You're doing great!
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
+            <Coins className="size-4 text-primary" />
+            <span className="text-foreground">Points</span>
+            <span className="text-lg font-bold text-foreground">{safeStats.points_balance}</span>
+          </div>
         </div>
 
         {/* KPI Overview Section */}
