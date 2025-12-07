@@ -8,8 +8,17 @@ class SendMessageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Users can message any other user
-        return true;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return false;
+        }
+
+        return $user->hasAnyRole(['tutor', 'student']);
     }
 
     public function rules(): array

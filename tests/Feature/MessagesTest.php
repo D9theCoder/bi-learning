@@ -1,18 +1,30 @@
 <?php
 
+use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\TutorMessage;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
+beforeEach(function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach (['admin', 'tutor', 'student'] as $role) {
+        Role::firstOrCreate(['name' => $role]);
+    }
+});
 
 it('requires authentication', function () {
     $response = $this->get(route('messages'));
     $response->assertRedirect(route('login'));
 });
 
-it('renders messages index page', function () {
-    $user = User::factory()->create();
+it('renders messages index page for tutors', function () {
+    $tutor = User::factory()->create()->assignRole('tutor');
 
-    $response = $this->actingAs($user)->get(route('messages'));
+    $response = $this->actingAs($tutor)->get(route('messages'));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -21,50 +33,175 @@ it('renders messages index page', function () {
     );
 });
 
-it('lists message threads with unread count', function () {
-    $user = User::factory()->create();
-    $partner = User::factory()->create();
+it('lists message threads with unread count for a student', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
     TutorMessage::factory()->create([
-        'tutor_id' => $partner->id,
-        'user_id' => $user->id,
+        'tutor_id' => $tutor->id,
+        'user_id' => $student->id,
         'is_read' => false,
     ]);
 
-    $response = $this->actingAs($user)->get(route('messages'));
+    $response = $this->actingAs($student)->get(route('messages'));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->has('threads', 1)
     );
 });
 
-it('sends a message', function () {
-    $user = User::factory()->create();
-    $partner = User::factory()->create();
-
-    $response = $this->actingAs($user)
-        ->post(route('messages.store'), [
-            'partner_id' => $partner->id,
-            'content' => 'Hello, tutor!',
-        ]);
-
-    $response->assertRedirect();
-    // Message should exist with consistent tutor_id/user_id
-    expect(TutorMessage::where(function ($q) use ($user, $partner) {
-        $q->where('tutor_id', $user->id)->where('user_id', $partner->id);
-    })->orWhere(function ($q) use ($user, $partner) {
-        $q->where('tutor_id', $partner->id)->where('user_id', $user->id);
-    })->count())->toBe(1);
-});
-
 it('validates message body', function () {
-    $user = User::factory()->create();
-    $partner = User::factory()->create();
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
 
-    $response = $this->actingAs($user)
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($student)
         ->post(route('messages.store'), [
-            'partner_id' => $partner->id,
+            'partner_id' => $tutor->id,
             'content' => '',
         ]);
 
     $response->assertSessionHasErrors('content');
+});
+
+it('allows a tutor to message a student', function () {
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $student = User::factory()->create()->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($tutor)->post(route('messages.store'), [
+        'partner_id' => $student->id,
+        'content' => 'Hello student!',
+    ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('tutor_messages', [
+        'tutor_id' => $tutor->id,
+        'user_id' => $student->id,
+        'content' => 'Hello student!',
+        'is_read' => false,
+    ]);
+});
+
+it('stores student to tutor messages with proper orientation', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($student)->post(route('messages.store'), [
+        'partner_id' => $tutor->id,
+        'content' => 'Hi tutor',
+    ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('tutor_messages', [
+        'tutor_id' => $tutor->id,
+        'user_id' => $student->id,
+        'content' => 'Hi tutor',
+    ]);
+});
+
+it('prevents admins from sending messages', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $student = User::factory()->create()->assignRole('student');
+
+    $response = $this->actingAs($admin)->post(route('messages.store'), [
+        'partner_id' => $student->id,
+        'content' => 'Admin message should fail',
+    ]);
+
+    $response->assertForbidden();
+});
+
+it('allows admins to poll any tutor-student conversation', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $student = User::factory()->create()->assignRole('student');
+
+    TutorMessage::factory()->create([
+        'tutor_id' => $tutor->id,
+        'user_id' => $student->id,
+        'content' => 'First message',
+        'is_read' => false,
+    ]);
+
+    $response = $this->actingAs($admin)->getJson(route('messages.poll', [
+        'tutor_id' => $tutor->id,
+        'student_id' => $student->id,
+    ]));
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('activeThread.tutor.id', $tutor->id);
+    $response->assertJsonPath('activeThread.student.id', $student->id);
+    $response->assertJsonPath('activeThread.messages.data.0.content', 'First message');
+});
+
+it('blocks student from messaging a tutor without enrollment', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+
+    $response = $this->actingAs($student)->post(route('messages.store'), [
+        'partner_id' => $tutor->id,
+        'content' => 'Hello',
+    ]);
+
+    $response->assertForbidden();
+});
+
+it('blocks tutor from messaging a student without enrollment', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+
+    $response = $this->actingAs($tutor)->post(route('messages.store'), [
+        'partner_id' => $student->id,
+        'content' => 'Hello',
+    ]);
+
+    $response->assertForbidden();
+});
+
+it('exposes contacts for students based on enrollments', function () {
+    $student = User::factory()->create()->assignRole('student');
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($student)->get(route('messages'));
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.0.id', $tutor->id)
+        ->where('contacts.0.role', 'tutor')
+    );
 });

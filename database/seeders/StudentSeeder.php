@@ -16,7 +16,7 @@ class StudentSeeder extends Seeder
         $cohorts = Cohort::all();
 
         // Create some random students for leaderboard
-        User::factory(20)->create()->each(function ($user) use ($cohorts) {
+        User::factory(20)->withoutTwoFactor()->create()->each(function ($user) use ($cohorts) {
             $user->update([
                 'cohort_id' => $cohorts->random()->id,
                 'total_xp' => fake()->numberBetween(500, 8000),
