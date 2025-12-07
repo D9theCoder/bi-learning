@@ -31,7 +31,7 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
   }
 
   return (
-    <Card>
+    <Card className="!gap-3 p-0 overflow-hidden">
       <CardHeader className="relative p-0">
         {course.thumbnail && (
           <img
@@ -48,7 +48,7 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
           />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 pt-3">
         <CardTitle className="line-clamp-2 text-base">
           {course.title || 'Untitled Course'}
         </CardTitle>
@@ -63,7 +63,7 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
           </Badge>
         )}
       </CardContent>
-      <CardFooter className="px-4 pt-0">
+      <CardFooter className="px-4 pb-4 pt-2">
         <Button asChild className="w-full" onClick={onResume}>
           <Link href={`/courses/${course.id}`} prefetch>
             <Play className="mr-2 size-4" />

@@ -54,9 +54,9 @@ export const DashboardSidebar = memo(
       {/* Achievements */}
       <DashboardErrorBoundary>
         <section aria-labelledby="achievements-heading">
-          <Card>
-            <CardHeader>
-              <CardTitle id="achievements-heading" className="pt-6">
+          <Card className="gap-4 pb-4 pt-6">
+            <CardHeader className="pb-0">
+              <CardTitle id="achievements-heading">
                 Recent Achievements
               </CardTitle>
             </CardHeader>
