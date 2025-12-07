@@ -240,7 +240,7 @@ export interface AchievementsPageProps {
   };
 }
 
-export interface CalendarPageProps {
+export interface CalendarPageProps extends SharedData {
   tasksByDate: Record<
     string,
     Array<{
@@ -263,6 +263,7 @@ export interface CalendarPageProps {
     start: string;
     end: string;
   };
+  [key: string]: unknown;
 }
 
 export interface CoursesPageProps {

@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface MiniCalendarProps {
   className?: string;
   currentDate?: Date;
   markers?: string[]; // Array of 'YYYY-MM-DD' strings that have events
   onDateSelect?: (date: Date) => void;
+  onResetFilter?: () => void;
+  isFiltered?: boolean;
 }
 
 export function MiniCalendar({
@@ -15,8 +17,14 @@ export function MiniCalendar({
   currentDate = new Date(),
   markers = [],
   onDateSelect,
+  onResetFilter,
+  isFiltered = false,
 }: MiniCalendarProps) {
   const [viewDate, setViewDate] = useState(currentDate);
+
+  useEffect(() => {
+    setViewDate(currentDate);
+  }, [currentDate]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -88,15 +96,30 @@ export function MiniCalendar({
   return (
     <div
       className={cn(
-        'w-full max-w-[320px] rounded-xl border bg-card p-4 text-card-foreground shadow-sm',
+        'w-full rounded-xl border bg-card p-4 text-card-foreground shadow-sm lg:max-w-full',
         className,
       )}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm font-semibold">
-          {monthName} {year}
-        </span>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex flex-col leading-tight">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            Calendar
+          </span>
+          <span className="text-sm font-semibold">
+            {monthName} {year}
+          </span>
+        </div>
         <div className="flex items-center gap-1">
+          {isFiltered && onResetFilter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={onResetFilter}
+            >
+              Show all
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
