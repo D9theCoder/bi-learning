@@ -32,7 +32,6 @@ class AchievementController extends Controller
                 'description' => $achievement->description,
                 'rarity' => $achievement->rarity,
                 'xp_reward' => $achievement->xp_reward,
-                'category' => $achievement->category ?? 'General',
                 'earned' => $earned,
                 'earned_at' => $earned ? $earnedAchievements[$achievement->id]->pivot->earned_at : null,
             ];

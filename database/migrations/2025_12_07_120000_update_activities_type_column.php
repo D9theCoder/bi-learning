@@ -69,7 +69,7 @@ return new class extends Migration
         });
 
         Schema::table('activities', function (Blueprint $table) {
-            $table->enum('type', ['lesson_completed', 'achievement_earned', 'course_enrolled', 'reward_claimed', 'level_up'])->default('lesson_completed')->after('user_id');
+            $table->enum('type', ['lesson_completed', 'task_completed', 'achievement_earned', 'course_enrolled', 'reward_claimed', 'level_up'])->default('lesson_completed')->after('user_id');
         });
 
         DB::table('activities')

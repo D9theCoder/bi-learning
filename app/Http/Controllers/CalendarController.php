@@ -24,6 +24,7 @@ class CalendarController extends Controller
 
         // Load user tasks in date window
         $tasks = $user->dailyTasks()
+            ->with('lesson.course')
             ->whereBetween('due_date', [$start, $end])
             ->orderBy('due_date')
             ->orderBy('is_completed')
@@ -40,7 +41,7 @@ class CalendarController extends Controller
                     'due_date' => $task->due_date->format('Y-m-d'),
                     'completed' => (bool) $task->is_completed,
                     'xp_reward' => $task->xp_reward,
-                    'course_title' => $task->course->title ?? 'General', // Added course title if available
+                    'course_title' => $task->lesson?->course?->title ?? 'General',
                     'type' => 'task', // basic type for now
                 ];
             })->values();

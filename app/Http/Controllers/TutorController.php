@@ -33,7 +33,7 @@ class TutorController extends Controller
 
         $tutors = $query->paginate(12)->withQueryString();
 
-        $tutors->through(function ($tutor) {
+        $tutors = $tutors->through(function ($tutor) {
             return [
                 'id' => $tutor->id,
                 'name' => $tutor->name,

@@ -56,7 +56,7 @@ class CourseController extends Controller
             ->keyBy('course_id');
 
         // Add user progress to courses
-        $courses->through(function ($course) use ($enrollments, $user) {
+        $courses = $courses->through(function ($course) use ($enrollments, $user) {
             $courseData = $course->toArray();
 
             if ($enrollments->has($course->id)) {
