@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RewardSeeder::class,
             InstructorSeeder::class,
             CourseSeeder::class,
+            CourseContentSeeder::class,
             TestUserSeeder::class,
             StudentSeeder::class,
         ]);

@@ -10,100 +10,129 @@ use Illuminate\Database\Seeder;
 
 class CourseContentSeeder extends Seeder
 {
+    /**
+     * Seed a curated course with the same structure as the dummy courses UI.
+     */
     public function run(): void
     {
-        // Ensure we have an instructor
-        $instructor = User::factory()->create([
-            'name' => 'Dr. Devi Fitrianah',
-            'email' => 'devi@example.com',
-            'avatar' => 'https://ui-avatars.com/api/?name=Devi+Fitrianah&background=random',
-        ]);
+        $instructor = User::role('tutor')->inRandomOrder()->first();
 
-        // Create the IT Research Methodology Course
-        $course = Course::create([
+        if ($instructor === null) {
+            $instructor = User::factory()->create([
+                'name' => 'Dr. Devi Fitrianah',
+                'email' => 'devi@example.com',
+                'avatar' => 'https://ui-avatars.com/api/?name=Devi+Fitrianah&background=random',
+            ]);
+
+            $instructor->assignRole('tutor');
+        }
+
+        $courseDefinition = [
             'title' => 'IT Research Methodology',
-            'description' => 'Learn the fundamentals of research methodology in Information Technology. This course covers thesis guidelines, research goals, and appropriate methodologies.',
-            'thumbnail' => 'https://placehold.co/600x400/png?text=IT+Research',
-            'instructor_id' => $instructor->id,
-            'duration_minutes' => 240, // 4 hours
+            'description' => 'Learn the fundamentals of research methodology in Information Technology, from defining topics to preparing for defense.',
+            'thumbnail' => 'https://placehold.co/800x480/png?text=IT+Research',
+            'duration_minutes' => 720,
             'difficulty' => 'intermediate',
             'category' => 'Research',
             'is_published' => true,
-        ]);
+            'lessons' => [
+                [
+                    'title' => 'Session 1: Research Foundations',
+                    'description' => 'Overview of the research lifecycle, expectations, and milestone planning.',
+                    'duration_minutes' => 90,
+                    'contents' => [
+                        ['title' => 'Wifi Attendance', 'type' => 'attendance', 'duration_minutes' => 10, 'is_required' => true],
+                        ['title' => 'PPT - Research Foundations', 'type' => 'file', 'file_path' => '/materials/research-foundations.pdf', 'duration_minutes' => 25],
+                        ['title' => 'Kick-off Video', 'type' => 'video', 'url' => 'https://www.youtube.com/watch?v=43w7rUHl8cE', 'duration_minutes' => 30],
+                    ],
+                ],
+                [
+                    'title' => 'Session 2: Literature Review Strategy',
+                    'description' => 'Structuring research questions and building a reading tracker.',
+                    'duration_minutes' => 90,
+                    'contents' => [
+                        ['title' => 'Attendance Check', 'type' => 'attendance', 'duration_minutes' => 5, 'is_required' => true],
+                        ['title' => 'Journal Databases Walkthrough', 'type' => 'video', 'url' => 'https://www.youtube.com/watch?v=9l8w2oqImQA', 'duration_minutes' => 20],
+                        ['title' => 'Reading Tracker Template', 'type' => 'file', 'file_path' => '/templates/reading-tracker.xlsx', 'duration_minutes' => 10],
+                    ],
+                ],
+                [
+                    'title' => 'Thesis Guidelines',
+                    'description' => '<p><strong>Learning Outcome</strong><br>(C3) Application : Apply appropriate research methodology to achieve research goals</p><p><strong>Sub Topic</strong><ul><li>List of Topics</li><li>Progress Evaluations</li><li>Stream of Thesis</li><li>Thesis Defense</li><li>Thesis Outline</li><li>Thesis Proposal</li></ul></p>',
+                    'duration_minutes' => 180,
+                    'contents' => [
+                        ['title' => 'Wifi Attendance', 'type' => 'attendance', 'duration_minutes' => 180, 'is_required' => true],
+                        ['title' => 'PPT - Thesis Guidelines', 'type' => 'file', 'file_path' => '/materials/thesis-guidelines.pdf', 'duration_minutes' => 10],
+                        ['title' => 'SM3-S3-R0', 'type' => 'file', 'duration_minutes' => 10],
+                        ['title' => 'SM3-S3-R0_2', 'type' => 'link', 'url' => 'https://example.com/resource', 'duration_minutes' => 10],
+                        ['title' => 'LN3-Thesis Guidelines-R0', 'type' => 'file', 'duration_minutes' => 10],
+                    ],
+                ],
+                [
+                    'title' => 'Session 4: Method Selection',
+                    'description' => 'Match research questions to methods and define instruments.',
+                    'duration_minutes' => 90,
+                    'contents' => [
+                        ['title' => 'Research Onion Reading', 'type' => 'file', 'file_path' => '/materials/research-onion.pdf', 'duration_minutes' => 20],
+                        ['title' => 'Instrument Draft', 'type' => 'file', 'file_path' => '/templates/instrument-draft.docx', 'duration_minutes' => 25],
+                        ['title' => 'Method Match Quiz', 'type' => 'quiz', 'duration_minutes' => 15],
+                    ],
+                ],
+                [
+                    'title' => 'Session 5: Data Collection & Ethics',
+                    'description' => 'Plan data collection schedule, ethics, and risk mitigation.',
+                    'duration_minutes' => 120,
+                    'contents' => [
+                        ['title' => 'Attendance', 'type' => 'attendance', 'duration_minutes' => 5, 'is_required' => true],
+                        ['title' => 'Consent Form Template', 'type' => 'file', 'file_path' => '/templates/consent-form.pdf', 'duration_minutes' => 10],
+                        ['title' => 'Field Guide', 'type' => 'file', 'file_path' => '/materials/field-guide.pdf', 'duration_minutes' => 15],
+                        ['title' => 'Pilot Dataset Upload', 'type' => 'link', 'url' => 'https://example.com/pilot-upload', 'duration_minutes' => 10],
+                    ],
+                ],
+            ],
+        ];
 
-        // Session 3 Data (Matching the screenshot)
-        $session3 = Lesson::create([
-            'course_id' => $course->id,
-            'title' => 'Thesis Guidelines',
-            'description' => '<p><strong>Learning Outcome</strong><br>(C3) Application : Apply appropriate research methodology to achieve research goals</p><p><strong>Sub Topic</strong><ul><li>List of Topics</li><li>Progress Evaluations</li><li>Stream of Thesis</li><li>Thesis Defense</li><li>Thesis Outline</li><li>Thesis Proposal</li></ul></p>',
-            'duration_minutes' => 180,
-            'order' => 3,
-        ]);
+        $course = Course::updateOrCreate(
+            ['title' => $courseDefinition['title']],
+            [
+                'description' => $courseDefinition['description'],
+                'thumbnail' => $courseDefinition['thumbnail'],
+                'instructor_id' => $instructor->id,
+                'duration_minutes' => $courseDefinition['duration_minutes'],
+                'difficulty' => $courseDefinition['difficulty'],
+                'category' => $courseDefinition['category'],
+                'is_published' => $courseDefinition['is_published'],
+            ],
+        );
 
-        // Contents for Session 3
-        CourseContent::create([
-            'lesson_id' => $session3->id,
-            'title' => 'Wifi Attendance',
-            'type' => 'attendance',
-            'duration_minutes' => 180, // 3h
-            'is_required' => true,
-            'order' => 1,
-        ]);
+        $course->lessons()->each(static function (Lesson $lesson): void {
+            $lesson->contents()->delete();
+        });
 
-        CourseContent::create([
-            'lesson_id' => $session3->id,
-            'title' => 'PPT - Thesis Guidelines',
-            'type' => 'file',
-            'file_path' => '/materials/thesis-guidelines.pdf',
-            'duration_minutes' => 10,
-            'order' => 2,
-        ]);
+        $course->lessons()->delete();
 
-        CourseContent::create([
-            'lesson_id' => $session3->id,
-            'title' => 'SM3-S3-R0',
-            'type' => 'file',
-            'duration_minutes' => 10,
-            'order' => 3,
-        ]);
-
-        CourseContent::create([
-            'lesson_id' => $session3->id,
-            'title' => 'SM3-S3-R0_2',
-            'type' => 'link',
-            'url' => 'https://example.com/resource',
-            'duration_minutes' => 10,
-            'order' => 4,
-        ]);
-
-        CourseContent::create([
-            'lesson_id' => $session3->id,
-            'title' => 'LN3-Thesis Guidelines-R0',
-            'type' => 'file',
-            'duration_minutes' => 10,
-            'order' => 5,
-        ]);
-
-
-        // Create other sessions (1, 2, 4, 5...) just placeholders
-        for ($i = 1; $i <= 10; $i++) {
-            if ($i === 3) continue;
-
+        foreach ($courseDefinition['lessons'] as $lessonIndex => $lessonData) {
             $lesson = Lesson::create([
                 'course_id' => $course->id,
-                'title' => "Session $i: Topic Placeholder",
-                'description' => "Content for session $i.",
-                'duration_minutes' => 90,
-                'order' => $i,
+                'title' => $lessonData['title'],
+                'description' => $lessonData['description'],
+                'duration_minutes' => $lessonData['duration_minutes'],
+                'order' => $lessonIndex + 1,
             ]);
 
-            CourseContent::create([
-                'lesson_id' => $lesson->id,
-                'title' => "Session $i Materials",
-                'type' => 'file',
-                'duration_minutes' => 15,
-                'order' => 1,
-            ]);
+            foreach ($lessonData['contents'] as $contentIndex => $contentData) {
+                CourseContent::create([
+                    'lesson_id' => $lesson->id,
+                    'title' => $contentData['title'],
+                    'type' => $contentData['type'],
+                    'file_path' => $contentData['file_path'] ?? null,
+                    'url' => $contentData['url'] ?? null,
+                    'description' => $contentData['description'] ?? null,
+                    'duration_minutes' => $contentData['duration_minutes'] ?? null,
+                    'is_required' => $contentData['is_required'] ?? false,
+                    'order' => $contentData['order'] ?? $contentIndex + 1,
+                ]);
+            }
         }
     }
 }
