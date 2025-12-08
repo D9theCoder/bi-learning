@@ -3,11 +3,13 @@ import { CourseFilters } from '@/components/courses/course-filters';
 import { CoursePagination } from '@/components/courses/course-pagination';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
+import { Button } from '@/components/ui/button';
+import { useRoles } from '@/hooks/use-roles';
 import AppLayout from '@/layouts/app-layout';
 import { courses as coursesRoute } from '@/routes';
 import type { BreadcrumbItem, CoursesPageProps } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { BookOpen } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { BookOpen, Plus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -19,6 +21,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function CoursesPage({ courses, filters }: CoursesPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const { isAdmin, isTutor } = useRoles();
+  const canManageCourses = isAdmin || isTutor;
 
   const handleFilterChange = useCallback(
     (key: keyof typeof filters, value: string) => {
@@ -46,11 +50,21 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
       <Head title="My Courses" />
 
       <div className="flex flex-1 flex-col gap-6 overflow-x-auto p-4 lg:p-6">
-        <PageHeader
-          icon={BookOpen}
-          title="My Courses"
-          description="Explore and manage your enrolled courses."
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <PageHeader
+            icon={BookOpen}
+            title="My Courses"
+            description="Explore and manage your enrolled courses."
+          />
+          {canManageCourses && (
+            <Button className="self-start" size="sm" asChild>
+              <Link href="/courses/manage/create" prefetch>
+                <Plus className="mr-2 size-4" />
+                Add Course
+              </Link>
+            </Button>
+          )}
+        </div>
 
         <CourseFilters
           filters={filters}
