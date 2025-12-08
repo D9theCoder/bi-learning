@@ -1,14 +1,111 @@
 <?php
 
 use App\Models\Course;
+use App\Models\CourseContent;
+use App\Models\Lesson;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
 beforeEach(function () {
+    $this->withoutMiddleware([
+        ValidateCsrfToken::class,
+        VerifyCsrfToken::class,
+    ]);
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach (['admin', 'tutor', 'student'] as $role) {
+        Role::firstOrCreate(['name' => $role]);
+    }
+});
+
+beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
+});
+
+it('allows tutors to create lessons for their course', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    $response = $this->actingAs($tutor)->post(route('courses.manage.lessons.store', $course), [
+        'title' => 'Lesson 1',
+        'description' => 'Intro lesson',
+        'order' => 1,
+        'duration_minutes' => 45,
+        'video_url' => 'https://example.com/video',
+    ]);
+
+    $response->assertRedirect(route('courses.manage.edit', $course));
+    expect(Lesson::where('course_id', $course->id)->where('title', 'Lesson 1')->exists())->toBeTrue();
+});
+
+it('prevents tutors from managing lessons on other tutor courses', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $otherTutor = User::factory()->create();
+    $otherTutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $otherTutor->id]);
+
+    $this->actingAs($tutor)
+        ->post(route('courses.manage.lessons.store', $course), [
+            'title' => 'Blocked lesson',
+            'order' => 1,
+        ])
+        ->assertForbidden();
+});
+
+it('allows tutors to add content to their lessons', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $lesson = Lesson::factory()->for($course)->create();
+
+    $response = $this->actingAs($tutor)->post(
+        route('courses.manage.contents.store', [$course, $lesson]),
+        [
+            'title' => 'Watch video',
+            'type' => 'video',
+            'url' => 'https://example.com/watch',
+            'duration_minutes' => 10,
+            'order' => 1,
+            'is_required' => true,
+        ],
+    );
+
+    $response->assertRedirect(route('courses.manage.edit', $course));
+
+    expect(CourseContent::where('lesson_id', $lesson->id)->where('title', 'Watch video')->exists())->toBeTrue();
+});
+
+it('includes lessons and contents in manage edit payload', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $lesson = Lesson::factory()->for($course)->create(['title' => 'Session 1']);
+    CourseContent::query()->create([
+        'lesson_id' => $lesson->id,
+        'title' => 'Slides',
+        'type' => 'file',
+        'is_required' => true,
+        'order' => 1,
+    ]);
+
+    $response = $this->actingAs($tutor)->get(route('courses.manage.edit', $course));
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('courses/manage/edit')
+        ->where('course.lessons.0.title', 'Session 1')
+        ->where('course.lessons.0.contents.0.title', 'Slides')
+    );
 });
 
 it('allows admins to view management and create courses', function () {

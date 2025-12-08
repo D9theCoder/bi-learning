@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { Course, CourseContent, Lesson, User } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
   BookOpen,
   CalendarCheck,
@@ -36,6 +36,7 @@ import {
   ScoringTab,
   SyllabusTab,
 } from './tabs';
+import { useRoles } from '@/hooks/use-roles';
 
 interface CourseShowProps {
   course: Course & {
@@ -52,6 +53,11 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
     course.lessons.length > 0 ? course.lessons[0].id.toString() : '',
   );
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const { isAdmin, isTutor } = useRoles();
+  const page = usePage<{ auth?: { user?: { id: number } } }>();
+  const currentUserId = page.props.auth?.user?.id;
+  const canManageCourse =
+    isAdmin || (isTutor && currentUserId !== undefined && course.instructor_id === currentUserId);
 
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,
@@ -247,7 +253,23 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
 
                 {/* Right Column: Things to do */}
                 <div>
-                  {!isEnrolled ? (
+                  {canManageCourse ? (
+                    <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
+                      <CardContent className="pt-6">
+                        <h3 className="mb-2 font-semibold text-yellow-800 dark:text-yellow-500">
+                          Manage this course
+                        </h3>
+                        <p className="mb-4 text-sm text-yellow-700 dark:text-yellow-600">
+                          Update course details, lessons, and content.
+                        </p>
+                        <Button className="w-full" asChild>
+                          <Link href={`/courses/manage/${course.id}/edit`} prefetch>
+                            Manage Course
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : !isEnrolled ? (
                     <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
                       <CardContent className="pt-6">
                         <h3 className="mb-2 font-semibold text-yellow-800 dark:text-yellow-500">

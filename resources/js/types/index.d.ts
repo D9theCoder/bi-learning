@@ -69,9 +69,9 @@ export interface Lesson {
   description?: string;
   content?: string;
   contents?: CourseContent[];
-  duration_minutes: number;
-  order: number;
-  video_url?: string;
+  duration_minutes: number | null;
+  order: number | null;
+  video_url?: string | null;
   is_completed?: boolean;
   created_at: string;
   updated_at: string;
@@ -186,12 +186,12 @@ export interface CourseContent {
   lesson_id: number;
   title: string;
   type: 'file' | 'video' | 'link' | 'quiz' | 'attendance';
-  file_path?: string;
-  url?: string;
-  description?: string;
-  duration_minutes?: number;
+  file_path?: string | null;
+  url?: string | null;
+  description?: string | null;
+  duration_minutes?: number | null;
   is_required: boolean;
-  order: number;
+  order: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -316,6 +316,7 @@ export interface EditCoursePageProps {
     is_published?: boolean;
     duration_minutes?: number | null;
     instructor_id?: number | null;
+    lessons?: Lesson[];
   }) | null;
   mode: 'create' | 'edit';
 }

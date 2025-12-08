@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCourseContentRequest;
 use App\Http\Requests\StoreCourseRequest;
+use App\Http\Requests\StoreLessonRequest;
+use App\Http\Requests\UpdateCourseContentRequest;
 use App\Http\Requests\UpdateCourseRequest;
+use App\Http\Requests\UpdateLessonRequest;
 use App\Models\Course;
+use App\Models\CourseContent;
+use App\Models\Lesson;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -89,6 +96,8 @@ class CourseManagementController extends Controller
             abort(403);
         }
 
+        $course->load(['lessons.contents']);
+
         return Inertia::render('courses/manage/edit', [
             'course' => [
                 'id' => $course->id,
@@ -100,6 +109,34 @@ class CourseManagementController extends Controller
                 'category' => $course->category,
                 'is_published' => $course->is_published,
                 'instructor_id' => $course->instructor_id,
+                'lessons' => $course->lessons->map(function (Lesson $lesson) {
+                    return [
+                        'id' => $lesson->id,
+                        'title' => $lesson->title,
+                        'description' => $lesson->description,
+                        'duration_minutes' => $lesson->duration_minutes,
+                        'order' => $lesson->order,
+                        'video_url' => $lesson->video_url,
+                        'contents' => $lesson->contents->map(function (CourseContent $content) {
+                            return [
+                                'id' => $content->id,
+                                'lesson_id' => $content->lesson_id,
+                                'title' => $content->title,
+                                'type' => $content->type,
+                                'file_path' => $content->file_path,
+                                'url' => $content->url,
+                                'description' => $content->description,
+                                'duration_minutes' => $content->duration_minutes,
+                                'is_required' => $content->is_required,
+                                'order' => $content->order,
+                                'created_at' => $content->created_at?->toIsoString(),
+                                'updated_at' => $content->updated_at?->toIsoString(),
+                            ];
+                        })->values(),
+                        'created_at' => $lesson->created_at?->toIsoString(),
+                        'updated_at' => $lesson->updated_at?->toIsoString(),
+                    ];
+                })->values(),
             ],
             'mode' => 'edit',
         ]);
@@ -124,5 +161,109 @@ class CourseManagementController extends Controller
         return redirect()
             ->route('courses.manage.edit', $course)
             ->with('message', 'Course updated.');
+    }
+
+    public function storeLesson(StoreLessonRequest $request, Course $course): RedirectResponse
+    {
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $course->lessons()->create($request->validated());
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Lesson created.');
+    }
+
+    public function updateLesson(UpdateLessonRequest $request, Course $course, Lesson $lesson): RedirectResponse
+    {
+        $this->ensureLessonBelongsToCourse($lesson, $course);
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $lesson->update($request->validated());
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Lesson updated.');
+    }
+
+    public function destroyLesson(Request $request, Course $course, Lesson $lesson): RedirectResponse
+    {
+        $this->ensureLessonBelongsToCourse($lesson, $course);
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $lesson->delete();
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Lesson deleted.');
+    }
+
+    public function storeContent(StoreCourseContentRequest $request, Course $course, Lesson $lesson): RedirectResponse
+    {
+        $this->ensureLessonBelongsToCourse($lesson, $course);
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $lesson->contents()->create($request->validated());
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Content created.');
+    }
+
+    public function updateContent(UpdateCourseContentRequest $request, Course $course, Lesson $lesson, CourseContent $content): RedirectResponse
+    {
+        $this->ensureLessonBelongsToCourse($lesson, $course);
+        $this->ensureContentBelongsToLesson($content, $lesson);
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $content->update($request->validated());
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Content updated.');
+    }
+
+    public function destroyContent(Request $request, Course $course, Lesson $lesson, CourseContent $content): RedirectResponse
+    {
+        $this->ensureLessonBelongsToCourse($lesson, $course);
+        $this->ensureContentBelongsToLesson($content, $lesson);
+        $this->ensureCanManageCourse($request->user(), $course);
+
+        $content->delete();
+
+        return redirect()
+            ->route('courses.manage.edit', $course)
+            ->with('message', 'Content deleted.');
+    }
+
+    private function ensureCanManageCourse(?User $user, Course $course): void
+    {
+        if (! $user) {
+            abort(403);
+        }
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('tutor') && $course->instructor_id === $user->id) {
+            return;
+        }
+
+        abort(403);
+    }
+
+    private function ensureLessonBelongsToCourse(Lesson $lesson, Course $course): void
+    {
+        if ($lesson->course_id !== $course->id) {
+            abort(403);
+        }
+    }
+
+    private function ensureContentBelongsToLesson(CourseContent $content, Lesson $lesson): void
+    {
+        if ($content->lesson_id !== $lesson->id) {
+            abort(403);
+        }
     }
 }
