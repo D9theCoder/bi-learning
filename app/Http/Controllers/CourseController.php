@@ -47,6 +47,10 @@ class CourseController extends Controller
         };
 
         // Paginate
+        if ($user->hasRole('tutor') && ! $user->hasRole('admin')) {
+            $query->where('instructor_id', $user->id);
+        }
+
         $courses = $query->paginate(12)->withQueryString();
 
         // Get user enrollments to compute progress
@@ -81,6 +85,9 @@ class CourseController extends Controller
         $course->load(['instructor', 'lessons.contents']);
 
         $user = auth()->user();
+        if ($user && $user->hasRole('tutor') && ! $user->hasRole('admin') && $course->instructor_id !== $user->id) {
+            abort(403);
+        }
         $isEnrolled = false;
 
         if ($user) {

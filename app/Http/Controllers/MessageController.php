@@ -205,10 +205,17 @@ class MessageController extends Controller
             ->orderBy('id')
             ->paginate(50);
 
+        if ($this->isStudentUser($user)) {
         TutorMessage::where('user_id', $user->id)
             ->where('tutor_id', $partnerId)
             ->where('is_read', false)
             ->update(['is_read' => true]);
+        } elseif ($this->isTutorUser($user)) {
+            TutorMessage::where('tutor_id', $user->id)
+                ->where('user_id', $partnerId)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        }
 
         return [
             'partner' => [

@@ -15,6 +15,7 @@ import {
   calendar,
   courses,
   dashboard,
+  home,
   messages,
   rewards,
   tutors,
@@ -32,6 +33,7 @@ import {
   Users,
 } from 'lucide-react';
 import AppLogo from './app-logo';
+import { useRoles } from '@/hooks/use-roles';
 
 const mainNavItems: NavItem[] = [
   {
@@ -85,13 +87,39 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+  const { isAdmin, isStudent, isTutor } = useRoles();
+
+  const hideStudentOnly = isTutor && !isAdmin && !isStudent;
+  const studentOnlyTitles = new Set(['Dashboard', 'Achievements', 'Rewards', 'Calendar']);
+  const filteredNavItems = hideStudentOnly
+    ? mainNavItems.filter((item) => !studentOnlyTitles.has(item.title))
+    : mainNavItems;
+  const navItems: NavItem[] = [...filteredNavItems];
+
+  if (isAdmin || isTutor) {
+    const manageLink: NavItem = {
+      title: 'Manage Courses',
+      href: '/courses/manage',
+      icon: Folder,
+    };
+
+    const insertIndex = navItems.findIndex((item) => item.title === 'My Courses');
+    if (insertIndex >= 0) {
+      navItems.splice(insertIndex + 1, 0, manageLink);
+    } else {
+      navItems.unshift(manageLink);
+    }
+  }
+
+  const homeHref = navItems[0]?.href ?? home().url;
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard().url} prefetch>
+              <Link href={homeHref} prefetch>
                 <AppLogo />
               </Link>
             </SidebarMenuButton>
@@ -100,7 +128,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={mainNavItems} />
+        <NavMain items={filteredNavItems} />
       </SidebarContent>
 
       <SidebarFooter>

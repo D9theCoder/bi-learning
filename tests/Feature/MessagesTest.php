@@ -5,10 +5,17 @@ use App\Models\Enrollment;
 use App\Models\TutorMessage;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
+    $this->withoutMiddleware([
+        ValidateCsrfToken::class,
+        VerifyCsrfToken::class,
+    ]);
+
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     foreach (['admin', 'tutor', 'student'] as $role) {
@@ -70,6 +77,7 @@ it('validates message body', function () {
 
     $response = $this->actingAs($student)
         ->post(route('messages.store'), [
+            '_token' => csrf_token(),
             'partner_id' => $tutor->id,
             'content' => '',
         ]);
@@ -89,6 +97,7 @@ it('allows a tutor to message a student', function () {
     ]);
 
     $response = $this->actingAs($tutor)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $student->id,
         'content' => 'Hello student!',
     ]);
@@ -115,6 +124,7 @@ it('stores student to tutor messages with proper orientation', function () {
     ]);
 
     $response = $this->actingAs($student)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $tutor->id,
         'content' => 'Hi tutor',
     ]);
@@ -133,6 +143,7 @@ it('prevents admins from sending messages', function () {
     $student = User::factory()->create()->assignRole('student');
 
     $response = $this->actingAs($admin)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $student->id,
         'content' => 'Admin message should fail',
     ]);
@@ -163,11 +174,37 @@ it('allows admins to poll any tutor-student conversation', function () {
     $response->assertJsonPath('activeThread.messages.data.0.content', 'First message');
 });
 
+it('marks messages as read when tutor views a conversation', function () {
+    $tutor = User::factory()->create()->assignRole('tutor');
+    $student = User::factory()->create()->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $message = TutorMessage::factory()->create([
+        'tutor_id' => $tutor->id,
+        'user_id' => $student->id,
+        'content' => 'Unread message',
+        'is_read' => false,
+    ]);
+
+    $this->actingAs($tutor)->get(route('messages', [
+        'partner' => $student->id,
+    ]))->assertSuccessful();
+
+    expect($message->fresh()->is_read)->toBeTrue();
+});
+
 it('blocks student from messaging a tutor without enrollment', function () {
     $student = User::factory()->create()->assignRole('student');
     $tutor = User::factory()->create()->assignRole('tutor');
 
     $response = $this->actingAs($student)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $tutor->id,
         'content' => 'Hello',
     ]);
@@ -180,6 +217,7 @@ it('blocks tutor from messaging a student without enrollment', function () {
     $tutor = User::factory()->create()->assignRole('tutor');
 
     $response = $this->actingAs($tutor)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $student->id,
         'content' => 'Hello',
     ]);
@@ -218,6 +256,7 @@ it('allows student to message course instructor without tutor role', function ()
     ]);
 
     $response = $this->actingAs($student)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $instructor->id,
         'content' => 'Hi instructor',
     ]);
@@ -242,6 +281,7 @@ it('allows course instructor without tutor role to message student', function ()
     ]);
 
     $response = $this->actingAs($instructor)->post(route('messages.store'), [
+        '_token' => csrf_token(),
         'partner_id' => $student->id,
         'content' => 'Hello student',
     ]);

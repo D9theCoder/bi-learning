@@ -7,6 +7,16 @@ use App\Models\DailyTask;
 use App\Models\Enrollment;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
+beforeEach(function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach (['admin', 'tutor', 'student'] as $role) {
+        Role::firstOrCreate(['name' => $role]);
+    }
+});
 
 test('guests are redirected to the login page', function () {
     $this->get(route('dashboard'))->assertRedirect(route('login'));
@@ -14,6 +24,7 @@ test('guests are redirected to the login page', function () {
 
 test('authenticated users can visit the dashboard', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -27,6 +38,18 @@ test('authenticated users can visit the dashboard', function () {
         );
 });
 
+test('tutors can visit the dashboard', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $this->actingAs($tutor)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+        );
+});
+
 test('dashboard displays user statistics', function () {
     $cohort = Cohort::factory()->create();
     $user = User::factory()->create([
@@ -36,6 +59,7 @@ test('dashboard displays user statistics', function () {
         'points_balance' => 850,
         'current_streak' => 5,
     ]);
+    $user->assignRole('student');
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -48,6 +72,7 @@ test('dashboard displays user statistics', function () {
 
 test('dashboard shows enrolled courses', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     $course = Course::factory()->create();
     $enrollment = Enrollment::factory()->create([
         'user_id' => $user->id,
@@ -66,6 +91,7 @@ test('dashboard shows enrolled courses', function () {
 
 test('dashboard displays today tasks', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     DailyTask::factory()->create([
         'user_id' => $user->id,
         'due_date' => today(),
@@ -85,6 +111,7 @@ test('dashboard shows cohort leaderboard when user is in cohort', function () {
         'cohort_id' => $cohort->id,
         'total_xp' => 1000,
     ]);
+    $user->assignRole('student');
 
     // Create other users in cohort
     User::factory(5)->create([
@@ -102,6 +129,7 @@ test('dashboard shows cohort leaderboard when user is in cohort', function () {
 
 test('dashboard shows recent achievements', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     $achievement = Achievement::factory()->create();
     $user->achievements()->attach($achievement->id, ['earned_at' => now()]);
 

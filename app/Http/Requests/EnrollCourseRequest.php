@@ -8,8 +8,13 @@ class EnrollCourseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Ensure course exists (already checked by route model binding)
-        return $this->route('course') !== null;
+        $user = $this->user();
+
+        if (! $user || $this->route('course') === null) {
+            return false;
+        }
+
+        return $user->hasAnyRole(['student', 'admin']);
     }
 
     public function rules(): array

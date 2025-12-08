@@ -3,6 +3,8 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
   user: User;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export interface BreadcrumbItem {
@@ -288,6 +290,34 @@ export interface CoursesPageProps {
     per_page: number;
     total: number;
   };
+}
+
+export interface ManageCoursesPageProps {
+  courses: {
+    data: Array<
+      Course & {
+        is_published: boolean;
+        updated_at?: string;
+        instructor?: {
+          id: number;
+          name: string;
+        } | null;
+      }
+    >;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface EditCoursePageProps {
+  course: (Course & {
+    is_published?: boolean;
+    duration_minutes?: number | null;
+    instructor_id?: number | null;
+  }) | null;
+  mode: 'create' | 'edit';
 }
 
 export interface MessagesPageProps {

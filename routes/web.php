@@ -3,6 +3,7 @@
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseManagementController;
 use App\Http\Controllers\DailyTaskController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrollmentController;
@@ -23,19 +24,42 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:student|tutor|admin')
+        ->name('dashboard');
 
     // Achievement routes
-    Route::get('achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('achievements', [AchievementController::class, 'index'])
+        ->middleware('role:student|admin')
+        ->name('achievements');
 
     // Calendar routes
-    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
-    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])->name('tasks.toggle');
+    Route::get('calendar', [CalendarController::class, 'index'])
+        ->middleware('role:student|tutor|admin')
+        ->name('calendar');
+    Route::patch('tasks/{task}', [DailyTaskController::class, 'toggleComplete'])
+        ->middleware('role:student|tutor|admin')
+        ->name('tasks.toggle');
 
     // Course routes
     Route::get('courses', [CourseController::class, 'index'])->name('courses');
-    Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
-    Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
+
+    // Course management routes (admin/tutor)
+    Route::middleware('role:admin|tutor')->prefix('courses/manage')->name('courses.manage.')->group(function () {
+        Route::get('/', [CourseManagementController::class, 'index'])->name('index');
+        Route::get('/create', [CourseManagementController::class, 'create'])->name('create');
+        Route::post('/', [CourseManagementController::class, 'store'])->name('store');
+        Route::get('/{course}/edit', [CourseManagementController::class, 'edit'])->name('edit');
+        Route::put('/{course}', [CourseManagementController::class, 'update'])->name('update');
+    });
+
+    Route::get('courses/{course}', [CourseController::class, 'show'])
+        ->whereNumber('course')
+        ->name('courses.show');
+    Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])
+        ->middleware('role:student|admin')
+        ->whereNumber('course')
+        ->name('courses.enroll');
 
     // Message routes
     Route::get('messages', [MessageController::class, 'index'])->name('messages');
@@ -43,8 +67,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 
     // Reward routes
-    Route::get('rewards', [RewardController::class, 'index'])->name('rewards');
-    Route::post('rewards/{reward}/redeem', [RewardRedemptionController::class, 'store'])->name('rewards.redeem');
+    Route::get('rewards', [RewardController::class, 'index'])
+        ->middleware('role:student|admin')
+        ->name('rewards');
+    Route::post('rewards/{reward}/redeem', [RewardRedemptionController::class, 'store'])
+        ->middleware('role:student|admin')
+        ->name('rewards.redeem');
 
     // Tutor routes
     Route::get('tutors', [TutorController::class, 'index'])->name('tutors');

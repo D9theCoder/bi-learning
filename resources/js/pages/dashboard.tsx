@@ -11,7 +11,8 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { TodayTaskList } from '@/components/dashboard/today-task-list';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard } from '@/routes';
+import { courses, dashboard } from '@/routes';
+import { useRoles } from '@/hooks/use-roles';
 import type {
   Achievement,
   Activity,
@@ -23,7 +24,7 @@ import type {
   Reward,
   TutorMessage,
 } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Activity as ActivityIcon, BookOpen, Clock, Coins, Flame, Zap } from 'lucide-react';
 import React, { memo } from 'react';
 
@@ -177,6 +178,33 @@ export default function Dashboard({
   cohort_leaderboard,
   weekly_activity_data,
 }: DashboardPageProps) {
+  const { isAdmin, isStudent } = useRoles();
+
+  if (!isAdmin && !isStudent) {
+    return (
+      <AppLayout breadcrumbs={breadcrumbs}>
+        <Head title="Dashboard" />
+        <div className="flex h-full flex-1 flex-col gap-6 p-6">
+          <Card>
+            <CardContent className="flex flex-col gap-4 p-8 text-center">
+              <h1 className="text-2xl font-bold text-foreground">Access limited to learners</h1>
+              <p className="text-muted-foreground">
+                This dashboard focuses on student progress. Head to Courses to manage or explore content.
+              </p>
+              <Link
+                href={courses().url}
+                prefetch
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+              >
+                Go to Courses
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const [isLoading, setIsLoading] = React.useState(true);
   React.useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 250);
