@@ -15,15 +15,15 @@ export default function Welcome() {
   const { auth } = usePage<SharedData>().props;
 
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    });
+    // const lenis = new Lenis({
+    //   duration: 1.2,
+    //   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    //   orientation: 'vertical',
+    //   gestureOrientation: 'vertical',
+    //   smoothWheel: true,
+    //   wheelMultiplier: 1,
+    //   touchMultiplier: 2,
+    // });
 
     // Custom damping as requested
     // Note: lenis v1 uses 'lerp' or 'duration'. Damping factor of 0.1 usually implies lerp = 0.1 in other libs,

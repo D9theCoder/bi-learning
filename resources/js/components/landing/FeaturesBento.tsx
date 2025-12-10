@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Gamepad2, GraduationCap, Target, Trophy } from 'lucide-react';
+import { Flame, Gamepad2, GraduationCap, Target, Trophy } from 'lucide-react';
 
 export default function FeaturesBento() {
   return (
@@ -65,16 +65,16 @@ export default function FeaturesBento() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex -space-x-2 overflow-hidden">
+            <div className="flex items-center -space-x-2 overflow-hidden">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex inline-block h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-background"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-background"
                 >
                   T{i}
                 </div>
               ))}
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground ring-2 ring-background">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground ring-2 ring-background">
                 +42
               </div>
             </div>
@@ -101,8 +101,12 @@ export default function FeaturesBento() {
               >
                 Active Streak
               </Badge>
-              <span className="text-sm font-bold text-muted-foreground">
-                🔥 14 Days
+              <span className="flex items-center gap-1 text-sm font-bold text-muted-foreground">
+                <Flame
+                  className="h-4 w-4 text-amber-500 dark:text-amber-400"
+                  aria-hidden="true"
+                />
+                14 Days
               </span>
             </div>
           </CardContent>
