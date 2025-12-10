@@ -126,6 +126,7 @@ class CourseManagementController extends Controller
                                 'file_path' => $content->file_path,
                                 'url' => $content->url,
                                 'description' => $content->description,
+                                'due_date' => $content->due_date?->toDateString(),
                                 'duration_minutes' => $content->duration_minutes,
                                 'is_required' => $content->is_required,
                                 'order' => $content->order,

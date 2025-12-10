@@ -189,6 +189,7 @@ export interface CourseContent {
   file_path?: string | null;
   url?: string | null;
   description?: string | null;
+  due_date?: string | null;
   duration_minutes?: number | null;
   is_required: boolean;
   order: number | null;
@@ -225,6 +226,41 @@ export interface WeeklyActivityDataPoint {
   day: string;
   minutes: number;
   xp: number;
+}
+
+export interface TutorDashboardCourse {
+  id: number;
+  title: string;
+  student_count: number;
+  active_students: number;
+  average_progress: number;
+  attendance_rate: number;
+  assignment_rate: number;
+  next_due_date?: string | null;
+  is_published?: boolean;
+}
+
+export interface TutorDashboardChartPoint {
+  course: string;
+  attendance: number;
+  assignments: number;
+  students: number;
+}
+
+export interface TutorCalendarItem {
+  id: number;
+  title: string;
+  course_title: string;
+  due_date: string;
+  type: string;
+}
+
+export interface TutorRosterEntry {
+  id: number;
+  name: string;
+  avatar?: string;
+  courses: number;
+  average_progress: number;
 }
 
 // Page Props Interfaces
@@ -369,6 +405,18 @@ export interface RewardsPageProps {
   };
   filters?: {
     rarity?: string;
+  };
+}
+
+export interface TutorDashboardData {
+  courses: TutorDashboardCourse[];
+  chart: TutorDashboardChartPoint[];
+  calendar: TutorCalendarItem[];
+  roster: TutorRosterEntry[];
+  summary: {
+    course_count: number;
+    student_count: number;
+    average_progress: number;
   };
 }
 

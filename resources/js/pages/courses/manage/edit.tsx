@@ -37,6 +37,7 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
     file_path: string;
     url: string;
     description: string;
+    due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
     order: number | '';
@@ -46,6 +47,7 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
     file_path: content.file_path ?? '',
     url: content.url ?? '',
     description: content.description ?? '',
+    due_date: content.due_date ?? '',
     duration_minutes: content.duration_minutes ?? '',
     is_required: content.is_required ?? false,
     order: content.order ?? '',
@@ -136,6 +138,18 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
             placeholder="/storage/material.pdf"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor={`content-due-${content.id}`}>Due date (optional)</Label>
+          <Input
+            id={`content-due-${content.id}`}
+            type="date"
+            value={contentForm.data.due_date ?? ''}
+            onChange={(e) => contentForm.setData('due_date', e.target.value)}
+          />
+          {contentForm.errors.due_date ? (
+            <p className="text-xs text-destructive">{contentForm.errors.due_date}</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-3 pt-3 lg:grid-cols-3">
@@ -218,6 +232,7 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
     file_path: string;
     url: string;
     description: string;
+    due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
     order: number | '';
@@ -227,6 +242,7 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
     file_path: '',
     url: '',
     description: '',
+    due_date: '',
     duration_minutes: '',
     is_required: false,
     order: '',
@@ -313,6 +329,18 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
             onChange={(e) => newContentForm.setData('file_path', e.target.value)}
             placeholder="/storage/material.pdf"
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`new-content-due-${lessonId}`}>Due date (optional)</Label>
+          <Input
+            id={`new-content-due-${lessonId}`}
+            type="date"
+            value={newContentForm.data.due_date ?? ''}
+            onChange={(e) => newContentForm.setData('due_date', e.target.value)}
+          />
+          {newContentForm.errors.due_date ? (
+            <p className="text-xs text-destructive">{newContentForm.errors.due_date}</p>
+          ) : null}
         </div>
       </div>
 

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
+use App\Models\CourseContent;
+use App\Models\CourseContentCompletion;
 use App\Models\Reward;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,6 +16,8 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $isTutor = $user->hasRole('tutor');
+        $isAdmin = $user->hasRole('admin');
 
         // Load all relationships needed for dashboard
         $user->load([
@@ -87,6 +92,155 @@ class DashboardController extends Controller
             $currentUserRank = $user->cohortRank();
         }
 
+        $tutorData = null;
+
+        if ($isTutor || $isAdmin) {
+            $taughtCourses = Course::with([
+                'lessons.contents',
+                'enrollments.user',
+            ])
+                ->where('instructor_id', $user->id)
+                ->get();
+
+            $courseIds = $taughtCourses->pluck('id');
+            $contentIds = $taughtCourses
+                ->flatMap(fn (Course $course) => $course->lessons->flatMap(fn ($lesson) => $lesson->contents))
+                ->pluck('id');
+
+            $completions = CourseContentCompletion::whereIn('course_content_id', $contentIds)
+                ->get()
+                ->groupBy('course_content_id');
+
+            $courseSnapshots = [];
+            $chartSeries = [];
+            $upcomingItems = [];
+            $studentAggregates = [];
+
+            foreach ($taughtCourses as $course) {
+                $enrollments = $course->enrollments;
+                $studentCount = $enrollments->count();
+                $activeStudents = $enrollments->where('status', 'active')->count();
+                $avgProgress = round((float) ($enrollments->avg('progress_percentage') ?? 0), 1);
+
+                $attendanceContents = $course->lessons->flatMap(
+                    fn ($lesson) => $lesson->contents->where('type', 'attendance')
+                );
+                $assignmentContents = $course->lessons->flatMap(
+                    fn ($lesson) => $lesson->contents->reject(fn ($content) => $content->type === 'attendance')
+                );
+
+                $attendanceCompleted = $attendanceContents->sum(
+                    fn (CourseContent $content) => $completions->get($content->id)?->count() ?? 0
+                );
+                $assignmentCompleted = $assignmentContents->sum(
+                    fn (CourseContent $content) => $completions->get($content->id)?->count() ?? 0
+                );
+
+                $attendancePossible = max(1, $attendanceContents->count() * max(1, $studentCount));
+                $assignmentPossible = max(1, $assignmentContents->count() * max(1, $studentCount));
+
+                $attendanceRate = round(($attendanceCompleted / $attendancePossible) * 100, 1);
+                $assignmentRate = round(($assignmentCompleted / $assignmentPossible) * 100, 1);
+
+                $nextDue = $course->lessons
+                    ->flatMap(fn ($lesson) => $lesson->contents)
+                    ->filter(fn (CourseContent $content) => $content->due_date !== null)
+                    ->sortBy('due_date')
+                    ->first();
+
+                $courseSnapshots[] = [
+                    'id' => $course->id,
+                    'title' => $course->title,
+                    'student_count' => $studentCount,
+                    'active_students' => $activeStudents,
+                    'average_progress' => $avgProgress,
+                    'attendance_rate' => $attendanceRate,
+                    'assignment_rate' => $assignmentRate,
+                    'next_due_date' => $nextDue?->due_date?->toDateString(),
+                    'is_published' => $course->is_published,
+                ];
+
+                $chartSeries[] = [
+                    'course' => $course->title,
+                    'attendance' => $attendanceRate,
+                    'assignments' => $assignmentRate,
+                    'students' => $studentCount,
+                ];
+
+                $dueContents = $course->lessons
+                    ->flatMap(fn ($lesson) => $lesson->contents)
+                    ->filter(fn (CourseContent $content) => $content->due_date !== null)
+                    ->sortBy('due_date')
+                    ->map(fn (CourseContent $content) => [
+                        'id' => $content->id,
+                        'title' => $content->title,
+                        'course_title' => $course->title,
+                        'due_date' => $content->due_date?->toDateString(),
+                        'type' => $content->type,
+                    ]);
+
+                $upcomingItems = array_merge($upcomingItems, $dueContents->all());
+
+                foreach ($enrollments as $enrollment) {
+                    $student = $enrollment->user;
+
+                    if (! $student) {
+                        continue;
+                    }
+
+                    if (! isset($studentAggregates[$student->id])) {
+                        $studentAggregates[$student->id] = [
+                            'id' => $student->id,
+                            'name' => $student->name,
+                            'avatar' => $student->avatar,
+                            'courses' => 0,
+                            'progress_values' => [],
+                        ];
+                    }
+
+                    $studentAggregates[$student->id]['courses']++;
+                    $studentAggregates[$student->id]['progress_values'][] = (float) ($enrollment->progress_percentage ?? 0);
+                }
+            }
+
+            usort($upcomingItems, fn ($a, $b) => strcmp($a['due_date'], $b['due_date']));
+            $upcomingItems = array_slice($upcomingItems, 0, 8);
+
+            $roster = collect($studentAggregates)
+                ->map(function ($entry) {
+                    $avg = count($entry['progress_values']) > 0
+                        ? round(array_sum($entry['progress_values']) / count($entry['progress_values']), 1)
+                        : 0;
+
+                    return [
+                        'id' => $entry['id'],
+                        'name' => $entry['name'],
+                        'avatar' => $entry['avatar'],
+                        'courses' => $entry['courses'],
+                        'average_progress' => $avg,
+                    ];
+                })
+                ->sortByDesc('average_progress')
+                ->values()
+                ->take(10)
+                ->all();
+
+            $tutorData = [
+                'courses' => $courseSnapshots,
+                'chart' => $chartSeries,
+                'calendar' => $upcomingItems,
+                'roster' => $roster,
+                'summary' => [
+                    'course_count' => $courseSnapshots ? count($courseSnapshots) : 0,
+                    'student_count' => collect($courseSnapshots)->sum('student_count'),
+                    'average_progress' => round(
+                        collect($courseSnapshots)->avg('average_progress') ?? 0,
+                        1
+                    ),
+                ],
+            ];
+        }
+
         return Inertia::render('dashboard', [
             'stats' => [
                 'streak' => $user->currentStreak(),
@@ -114,6 +268,7 @@ class DashboardController extends Controller
                 ->orderBy('cost')
                 ->limit(6)
                 ->get(),
+            'tutor_dashboard' => $tutorData,
         ]);
     }
 }

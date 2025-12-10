@@ -3,8 +3,11 @@
 use App\Models\Achievement;
 use App\Models\Cohort;
 use App\Models\Course;
+use App\Models\CourseContent;
+use App\Models\CourseContentCompletion;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -137,5 +140,63 @@ test('dashboard shows recent achievements', function () {
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->has('recent_achievements', 1)
+        );
+});
+
+test('tutor dashboard includes tutor data and chart metrics', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create([
+        'instructor_id' => $tutor->id,
+    ]);
+
+    $lesson = Lesson::factory()->create([
+        'course_id' => $course->id,
+        'order' => 1,
+    ]);
+
+    $attendanceContent = CourseContent::factory()->create([
+        'lesson_id' => $lesson->id,
+        'type' => 'attendance',
+        'due_date' => now()->addDays(2),
+        'order' => 1,
+    ]);
+
+    $assignmentContent = CourseContent::factory()->create([
+        'lesson_id' => $lesson->id,
+        'type' => 'quiz',
+        'due_date' => now()->addDays(3),
+        'order' => 2,
+    ]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'progress_percentage' => 60,
+    ]);
+
+    CourseContentCompletion::factory()->create([
+        'course_content_id' => $attendanceContent->id,
+        'user_id' => $student->id,
+    ]);
+
+    CourseContentCompletion::factory()->create([
+        'course_content_id' => $assignmentContent->id,
+        'user_id' => $student->id,
+    ]);
+
+    $this->actingAs($tutor)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tutor_dashboard')
+            ->where('tutor_dashboard.summary.course_count', 1)
+            ->has('tutor_dashboard.chart', 1)
+            ->has('tutor_dashboard.calendar', 2)
+            ->has('tutor_dashboard.courses', 1)
         );
 });

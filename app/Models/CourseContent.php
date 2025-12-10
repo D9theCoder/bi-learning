@@ -19,6 +19,7 @@ class CourseContent extends Model
         'file_path',
         'url',
         'description',
+        'due_date',
         'duration_minutes',
         'is_required',
         'order',
@@ -30,6 +31,7 @@ class CourseContent extends Model
             'is_required' => 'boolean',
             'order' => 'integer',
             'duration_minutes' => 'integer',
+            'due_date' => 'date',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
