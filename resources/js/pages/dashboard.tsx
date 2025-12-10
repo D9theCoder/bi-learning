@@ -188,24 +188,28 @@ const TutorStatsSection = memo(
         label="Courses Taught"
         value={summary.course_count}
         color="blue"
+        disableHover
       />
       <StatCard
         icon={Users}
         label="Students"
         value={summary.student_count}
         color="purple"
+        disableHover
       />
       <StatCard
         icon={BarChart3}
         label="Avg Progress"
         value={`${summary.average_progress}%`}
         color="green"
+        disableHover
       />
       <StatCard
         icon={ActivityIcon}
         label="Attendance vs Assign."
         value={`${attendanceAverage}% / ${assignmentAverage}%`}
         color="orange"
+        disableHover
       />
     </section>
   ),

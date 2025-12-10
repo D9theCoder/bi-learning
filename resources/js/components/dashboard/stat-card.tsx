@@ -14,6 +14,7 @@ export interface StatCardProps {
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'yellow';
   className?: string;
   animate?: boolean;
+  disableHover?: boolean;
 }
 
 const colorStyles = {
@@ -37,6 +38,7 @@ export function StatCard({
   color,
   className,
   animate = false,
+  disableHover = false,
 }: StatCardProps) {
   const isNumber = typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)));
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -44,7 +46,8 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden border border-border shadow-sm transition-all hover:scale-[1.02] hover:border-primary/30',
+        'overflow-hidden border border-border shadow-sm',
+        disableHover ? 'cursor-default' : 'transition-all hover:scale-[1.02] hover:border-primary/30',
         className,
       )}
     >

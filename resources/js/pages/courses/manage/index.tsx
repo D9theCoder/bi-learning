@@ -84,6 +84,11 @@ export default function ManageCourses({ courses }: ManageCoursesPageProps) {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <Link href={`/courses/${course.id}`} prefetch>
+                      <Button variant="outline" size="sm">
+                        View
+                      </Button>
+                    </Link>
                     <Link href={`/courses/manage/${course.id}/edit`} prefetch>
                       <Button variant="secondary" size="sm">
                         Edit
