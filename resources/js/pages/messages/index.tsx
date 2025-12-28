@@ -1,5 +1,10 @@
 import { MessageThread } from '@/components/messages/message-thread';
-import type { ActiveThread, ContactUser, Thread } from '@/components/messages/types';
+import type {
+  ActiveThread,
+  ContactUser,
+  ParticipantThread,
+  Thread,
+} from '@/components/messages/types';
 import { ThreadList } from '@/components/messages/thread-list';
 import { PageHeader } from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
@@ -40,12 +45,8 @@ export default function MessagesPage({
   );
   const messagesUrl = messagesRoute().url;
 
-  useEffect(() => {
-    setThreadsState(threads);
-    setActiveThreadState(activeThread ?? null);
-    setContactsState(contacts);
-    setSelectedContactId(contacts[0]?.id ?? '');
-  }, [threads, activeThread, contacts]);
+  const isParticipantThread = (thread: Thread): thread is ParticipantThread =>
+    'partner' in thread;
 
   const conversationKey = useMemo(() => {
     if (!activeThreadState) return 'none';
@@ -173,7 +174,14 @@ export default function MessagesPage({
         )}
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <ThreadList threads={threadsState} isAdmin={isAdmin} />
+          {isAdmin ? (
+            <ThreadList threads={threadsState} isAdmin={true} />
+          ) : (
+            <ThreadList
+              threads={threadsState.filter(isParticipantThread)}
+              isAdmin={false}
+            />
+          )}
           <MessageThread
             activeThread={activeThreadState}
             isAdmin={isAdmin}
