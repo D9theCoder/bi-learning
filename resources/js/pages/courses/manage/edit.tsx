@@ -19,7 +19,6 @@ const contentTypes = [
   { value: 'video', label: 'Video' },
   { value: 'link', label: 'Link' },
   { value: 'quiz', label: 'Quiz' },
-  { value: 'attendance', label: 'Attendance' },
 ];
 
 type LessonWithContents = Lesson & { contents?: CourseContent[] };
@@ -34,13 +33,12 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
   const contentForm = useForm<{
     title: string;
     type: CourseContent['type'];
-    file_path: string;
+    file_path: File | string | null;
     url: string;
     description: string;
     due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
-    order: number | '';
   }>({
     title: content.title ?? '',
     type: content.type ?? 'file',
@@ -50,24 +48,29 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
     due_date: content.due_date ?? '',
     duration_minutes: content.duration_minutes ?? '',
     is_required: content.is_required ?? false,
-    order: content.order ?? '',
   });
 
   const saveContent = () => {
-    contentForm.put(`/courses/manage/${courseId}/lessons/${lessonId}/contents/${content.id}`, {
-      preserveScroll: true,
-    });
+    contentForm.put(
+      `/courses/manage/${courseId}/lessons/${lessonId}/contents/${content.id}`,
+      {
+        preserveScroll: true,
+      },
+    );
   };
 
   const deleteContent = () => {
-    router.delete(`/courses/manage/${courseId}/lessons/${lessonId}/contents/${content.id}`, {
-      preserveScroll: true,
-    });
+    router.delete(
+      `/courses/manage/${courseId}/lessons/${lessonId}/contents/${content.id}`,
+      {
+        preserveScroll: true,
+      },
+    );
   };
 
   return (
     <div className="rounded-lg border border-border/60 bg-muted/40 p-4">
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`content-title-${content.id}`}>Title</Label>
           <Input
@@ -76,7 +79,9 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
             onChange={(e) => contentForm.setData('title', e.target.value)}
           />
           {contentForm.errors.title ? (
-            <p className="text-xs text-destructive">{contentForm.errors.title}</p>
+            <p className="text-xs text-destructive">
+              {contentForm.errors.title}
+            </p>
           ) : null}
         </div>
         <div className="space-y-2">
@@ -86,7 +91,10 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             value={contentForm.data.type}
             onChange={(e) =>
-              contentForm.setData('type', e.target.value as CourseContent['type'])
+              contentForm.setData(
+                'type',
+                e.target.value as CourseContent['type'],
+              )
             }
           >
             {contentTypes.map((opt) => (
@@ -96,65 +104,73 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
             ))}
           </select>
           {contentForm.errors.type ? (
-            <p className="text-xs text-destructive">{contentForm.errors.type}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`content-order-${content.id}`}>Order</Label>
-          <Input
-            id={`content-order-${content.id}`}
-            type="number"
-            min={1}
-            value={contentForm.data.order ?? ''}
-            onChange={(e) =>
-              contentForm.setData(
-                'order',
-                e.target.value === '' ? '' : Number(e.target.value),
-              )
-            }
-          />
-          {contentForm.errors.order ? (
-            <p className="text-xs text-destructive">{contentForm.errors.order}</p>
+            <p className="text-xs text-destructive">
+              {contentForm.errors.type}
+            </p>
           ) : null}
         </div>
       </div>
 
       <div className="grid gap-3 pt-3 lg:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`content-url-${content.id}`}>URL</Label>
-          <Input
-            id={`content-url-${content.id}`}
-            value={contentForm.data.url ?? ''}
-            onChange={(e) => contentForm.setData('url', e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`content-file-${content.id}`}>File path</Label>
-          <Input
-            id={`content-file-${content.id}`}
-            value={contentForm.data.file_path ?? ''}
-            onChange={(e) => contentForm.setData('file_path', e.target.value)}
-            placeholder="/storage/material.pdf"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`content-due-${content.id}`}>Due date (optional)</Label>
-          <Input
-            id={`content-due-${content.id}`}
-            type="date"
-            value={contentForm.data.due_date ?? ''}
-            onChange={(e) => contentForm.setData('due_date', e.target.value)}
-          />
-          {contentForm.errors.due_date ? (
-            <p className="text-xs text-destructive">{contentForm.errors.due_date}</p>
-          ) : null}
-        </div>
+        {/* Show URL for video and link types */}
+        {(contentForm.data.type === 'video' ||
+          contentForm.data.type === 'link') && (
+          <div className="space-y-2">
+            <Label htmlFor={`content-url-${content.id}`}>URL</Label>
+            <Input
+              id={`content-url-${content.id}`}
+              value={contentForm.data.url ?? ''}
+              onChange={(e) => contentForm.setData('url', e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+        )}
+        {/* Show file upload for file type */}
+        {contentForm.data.type === 'file' && (
+          <div className="space-y-2">
+            <Label htmlFor={`content-file-${content.id}`}>File Upload</Label>
+            <Input
+              id={`content-file-${content.id}`}
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  contentForm.setData('file_path', file);
+                }
+              }}
+            />
+            {typeof contentForm.data.file_path === 'string' &&
+              contentForm.data.file_path && (
+                <p className="text-xs text-muted-foreground">
+                  Current: {contentForm.data.file_path}
+                </p>
+              )}
+          </div>
+        )}
+        {/* Show due date only for quiz type */}
+        {contentForm.data.type === 'quiz' && (
+          <div className="space-y-2">
+            <Label htmlFor={`content-due-${content.id}`}>Due date</Label>
+            <Input
+              id={`content-due-${content.id}`}
+              type="date"
+              value={contentForm.data.due_date ?? ''}
+              onChange={(e) => contentForm.setData('due_date', e.target.value)}
+            />
+            {contentForm.errors.due_date ? (
+              <p className="text-xs text-destructive">
+                {contentForm.errors.due_date}
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 pt-3 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-2">
-          <Label htmlFor={`content-description-${content.id}`}>Description</Label>
+          <Label htmlFor={`content-description-${content.id}`}>
+            Description
+          </Label>
           <Textarea
             id={`content-description-${content.id}`}
             rows={2}
@@ -162,11 +178,15 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
             onChange={(e) => contentForm.setData('description', e.target.value)}
           />
           {contentForm.errors.description ? (
-            <p className="text-xs text-destructive">{contentForm.errors.description}</p>
+            <p className="text-xs text-destructive">
+              {contentForm.errors.description}
+            </p>
           ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`content-duration-${content.id}`}>Duration (minutes)</Label>
+          <Label htmlFor={`content-duration-${content.id}`}>
+            Duration (minutes)
+          </Label>
           <Input
             id={`content-duration-${content.id}`}
             type="number"
@@ -184,15 +204,21 @@ function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
               type="checkbox"
               className="size-4 rounded border-border"
               checked={contentForm.data.is_required}
-              onChange={(e) => contentForm.setData('is_required', e.target.checked)}
+              onChange={(e) =>
+                contentForm.setData('is_required', e.target.checked)
+              }
             />
             Required
           </label>
           {contentForm.errors.duration_minutes ? (
-            <p className="text-xs text-destructive">{contentForm.errors.duration_minutes}</p>
+            <p className="text-xs text-destructive">
+              {contentForm.errors.duration_minutes}
+            </p>
           ) : null}
           {contentForm.errors.is_required ? (
-            <p className="text-xs text-destructive">{contentForm.errors.is_required}</p>
+            <p className="text-xs text-destructive">
+              {contentForm.errors.is_required}
+            </p>
           ) : null}
         </div>
       </div>
@@ -229,13 +255,12 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
   const newContentForm = useForm<{
     title: string;
     type: CourseContent['type'];
-    file_path: string;
+    file_path: File | string | null;
     url: string;
     description: string;
     due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
-    order: number | '';
   }>({
     title: '',
     type: 'file',
@@ -245,20 +270,22 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
     due_date: '',
     duration_minutes: '',
     is_required: false,
-    order: '',
   });
 
   const submitNewContent = () => {
-    newContentForm.post(`/courses/manage/${courseId}/lessons/${lessonId}/contents`, {
-      preserveScroll: true,
-      onSuccess: () => newContentForm.reset(),
-    });
+    newContentForm.post(
+      `/courses/manage/${courseId}/lessons/${lessonId}/contents`,
+      {
+        preserveScroll: true,
+        onSuccess: () => newContentForm.reset(),
+      },
+    );
   };
 
   return (
     <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4">
       <p className="text-sm font-semibold text-foreground">Add content</p>
-      <div className="grid gap-3 pt-3 lg:grid-cols-3">
+      <div className="grid gap-3 pt-3 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`new-content-title-${lessonId}`}>Title</Label>
           <Input
@@ -268,7 +295,9 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
             placeholder="Content title"
           />
           {newContentForm.errors.title ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.title}</p>
+            <p className="text-xs text-destructive">
+              {newContentForm.errors.title}
+            </p>
           ) : null}
         </div>
         <div className="space-y-2">
@@ -278,7 +307,10 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             value={newContentForm.data.type}
             onChange={(e) =>
-              newContentForm.setData('type', e.target.value as CourseContent['type'])
+              newContentForm.setData(
+                'type',
+                e.target.value as CourseContent['type'],
+              )
             }
           >
             {contentTypes.map((opt) => (
@@ -288,77 +320,87 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
             ))}
           </select>
           {newContentForm.errors.type ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.type}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`new-content-order-${lessonId}`}>Order</Label>
-          <Input
-            id={`new-content-order-${lessonId}`}
-            type="number"
-            min={1}
-            value={newContentForm.data.order ?? ''}
-            onChange={(e) =>
-              newContentForm.setData(
-                'order',
-                e.target.value === '' ? '' : Number(e.target.value),
-              )
-            }
-          />
-          {newContentForm.errors.order ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.order}</p>
+            <p className="text-xs text-destructive">
+              {newContentForm.errors.type}
+            </p>
           ) : null}
         </div>
       </div>
 
       <div className="grid gap-3 pt-3 lg:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`new-content-url-${lessonId}`}>URL</Label>
-          <Input
-            id={`new-content-url-${lessonId}`}
-            value={newContentForm.data.url ?? ''}
-            onChange={(e) => newContentForm.setData('url', e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`new-content-file-${lessonId}`}>File path</Label>
-          <Input
-            id={`new-content-file-${lessonId}`}
-            value={newContentForm.data.file_path ?? ''}
-            onChange={(e) => newContentForm.setData('file_path', e.target.value)}
-            placeholder="/storage/material.pdf"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`new-content-due-${lessonId}`}>Due date (optional)</Label>
-          <Input
-            id={`new-content-due-${lessonId}`}
-            type="date"
-            value={newContentForm.data.due_date ?? ''}
-            onChange={(e) => newContentForm.setData('due_date', e.target.value)}
-          />
-          {newContentForm.errors.due_date ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.due_date}</p>
-          ) : null}
-        </div>
+        {/* Show URL for video and link types */}
+        {(newContentForm.data.type === 'video' ||
+          newContentForm.data.type === 'link') && (
+          <div className="space-y-2">
+            <Label htmlFor={`new-content-url-${lessonId}`}>URL</Label>
+            <Input
+              id={`new-content-url-${lessonId}`}
+              value={newContentForm.data.url ?? ''}
+              onChange={(e) => newContentForm.setData('url', e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+        )}
+        {/* Show file upload for file type */}
+        {newContentForm.data.type === 'file' && (
+          <div className="space-y-2">
+            <Label htmlFor={`new-content-file-${lessonId}`}>File Upload</Label>
+            <Input
+              id={`new-content-file-${lessonId}`}
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  newContentForm.setData('file_path', file);
+                }
+              }}
+            />
+          </div>
+        )}
+        {/* Show due date only for quiz type */}
+        {newContentForm.data.type === 'quiz' && (
+          <div className="space-y-2">
+            <Label htmlFor={`new-content-due-${lessonId}`}>Due date</Label>
+            <Input
+              id={`new-content-due-${lessonId}`}
+              type="date"
+              value={newContentForm.data.due_date ?? ''}
+              onChange={(e) =>
+                newContentForm.setData('due_date', e.target.value)
+              }
+            />
+            {newContentForm.errors.due_date ? (
+              <p className="text-xs text-destructive">
+                {newContentForm.errors.due_date}
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 pt-3 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-2">
-          <Label htmlFor={`new-content-description-${lessonId}`}>Description</Label>
+          <Label htmlFor={`new-content-description-${lessonId}`}>
+            Description
+          </Label>
           <Textarea
             id={`new-content-description-${lessonId}`}
             rows={2}
             value={newContentForm.data.description ?? ''}
-            onChange={(e) => newContentForm.setData('description', e.target.value)}
+            onChange={(e) =>
+              newContentForm.setData('description', e.target.value)
+            }
           />
           {newContentForm.errors.description ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.description}</p>
+            <p className="text-xs text-destructive">
+              {newContentForm.errors.description}
+            </p>
           ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`new-content-duration-${lessonId}`}>Duration (minutes)</Label>
+          <Label htmlFor={`new-content-duration-${lessonId}`}>
+            Duration (minutes)
+          </Label>
           <Input
             id={`new-content-duration-${lessonId}`}
             type="number"
@@ -376,15 +418,21 @@ function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
               type="checkbox"
               className="size-4 rounded border-border"
               checked={newContentForm.data.is_required}
-              onChange={(e) => newContentForm.setData('is_required', e.target.checked)}
+              onChange={(e) =>
+                newContentForm.setData('is_required', e.target.checked)
+              }
             />
             Required
           </label>
           {newContentForm.errors.duration_minutes ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.duration_minutes}</p>
+            <p className="text-xs text-destructive">
+              {newContentForm.errors.duration_minutes}
+            </p>
           ) : null}
           {newContentForm.errors.is_required ? (
-            <p className="text-xs text-destructive">{newContentForm.errors.is_required}</p>
+            <p className="text-xs text-destructive">
+              {newContentForm.errors.is_required}
+            </p>
           ) : null}
         </div>
       </div>
@@ -425,11 +473,15 @@ function LessonCard({ courseId, lesson }: LessonCardProps) {
   });
 
   const saveLesson = () => {
-    lessonForm.put(`/courses/manage/${courseId}/lessons/${lesson.id}`, { preserveScroll: true });
+    lessonForm.put(`/courses/manage/${courseId}/lessons/${lesson.id}`, {
+      preserveScroll: true,
+    });
   };
 
   const deleteLesson = () => {
-    router.delete(`/courses/manage/${courseId}/lessons/${lesson.id}`, { preserveScroll: true });
+    router.delete(`/courses/manage/${courseId}/lessons/${lesson.id}`, {
+      preserveScroll: true,
+    });
   };
 
   return (
@@ -445,7 +497,9 @@ function LessonCard({ courseId, lesson }: LessonCardProps) {
                 onChange={(e) => lessonForm.setData('title', e.target.value)}
               />
               {lessonForm.errors.title ? (
-                <p className="text-xs text-destructive">{lessonForm.errors.title}</p>
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.title}
+                </p>
               ) : null}
             </div>
             <div className="space-y-2">
@@ -463,26 +517,36 @@ function LessonCard({ courseId, lesson }: LessonCardProps) {
                 }
               />
               {lessonForm.errors.order ? (
-                <p className="text-xs text-destructive">{lessonForm.errors.order}</p>
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.order}
+                </p>
               ) : null}
             </div>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-2">
-              <Label htmlFor={`lesson-description-${lesson.id}`}>Description</Label>
+            <div className="space-y-2 lg:col-span-2">
+              <Label htmlFor={`lesson-description-${lesson.id}`}>
+                Description
+              </Label>
               <Textarea
                 id={`lesson-description-${lesson.id}`}
                 rows={3}
                 value={lessonForm.data.description ?? ''}
-                onChange={(e) => lessonForm.setData('description', e.target.value)}
+                onChange={(e) =>
+                  lessonForm.setData('description', e.target.value)
+                }
               />
               {lessonForm.errors.description ? (
-                <p className="text-xs text-destructive">{lessonForm.errors.description}</p>
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.description}
+                </p>
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`lesson-duration-${lesson.id}`}>Duration (minutes)</Label>
+              <Label htmlFor={`lesson-duration-${lesson.id}`}>
+                Duration (minutes)
+              </Label>
               <Input
                 id={`lesson-duration-${lesson.id}`}
                 type="number"
@@ -499,14 +563,20 @@ function LessonCard({ courseId, lesson }: LessonCardProps) {
               <Input
                 id={`lesson-video-${lesson.id}`}
                 value={lessonForm.data.video_url ?? ''}
-                onChange={(e) => lessonForm.setData('video_url', e.target.value)}
+                onChange={(e) =>
+                  lessonForm.setData('video_url', e.target.value)
+                }
                 placeholder="https://..."
               />
               {lessonForm.errors.duration_minutes ? (
-                <p className="text-xs text-destructive">{lessonForm.errors.duration_minutes}</p>
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.duration_minutes}
+                </p>
               ) : null}
               {lessonForm.errors.video_url ? (
-                <p className="text-xs text-destructive">{lessonForm.errors.video_url}</p>
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.video_url}
+                </p>
               ) : null}
             </div>
           </div>
@@ -585,14 +655,15 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
   };
 
   const submitLesson = () => {
-    if (! course) {
+    if (!course) {
       return;
     }
 
     lessonForm.transform((data) => ({
       ...data,
       order: data.order === '' ? null : Number(data.order),
-      duration_minutes: data.duration_minutes === '' ? null : Number(data.duration_minutes),
+      duration_minutes:
+        data.duration_minutes === '' ? null : Number(data.duration_minutes),
     }));
 
     lessonForm.post(`/courses/manage/${course.id}/lessons`, {
@@ -620,7 +691,7 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
             </Button>
           </Link>
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs tracking-wide text-muted-foreground uppercase">
               {isEdit ? 'Update course' : 'New course'}
             </p>
             <h1 className="text-2xl font-bold text-foreground">
@@ -631,7 +702,9 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Course details</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Course details
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -690,7 +763,12 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
                   type="number"
                   min={1}
                   value={form.data.duration_minutes ?? ''}
-                  onChange={(e) => form.setData('duration_minutes', Number(e.target.value) || '')}
+                  onChange={(e) =>
+                    form.setData(
+                      'duration_minutes',
+                      Number(e.target.value) || '',
+                    )
+                  }
                   placeholder="e.g. 120"
                 />
               </div>
@@ -730,7 +808,11 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
               <Link href="/courses/manage" prefetch>
                 <Button variant="ghost">Cancel</Button>
               </Link>
-              <Button onClick={submitCourse} disabled={form.processing} className="inline-flex items-center gap-2">
+              <Button
+                onClick={submitCourse}
+                disabled={form.processing}
+                className="inline-flex items-center gap-2"
+              >
                 <Save className="size-4" />
                 {isEdit ? 'Save changes' : 'Create course'}
               </Button>
@@ -741,18 +823,24 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
         {isEdit && course ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Lessons & content</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Lessons & content
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4">
-                <p className="text-sm font-semibold text-foreground">Add lesson</p>
+                <p className="text-sm font-semibold text-foreground">
+                  Add lesson
+                </p>
                 <div className="grid gap-3 pt-3 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="new-lesson-title">Title</Label>
                     <Input
                       id="new-lesson-title"
                       value={lessonForm.data.title}
-                      onChange={(e) => lessonForm.setData('title', e.target.value)}
+                      onChange={(e) =>
+                        lessonForm.setData('title', e.target.value)
+                      }
                       placeholder="Lesson title"
                     />
                   </div>
@@ -763,9 +851,13 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
                       type="number"
                       min={1}
                       value={
-                        lessonForm.data.order === '' ? '' : String(lessonForm.data.order)
+                        lessonForm.data.order === ''
+                          ? ''
+                          : String(lessonForm.data.order)
                       }
-                      onChange={(e) => lessonForm.setData('order', e.target.value)}
+                      onChange={(e) =>
+                        lessonForm.setData('order', e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -776,11 +868,15 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
                       id="new-lesson-description"
                       rows={3}
                       value={lessonForm.data.description ?? ''}
-                      onChange={(e) => lessonForm.setData('description', e.target.value)}
+                      onChange={(e) =>
+                        lessonForm.setData('description', e.target.value)
+                      }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-lesson-duration">Duration (minutes)</Label>
+                    <Label htmlFor="new-lesson-duration">
+                      Duration (minutes)
+                    </Label>
                     <Input
                       id="new-lesson-duration"
                       type="number"
@@ -798,7 +894,9 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
                     <Input
                       id="new-lesson-video"
                       value={lessonForm.data.video_url ?? ''}
-                      onChange={(e) => lessonForm.setData('video_url', e.target.value)}
+                      onChange={(e) =>
+                        lessonForm.setData('video_url', e.target.value)
+                      }
                       placeholder="https://..."
                     />
                   </div>
@@ -826,7 +924,9 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No lessons yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No lessons yet.
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -834,7 +934,9 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
         ) : isEdit ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Lessons & content</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Lessons & content
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               Save the course first to manage lessons and content.
@@ -845,4 +947,3 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
     </AppLayout>
   );
 }
-

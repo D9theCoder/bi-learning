@@ -50,6 +50,9 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
       currentUserId !== undefined &&
       course.instructor_id === currentUserId);
 
+  // Admins can view all content, tutors can view their own course content, or user must be enrolled
+  const canViewContent = isAdmin || canManageCourse || isEnrolled;
+
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,
   );
@@ -263,41 +266,72 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {activeSession.contents.length > 0 ? (
-                        activeSession.contents.map((content) => (
-                          <div
-                            key={content.id}
-                            className={`flex items-center justify-between rounded-lg p-3 ${
-                              isEnrolled
-                                ? 'cursor-pointer bg-white/10 hover:bg-white/20'
-                                : 'cursor-not-allowed bg-white/5 opacity-70'
-                            } transition-colors`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="rounded-md bg-white p-2 text-yellow-600">
-                                {getIconForType(content.type)}
+                        activeSession.contents.map((content) => {
+                          const handleContentClick = () => {
+                            if (!canViewContent) return;
+
+                            if (content.type === 'file' && content.file_path) {
+                              // Download file
+                              window.open(
+                                `/storage/${content.file_path}`,
+                                '_blank',
+                              );
+                            } else if (
+                              (content.type === 'video' ||
+                                content.type === 'link') &&
+                              content.url
+                            ) {
+                              // Open video/link in new tab
+                              window.open(content.url, '_blank');
+                            }
+                          };
+
+                          return (
+                            <div
+                              key={content.id}
+                              onClick={handleContentClick}
+                              className={`flex items-center justify-between rounded-lg p-3 ${
+                                canViewContent
+                                  ? 'cursor-pointer bg-white/10 hover:bg-white/20'
+                                  : 'cursor-not-allowed bg-white/5 opacity-70'
+                              } transition-colors`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-md bg-white p-2 text-yellow-600">
+                                  {getIconForType(content.type)}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {content.title}
+                                  </p>
+                                  <p className="text-xs opacity-80">
+                                    {content.duration_minutes
+                                      ? `• ${content.duration_minutes}m`
+                                      : ''}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {content.title}
-                                </p>
-                                <p className="text-xs opacity-80">
-                                  {content.duration_minutes
-                                    ? `• ${content.duration_minutes}m`
-                                    : ''}
-                                </p>
-                              </div>
+                              {canViewContent &&
+                                (content.file_path || content.url) && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleContentClick();
+                                    }}
+                                  >
+                                    {content.type === 'file' ? (
+                                      <Download className="h-4 w-4" />
+                                    ) : (
+                                      <LinkIcon className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                )}
                             </div>
-                            {isEnrolled && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <p className="text-sm italic opacity-80">
                           No materials listed for this session.

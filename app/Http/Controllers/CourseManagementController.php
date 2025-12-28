@@ -212,7 +212,16 @@ class CourseManagementController extends Controller
         $this->ensureLessonBelongsToCourse($lesson, $course);
         $this->ensureCanManageCourse($request->user(), $course);
 
-        $lesson->contents()->create($request->validated());
+        $data = $request->validated();
+        
+        // Handle file upload
+        if ($request->hasFile('file_path')) {
+            $file = $request->file('file_path');
+            $path = $file->store('course-content', 'public');
+            $data['file_path'] = $path;
+        }
+
+        $lesson->contents()->create($data);
 
         return redirect()
             ->route('courses.manage.edit', $course)
@@ -225,7 +234,24 @@ class CourseManagementController extends Controller
         $this->ensureContentBelongsToLesson($content, $lesson);
         $this->ensureCanManageCourse($request->user(), $course);
 
-        $content->update($request->validated());
+        $data = $request->validated();
+        
+        // Handle file upload
+        if ($request->hasFile('file_path')) {
+            // Delete old file if exists
+            if ($content->file_path && \Storage::disk('public')->exists($content->file_path)) {
+                \Storage::disk('public')->delete($content->file_path);
+            }
+            
+            $file = $request->file('file_path');
+            $path = $file->store('course-content', 'public');
+            $data['file_path'] = $path;
+        } else {
+            // Keep existing file path if no new file uploaded
+            unset($data['file_path']);
+        }
+
+        $content->update($data);
 
         return redirect()
             ->route('courses.manage.edit', $course)

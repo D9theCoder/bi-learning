@@ -49,6 +49,9 @@ class CourseController extends Controller
         // Paginate
         if ($user->hasRole('tutor') && ! $user->hasRole('admin')) {
             $query->where('instructor_id', $user->id);
+        } elseif (! $user->hasAnyRole(['admin', 'tutor'])) {
+            // Students can only see published courses
+            $query->where('is_published', true);
         }
 
         $courses = $query->paginate(12)->withQueryString();

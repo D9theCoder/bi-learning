@@ -13,8 +13,6 @@ class UpdateCourseContentRequest extends FormRequest
     {
         $this->merge([
             'duration_minutes' => $this->input('duration_minutes') === '' ? null : $this->input('duration_minutes'),
-            'order' => $this->input('order') === '' ? null : $this->input('order'),
-            'file_path' => $this->input('file_path') === '' ? null : $this->input('file_path'),
             'url' => $this->input('url') === '' ? null : $this->input('url'),
             'description' => $this->input('description') === '' ? null : $this->input('description'),
             'due_date' => $this->input('due_date') === '' ? null : $this->input('due_date'),
@@ -51,14 +49,13 @@ class UpdateCourseContentRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:file,video,link,quiz,attendance'],
-            'file_path' => ['nullable', 'string', 'max:255'],
+            'type' => ['required', 'in:file,video,link,quiz'],
+            'file_path' => ['nullable', 'file', 'max:102400'], // 100MB max
             'url' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'due_date' => ['nullable', 'date'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'is_required' => ['sometimes', 'boolean'],
-            'order' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }
