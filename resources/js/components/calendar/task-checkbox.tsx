@@ -1,5 +1,5 @@
-import { Checkbox } from '@/components/ui/checkbox';
-import { useForm } from '@inertiajs/react';
+import { cn } from '@/lib/utils';
+import { CheckCircle2, Circle } from 'lucide-react';
 
 interface TaskCheckboxProps {
   task: {
@@ -11,36 +11,35 @@ interface TaskCheckboxProps {
 }
 
 export function TaskCheckbox({ task }: TaskCheckboxProps) {
-  const { data, setData, patch, processing } = useForm({
-    completed: task.completed,
-  });
-
-  const handleChange = (checked: boolean | 'indeterminate') => {
-    const newValue = checked === true;
-    setData('completed', newValue);
-    patch(route('tasks.toggle', { task: task.id }), {
-      preserveScroll: true,
-    });
-  };
-
   return (
-    <div className="flex items-center gap-3">
-      <Checkbox
-        checked={data.completed}
-        disabled={processing}
-        onCheckedChange={handleChange}
-      />
+    <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-3">
+      <div className="mt-0.5">
+        {task.completed ? (
+          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        ) : (
+          <Circle className="h-5 w-5 text-muted-foreground" />
+        )}
+      </div>
       <div className="flex-1">
         <div
-          className={data.completed ? 'text-muted-foreground line-through' : ''}
+          className={cn('font-medium',
+            task.completed && 'text-muted-foreground line-through')}
         >
           {task.title}
         </div>
-        {task.xp_reward && (
-          <div className="text-xs text-muted-foreground">
-            {task.xp_reward} XP
-          </div>
-        )}
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 font-medium',
+              task.completed
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-amber-50 text-amber-700',
+            )}
+          >
+            {task.completed ? 'Completed' : 'Scheduled'}
+          </span>
+          {task.xp_reward && <span>{task.xp_reward} XP</span>}
+        </div>
       </div>
     </div>
   );

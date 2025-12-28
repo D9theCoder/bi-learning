@@ -1,410 +1,491 @@
-# Bi-Learning Platform - AI Coding Agent Instructions
+<laravel-boost-guidelines>
+=== foundation rules ===
 
-## Project Overview
+# Laravel Boost Guidelines
 
-**Bi-Learning** is a gamified e-learning platform built with Laravel 12, Inertia.js v2, React 19, and Tailwind CSS v4. The platform features comprehensive user progress tracking, achievements, cohort-based learning, daily tasks, tutor messaging, and a reward system. The architecture emphasizes a component-driven React frontend with a Laravel API backend, leveraging Inertia for seamless SPA behavior without building a separate API.
+The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to enhance the user's satisfaction building Laravel applications.
 
-### Tech Stack & Versions
-- **Backend**: PHP 8.4.14, Laravel 12, Fortify v1 (auth), Wayfinder v0 (routing)
-- **Frontend**: React 19, Inertia.js v2, TypeScript, Tailwind CSS v4, shadcn/ui (New York style)
-- **Testing**: Pest v4 (with browser testing support), PHPUnit v12
-- **Tooling**: Vite 7, Laravel Pint v1, ESLint v9, Prettier v3, Laravel Boost MCP
-- **Dev Environment**: Laravel Herd (serves at `https://web-skripsi.test`)
+## Foundational Context
+This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
----
+- php - 8.4.14
+- inertiajs/inertia-laravel (INERTIA) - v2
+- laravel/fortify (FORTIFY) - v1
+- laravel/framework (LARAVEL) - v12
+- laravel/prompts (PROMPTS) - v0
+- laravel/wayfinder (WAYFINDER) - v0
+- laravel/mcp (MCP) - v0
+- laravel/pint (PINT) - v1
+- laravel/sail (SAIL) - v1
+- pestphp/pest (PEST) - v4
+- phpunit/phpunit (PHPUNIT) - v12
+- @inertiajs/react (INERTIA) - v2
+- react (REACT) - v19
+- tailwindcss (TAILWINDCSS) - v4
+- @laravel/vite-plugin-wayfinder (WAYFINDER) - v0
+- eslint (ESLINT) - v9
+- prettier (PRETTIER) - v3
 
-## Architecture & Data Model
 
-### Domain Model (Key Entities)
-The platform centers around **gamified learning** with these core entities:
+## Conventions
+- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, naming.
+- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
+- Check for existing components to reuse before writing a new one.
 
-- **User**: Learners with XP, levels, streaks, points balance, cohort membership
-- **Course**: Instructor-created learning content with lessons, difficulty levels, categories
-- **Enrollment**: Many-to-many relationship tracking user progress in courses (progress_percentage, status, last_activity)
-- **Lesson**: Ordered course content with duration, video URLs, completion tracking
-- **Achievement**: Unlockable badges with rarity tiers (bronze/silver/gold/platinum) and XP rewards
-- **DailyTask**: User-specific tasks with completion tracking, XP rewards, due dates
-- **Activity**: Audit log of user actions (lesson_completed, achievement_earned, level_up, etc.)
-- **Reward**: Redeemable items costing points (rarity: common/rare/epic/legendary)
-- **TutorMessage**: Direct messaging between users and tutors (instructor role)
-- **Cohort**: Group-based learning with leaderboards for competitive engagement
+## Verification Scripts
+- Do not create verification scripts or tinker when tests cover that functionality and prove it works. Unit and feature tests are more important.
 
-### Key Relationships
-- `User` → `hasMany` Enrollments, DailyTasks, Activities, TutorMessages
-- `User` → `belongsToMany` Achievements (pivot: earned_at), Rewards (pivot: points_spent, claimed_at)
-- `User` → `belongsTo` Cohort
-- `Course` → `hasMany` Lessons (ordered), Enrollments
-- `Enrollment` → computed `next_lesson` via `User->nextLessonForEnrollment()`
+## Application Structure & Architecture
+- Stick to existing directory structure - don't create new base folders without approval.
+- Do not change the application's dependencies without approval.
 
-### Data Flow Pattern
-Controllers aggregate data via Eloquent relationships → Inertia::render() passes props to React pages → TypeScript interfaces (`resources/js/types/index.d.ts`) enforce type safety → Components consume typed props.
+## Frontend Bundling
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
 
-**Example**: `DashboardController` loads user stats, enrollments with nested courses/lessons, achievements, tasks, activities, and cohort leaderboard—all passed as typed props to `dashboard.tsx`.
+## Replies
+- Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
----
+## Documentation Files
+- You must only create documentation files if explicitly requested by the user.
 
-## Laravel 12 Specifics
 
-### Modern Laravel Structure (v11+)
-- **No `app/Http/Kernel.php`**: Middleware registered in `bootstrap/app.php` via `withMiddleware()`
-- **No `app/Console/Kernel.php`**: Commands auto-register from `app/Console/Commands/`
-- **Service providers**: Application-specific providers in `bootstrap/providers.php`
-- **Routing**: `bootstrap/app.php` configures web routes (`routes/web.php`, `routes/settings.php`)
+=== boost rules ===
 
-### Code Conventions
-- **PHP 8 constructor promotion**: `public function __construct(public GitHub $github) {}`
-- **Explicit return types**: Always declare return types on methods
-- **Casts in methods**: Use `casts()` method on models, not `$casts` property
-- **No `env()` outside config files**: Use `config('app.name')` everywhere else
-- **Eloquent over raw queries**: Prefer `Model::query()`, avoid `DB::`, eager load to prevent N+1
-- **Form Requests for validation**: Always create dedicated request classes (check siblings for array vs string rules)
+## Laravel Boost
+- Laravel Boost is an MCP server that comes with powerful tools designed specifically for this application. Use them.
 
----
+## Artisan
+- Use the `list-artisan-commands` tool when you need to call an Artisan command to double check the available parameters.
 
-## Frontend Architecture (Inertia + React + TypeScript)
+## URLs
+- Whenever you share a project URL with the user you should use the `get-absolute-url` tool to ensure you're using the correct scheme, domain / IP, and port.
 
-### File Structure
-- **Pages**: `resources/js/pages/**/*.tsx` (auto-resolved by Inertia, e.g., `dashboard.tsx` → `dashboard` component)
-- **Components**: `resources/js/components/` (UI primitives in `ui/`, domain components in `dashboard/`)
-- **Types**: `resources/js/types/index.d.ts` (all domain interfaces)
-- **Layouts**: `resources/js/layouts/app-layout/` (AppLayout with sidebar, breadcrumbs)
-- **Utilities**: `resources/js/lib/utils.ts` (`cn()` for className merging)
-- **Hooks**: `resources/js/hooks/` (e.g., `use-appearance.ts`)
+## Tinker / Debugging
+- You should use the `tinker` tool when you need to execute PHP to debug code or query Eloquent models directly.
+- Use the `database-query` tool when you only need to read from the database.
 
-### TypeScript Path Aliases
-- `@/*` → `resources/js/*` (configured in `tsconfig.json`, `vite.config.ts`, `components.json`)
+## Reading Browser Logs With the `browser-logs` Tool
+- You can read browser logs, errors, and exceptions using the `browser-logs` tool from Boost.
+- Only recent browser logs will be useful - ignore old logs.
 
-### Inertia v2 Features in Use
-- **Navigation**: `router.visit()` or `<Link>` component (never traditional `<a>` tags)
-- **Forms**: `<Form>` component (preferred) or `useForm()` hook for manual control
-- **Deferred props**: Non-critical data (leaderboard, activity feed) loaded after initial render
-- **Route helpers**: Laravel Wayfinder generates type-safe route helpers (`dashboard()`, `courses()`, etc.)
+## Searching Documentation (Critically Important)
+- Boost comes with a powerful `search-docs` tool you should use before any other approaches. This tool automatically passes a list of installed packages and their versions to the remote Boost API, so it returns only version-specific documentation specific for the user's circumstance. You should pass an array of packages to filter on if you know you need docs for particular packages.
+- The 'search-docs' tool is perfect for all Laravel related packages, including Laravel, Inertia, Livewire, Filament, Tailwind, Pest, Nova, Nightwatch, etc.
+- You must use this tool to search for Laravel-ecosystem documentation before falling back to other approaches.
+- Search the documentation before making code changes to ensure we are taking the correct approach.
+- Use multiple, broad, simple, topic based queries to start. For example: `['rate limiting', 'routing rate limiting', 'routing']`.
+- Do not add package names to queries - package information is already shared. For example, use `test resource table`, not `filament 4 test resource table`.
 
-### React Patterns
-- **React 19**: Using React Compiler (`babel-plugin-react-compiler` in Vite config)
-- **Memoization**: `memo()` for expensive components (DashboardStatsSection, CoursesSkeleton, etc.)
-- **Error boundaries**: Custom `DashboardErrorBoundary` component wraps sections to isolate failures
-- **Loading states**: Skeleton components for all major sections during deferred prop loading
-- **Accessibility**: Semantic HTML, ARIA labels (`aria-label`, `aria-labelledby`, `role="list"`), keyboard nav support
+### Available Search Syntax
+- You can and should pass multiple queries at once. The most relevant results will be returned first.
 
----
+1. Simple Word Searches with auto-stemming - query=authentication - finds 'authenticate' and 'auth'
+2. Multiple Words (AND Logic) - query=rate limit - finds knowledge containing both "rate" AND "limit"
+3. Quoted Phrases (Exact Position) - query="infinite scroll" - Words must be adjacent and in that order
+4. Mixed Queries - query=middleware "rate limit" - "middleware" AND exact phrase "rate limit"
+5. Multiple Queries - queries=["authentication", "middleware"] - ANY of these terms
 
-## Component System (shadcn/ui)
+
+=== php rules ===
+
+## PHP
+
+- Always use curly braces for control structures, even if it has one line.
+
+### Constructors
+- Use PHP 8 constructor property promotion in `__construct()`.
+    - <code-snippet>public function __construct(public GitHub $github) { }</code-snippet>
+- Do not allow empty `__construct()` methods with zero parameters.
+
+### Type Declarations
+- Always use explicit return type declarations for methods and functions.
+- Use appropriate PHP type hints for method parameters.
+
+<code-snippet name="Explicit Return Types and Method Params" lang="php">
+protected function isAccessible(User $user, ?string $path = null): bool
+{
+    ...
+}
+</code-snippet>
+
+## Comments
+- Prefer PHPDoc blocks over comments. Never use comments within the code itself unless there is something _very_ complex going on.
+
+## PHPDoc Blocks
+- Add useful array shape type definitions for arrays when appropriate.
+
+## Enums
+- Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
+
+
+=== herd rules ===
+
+## Laravel Herd
+
+- The application is served by Laravel Herd and will be available at: https?://[kebab-case-project-dir].test. Use the `get-absolute-url` tool to generate URLs for the user to ensure valid URLs.
+- You must not run any commands to make the site available via HTTP(s). It is _always_ available through Laravel Herd.
+
+
+=== inertia-laravel/core rules ===
+
+## Inertia Core
+
+- Inertia.js components should be placed in the `resources/js/Pages` directory unless specified differently in the JS bundler (vite.config.js).
+- Use `Inertia::render()` for server-side routing instead of traditional Blade views.
+- Use `search-docs` for accurate guidance on all things Inertia.
+
+<code-snippet lang="php" name="Inertia::render Example">
+// routes/web.php example
+Route::get('/users', function () {
+    return Inertia::render('Users/Index', [
+        'users' => User::all()
+    ]);
+});
+</code-snippet>
+
+
+=== inertia-laravel/v2 rules ===
+
+## Inertia v2
+
+- Make use of all Inertia features from v1 & v2. Check the documentation before making any changes to ensure we are taking the correct approach.
+
+### Inertia v2 New Features
+- Polling
+- Prefetching
+- Deferred props
+- Infinite scrolling using merging props and `WhenVisible`
+- Lazy loading data on scroll
+
+### Deferred Props & Empty States
+- When using deferred props on the frontend, you should add a nice empty state with pulsing / animated skeleton.
+
+### Inertia Form General Guidance
+- The recommended way to build forms when using Inertia is with the `<Form>` component - a useful example is below. Use `search-docs` with a query of `form component` for guidance.
+- Forms can also be built using the `useForm` helper for more programmatic control, or to follow existing conventions. Use `search-docs` with a query of `useForm helper` for guidance.
+- `resetOnError`, `resetOnSuccess`, and `setDefaultsOnSuccess` are available on the `<Form>` component. Use `search-docs` with a query of 'form component resetting' for guidance.
+
+
+=== laravel/core rules ===
+
+## Do Things the Laravel Way
+
+- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using the `list-artisan-commands` tool.
+- If you're creating a generic PHP class, use `artisan make:class`.
+- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
+
+### Database
+- Always use proper Eloquent relationship methods with return type hints. Prefer relationship methods over raw queries or manual joins.
+- Use Eloquent models and relationships before suggesting raw database queries
+- Avoid `DB::`; prefer `Model::query()`. Generate code that leverages Laravel's ORM capabilities rather than bypassing them.
+- Generate code that prevents N+1 query problems by using eager loading.
+- Use Laravel's query builder for very complex database operations.
+
+### Model Creation
+- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `list-artisan-commands` to check the available options to `php artisan make:model`.
+
+### APIs & Eloquent Resources
+- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
+
+### Controllers & Validation
+- Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
+- Check sibling Form Requests to see if the application uses array or string based validation rules.
+
+### Queues
+- Use queued jobs for time-consuming operations with the `ShouldQueue` interface.
+
+### Authentication & Authorization
+- Use Laravel's built-in authentication and authorization features (gates, policies, Sanctum, etc.).
+
+### URL Generation
+- When generating links to other pages, prefer named routes and the `route()` function.
 
 ### Configuration
-- **Style**: "new-york" (from `components.json`)
-- **Base color**: neutral
-- **Icon library**: lucide-react
-- **CSS Variables**: Enabled for theming (supports dark mode via `dark:` prefix)
+- Use environment variables only in configuration files - never use the `env()` function directly outside of config files. Always use `config('app.name')`, not `env('APP_NAME')`.
 
-### Custom Dashboard Components (`resources/js/components/dashboard/`)
-These domain-specific components follow shadcn patterns:
+### Testing
+- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
+- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
+- When creating tests, make use of `php artisan make:test [options] <name>` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-1. **StatCard**: KPI display with icon, label, value, optional trend indicator
-2. **CourseCard**: Course thumbnail, progress ring, last activity, resume CTA
-3. **ProgressRing**: SVG-based circular progress with center label
-4. **StreakIndicator**: Flame icon with animated glow for active streaks
-5. **TodayTaskList**: Checkbox-based task list with overall progress bar
-6. **AchievementBadge**: Rarity-based styling with confetti animation on unlock
-7. **RecentActivityFeed**: Timeline-style list with icons and relative timestamps
-8. **TutorChatWidget**: Compact message list with unread badge and quick reply
-9. **MiniChart**: Wrapper around recharts (area/bar/sparkline)
-10. **LevelProgressBar**: Linear progress bar with level badge and XP display
-11. **CohortLeaderboard**: Top 10 list with rank badges and current user highlight
+### Vite Error
+- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
-**Key Pattern**: All dashboard components accept typed props from `resources/js/types/index.d.ts`.
 
----
+=== laravel/v12 rules ===
 
-## Tailwind CSS v4 Specifics
+## Laravel 12
 
-### Import Syntax (CRITICAL)
-```css
-/* resources/css/app.css */
-@import "tailwindcss"; /* NOT @tailwind base/components/utilities */
-```
+- Use the `search-docs` tool to get version specific documentation.
+- Since Laravel 11, Laravel has a new streamlined file structure which this project uses.
 
-### Deprecated Utilities Replaced
-- `bg-opacity-*` → `bg-black/*`
-- `flex-shrink-*` → `shrink-*`
-- `overflow-ellipsis` → `text-ellipsis`
+### Laravel 12 Structure
+- No middleware files in `app/Http/Middleware/`.
+- `bootstrap/app.php` is the file to register middleware, exceptions, and routing files.
+- `bootstrap/providers.php` contains application specific service providers.
+- **No app\Console\Kernel.php** - use `bootstrap/app.php` or `routes/console.php` for console configuration.
+- **Commands auto-register** - files in `app/Console/Commands/` are automatically available and do not require manual registration.
 
-### Spacing Convention
-Use `gap-*` utilities for spacing in flex/grid layouts—**never margins** between list items.
+### Database
+- When modifying a column, the migration must include all of the attributes that were previously defined on the column. Otherwise, they will be dropped and lost.
+- Laravel 11 allows limiting eagerly loaded records natively, without external packages: `$query->latest()->limit(10);`.
 
-```tsx
-// ✅ Correct
-<div className="flex gap-4">
-  <div>Item 1</div>
-  <div>Item 2</div>
-</div>
+### Models
+- Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
 
-// ❌ Avoid
-<div className="flex">
-  <div className="mr-4">Item 1</div>
-  <div>Item 2</div>
-</div>
-```
 
-### Dark Mode
-All existing pages/components support dark mode via `dark:` prefix. New components must follow this pattern.
+=== pint/core rules ===
 
----
+## Laravel Pint Code Formatter
 
-## Testing with Pest v4
+- You must run `vendor/bin/pint --dirty` before finalizing changes to ensure your code matches the project's expected style.
+- Do not run `vendor/bin/pint --test`, simply run `vendor/bin/pint` to fix any formatting issues.
 
-### Test Structure
-- **Feature tests**: `tests/Feature/` (most tests should be feature tests)
-- **Unit tests**: `tests/Unit/`
-- **Browser tests**: `tests/Browser/` (Pest v4 supports real browser testing)
 
-### Conventions from `DashboardTest.php`
-```php
-// ✅ Use specific assertions
-$response->assertSuccessful(); // not assertStatus(200)
-$response->assertForbidden(); // not assertStatus(403)
+=== pest/core rules ===
 
-// ✅ Inertia assertions with AssertableInertia
-->assertInertia(fn (Assert $page) => $page
-    ->component('dashboard')
-    ->has('stats')
-    ->where('stats.level', 8)
-)
+## Pest
 
-// ✅ Always use factories for test data
-$user = User::factory()->create(['total_xp' => 2500]);
-$enrollment = Enrollment::factory()->create(['status' => 'active']);
+### Testing
+- If you need to verify a feature is working, write or update a Unit / Feature test.
 
-// ✅ Use RefreshDatabase trait (enabled in Pest.php)
-```
+### Pest Tests
+- All tests must be written using Pest. Use `php artisan make:test --pest <name>`.
+- You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files - these are core to the application.
+- Tests should test all of the happy paths, failure paths, and weird paths.
+- Tests live in the `tests/Feature` and `tests/Unit` directories.
+- Pest tests look and behave like this:
+<code-snippet name="Basic Pest Test Example" lang="php">
+it('is true', function () {
+    expect(true)->toBeTrue();
+});
+</code-snippet>
 
 ### Running Tests
-- All tests: `php artisan test`
-- Single file: `php artisan test tests/Feature/DashboardTest.php`
-- Filter by name: `php artisan test --filter=testName`
+- Run the minimal number of tests using an appropriate filter before finalizing code edits.
+- To run all tests: `php artisan test`.
+- To run all tests in a file: `php artisan test tests/Feature/ExampleTest.php`.
+- To filter on a particular test name: `php artisan test --filter=testName` (recommended after making a change to a related file).
+- When the tests relating to your changes are passing, ask the user if they would like to run the entire test suite to ensure everything is still passing.
 
-**CRITICAL**: Always run affected tests after code changes. Every change must be programmatically tested.
+### Pest Assertions
+- When asserting status codes on a response, use the specific method like `assertForbidden` and `assertNotFound` instead of using `assertStatus(403)` or similar, e.g.:
+<code-snippet name="Pest Example Asserting postJson Response" lang="php">
+it('returns all', function () {
+    $response = $this->postJson('/api/docs', []);
 
----
+    $response->assertSuccessful();
+});
+</code-snippet>
 
-## Development Workflow
+### Mocking
+- Mocking can be very helpful when appropriate.
+- When mocking, you can use the `Pest\Laravel\mock` Pest function, but always import it via `use function Pest\Laravel\mock;` before using it. Alternatively, you can use `$this->mock()` if existing tests do.
+- You can also create partial mocks using the same import or self method.
 
-### Commands
-```bash
-# Start all dev services (server, queue, vite)
-composer run dev
+### Datasets
+- Use datasets in Pest to simplify tests which have a lot of duplicated data. This is often the case when testing validation rules, so consider going with this solution when writing tests for validation rules.
 
-# Build frontend assets![1761934159200](image/AGENTS/1761934159200.png)
-npm run build
-
-# Format code
-vendor/bin/pint        # PHP (Laravel Pint)
-npm run format         # TypeScript/React (Prettier)
-
-# Type checking
-npm run types          # TypeScript validation
-
-# Testing
-php artisan test
-php artisan test --filter=dashboard
-```
-
-### Creating New Features
-1. **Models/Migrations**: `php artisan make:model Course -mfs` (model, migration, factory, seeder)
-2. **Controllers**: `php artisan make:controller CourseController`
-3. **Form Requests**: `php artisan make:request StoreCourseRequest`
-4. **Tests**: `php artisan make:test --pest CourseTest`
-5. **Frontend Components**: Follow shadcn patterns, add TypeScript interfaces to `types/index.d.ts`
-
-### Laravel Wayfinder
-Type-safe route generation configured in `vite.config.ts`:
-```ts
-wayfinder({ formVariants: true })
-```
-
-Usage in React:
-```tsx
-import { dashboard, courses } from '@/routes';
-
-<Link href={dashboard().url}>Dashboard</Link>
-<Link href={courses({ filter: 'active' }).url}>Courses</Link>
-```
-
----
-
-## Laravel Boost MCP Tools (Critical)
-
-The project uses Laravel Boost MCP server for enhanced tooling. **Always use these tools** when available:
-
-- **`search-docs`**: Search version-specific Laravel ecosystem docs (Laravel, Inertia, Pest, Tailwind, etc.)
-  - Pass multiple queries: `['authentication', 'middleware']`
-  - Filter by packages: `packages: ['laravel/framework']`
-  - DO NOT add package names to queries (already included)
-
-- **`tinker`**: Execute PHP in Laravel context for debugging (prefer over manual scripts)
-- **`database-query`**: Read-only SQL queries (faster than tinker for simple data checks)
-- **`browser-logs`**: Read recent browser console logs/errors
-- **`list-artisan-commands`**: Double-check artisan command parameters before running
-- **`get-absolute-url`**: Generate correct URLs for Laravel Herd (https://web-skripsi.test)
-
-**Search-docs syntax examples**:
-```
-queries: ["rate limiting", "routing"]  // Multiple queries, broad topics
-queries: ["form validation"]           // Simple, no package names
-```
-
----
-
-## Key Gotchas & Project-Specific Patterns
-
-### User Helper Methods (app/Models/User.php)
-The User model includes **custom dashboard helpers**—use these instead of duplicating logic:
-
-- `currentStreak()`: Returns int (current_streak field)
-- `xpThisWeek()`: Calculates XP from activities this week
-- `hoursThisWeek()`: Sums completed task minutes / 60
-- `nextAchievementMilestone()`: Finds closest unearned achievement
-- `weeklyActivityChartData()`: Returns array for MiniChart component
-- `cohortRank()`: User's position in cohort leaderboard
-- `nextLessonForEnrollment($enrollment)`: Finds next incomplete lesson
-
-### Enrollment Data Shaping (DashboardController)
-Enrollments require **computed `next_lesson`** via `map()`:
-```php
-$enrolledCourses = $user->enrollments()
-    ->with(['course.lessons', 'course.instructor'])
-    ->get()
-    ->map(function ($enrollment) use ($user) {
-        $data = $enrollment->toArray();
-        $data['next_lesson'] = $user->nextLessonForEnrollment($enrollment)?->toArray();
-        $data['progress_percentage'] = (float) ($enrollment->progress_percentage ?? 0);
-        return $data;
-    });
-```
-
-### Achievement Pivot Ambiguity
-When querying user achievements, **order by pivot table**:
-```php
-$user->achievements()
-    ->orderByDesc('achievement_user.earned_at') // Specify pivot table
-    ->get();
-```
-
-### Middleware Registration (bootstrap/app.php)
-Custom middleware in `web` stack:
-```php
-$middleware->web(append: [
-    HandleAppearance::class,
-    HandleInertiaRequests::class,
-    AddLinkHeadersForPreloadedAssets::class,
+<code-snippet name="Pest Dataset Example" lang="php">
+it('has emails', function (string $email) {
+    expect($email)->not->toBeEmpty();
+})->with([
+    'james' => 'james@laravel.com',
+    'taylor' => 'taylor@laravel.com',
 ]);
-```
+</code-snippet>
 
-### Dashboard Loading Pattern
-Dashboard uses **deferred loading with skeletons**:
-- Initial render: Show skeleton components (`StatsSkeleton`, `CoursesSkeleton`, etc.)
-- 250ms delay via `useEffect` to prevent flash on fast connections
-- Error boundaries isolate section failures
 
----
+=== pest/v4 rules ===
 
-## File Organization Best Practices
+## Pest 4
 
-### When to Create New Files
-- **Models**: Place in `app/Models/`, always include relationships
-- **Controllers**: `app/Http/Controllers/`, use resource controllers for CRUD
-- **Form Requests**: `app/Http/Requests/`, check sibling files for validation style
-- **React Pages**: `resources/js/pages/`, follow kebab-case naming (e.g., `course-detail.tsx`)
-- **Components**: Reusable UI in `resources/js/components/ui/`, domain logic in `dashboard/`
+- Pest v4 is a huge upgrade to Pest and offers: browser testing, smoke testing, visual regression testing, test sharding, and faster type coverage.
+- Browser testing is incredibly powerful and useful for this project.
+- Browser tests should live in `tests/Browser/`.
+- Use the `search-docs` tool for detailed guidance on utilizing these features.
 
-### Type Definitions
-Add all new domain types to `resources/js/types/index.d.ts`. Follow existing patterns:
-- **Interfaces** for data models (User, Course, Achievement, etc.)
-- **Type unions** for enums (`'active' | 'completed' | 'paused'`)
-- **Optional fields** with `?` suffix (`avatar?: string`)
+### Browser Testing
+- You can use Laravel features like `Event::fake()`, `assertAuthenticated()`, and model factories within Pest v4 browser tests, as well as `RefreshDatabase` (when needed) to ensure a clean state for each test.
+- Interact with the page (click, type, scroll, select, submit, drag-and-drop, touch gestures, etc.) when appropriate to complete the test.
+- If requested, test on multiple browsers (Chrome, Firefox, Safari).
+- If requested, test on different devices and viewports (like iPhone 14 Pro, tablets, or custom breakpoints).
+- Switch color schemes (light/dark mode) when appropriate.
+- Take screenshots or pause tests for debugging when appropriate.
 
----
+### Example Tests
 
-## Common Patterns to Follow
+<code-snippet name="Pest Browser Test Example" lang="php">
+it('may reset the password', function () {
+    Notification::fake();
 
-### Controller → Inertia → React Flow
-```php
-// Controller
-return Inertia::render('dashboard', [
-    'stats' => ['level' => $user->level],
-]);
+    $this->actingAs(User::factory()->create());
 
-// TypeScript interface (types/index.d.ts)
-export interface LearningStats {
-    level: number;
-}
+    $page = visit('/sign-in'); // Visit on a real browser...
 
-// React page (pages/dashboard.tsx)
-export default function Dashboard({ stats }: { stats: LearningStats }) {
-    return <div>Level {stats.level}</div>;
-}
-```
+    $page->assertSee('Sign In')
+        ->assertNoJavascriptErrors() // or ->assertNoConsoleLogs()
+        ->click('Forgot Password?')
+        ->fill('email', 'nuno@laravel.com')
+        ->click('Send Reset Link')
+        ->assertSee('We have emailed your password reset link!')
 
-### Relationship Eager Loading
-```php
-// ✅ Prevent N+1 queries
-$user->enrollments()->with(['course.lessons', 'course.instructor'])->get();
+    Notification::assertSent(ResetPassword::class);
+});
+</code-snippet>
 
-// ✅ Limit eagerly loaded records (Laravel 11+)
-$enrollment->course->lessons()->latest()->limit(10);
-```
+<code-snippet name="Pest Smoke Testing Example" lang="php">
+$pages = visit(['/', '/about', '/contact']);
 
-### Scopes for Reusable Queries
-```php
-// In model
-public function activeEnrollments(): HasMany
-{
-    return $this->enrollments()->where('status', 'active');
-}
+$pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
+</code-snippet>
 
-// Usage
-$user->activeEnrollments()->count();
-```
 
----
+=== inertia-react/core rules ===
 
-## Documentation
+## Inertia + React
 
-See `DASHBOARD_PLAN.md` for the comprehensive dashboard feature spec (all sections, interactions, data UX).
+- Use `router.visit()` or `<Link>` for navigation instead of traditional links.
 
-For questions about Laravel, Inertia, Tailwind, or Pest features, **always use the `search-docs` tool first** to get version-specific guidance.
+<code-snippet name="Inertia Client Navigation" lang="react">
 
----
+import { Link } from '@inertiajs/react'
+<Link href="/">Home</Link>
 
-## Quick Reference
+</code-snippet>
 
-### Project URLs
-- Local dev: `https://web-skripsi.test` (via Laravel Herd)
-- Always use `get-absolute-url` tool for generating URLs
 
-### Key Directories
-- **Models & Business Logic**: `app/Models/`
-- **Controllers**: `app/Http/Controllers/`
-- **React Pages**: `resources/js/pages/`
-- **Components**: `resources/js/components/`
-- **Types**: `resources/js/types/index.d.ts`
-- **Tests**: `tests/Feature/`, `tests/Unit/`
-- **Migrations**: `database/migrations/`
-- **Factories**: `database/factories/`
+=== inertia-react/v2/forms rules ===
 
-### Critical Files
-- **App config**: `bootstrap/app.php` (middleware, routing)
-- **Vite config**: `vite.config.ts` (plugins, React Compiler)
-- **Inertia entrypoint**: `resources/js/app.tsx`
-- **Main layout**: `resources/js/layouts/app-layout/`
-- **Routes**: `routes/web.php`, `routes/settings.php`
-- **Dashboard logic**: `app/Http/Controllers/DashboardController.php`
+## Inertia + React Forms
 
-### Common Tasks
-- **New model**: `php artisan make:model Course -mfs --pest`
-- **New controller**: `php artisan make:controller CourseController`
-- **New test**: `php artisan make:test --pest CourseTest`
-- **Format PHP**: `vendor/bin/pint --dirty`
-- **Format JS/TS**: `npm run format`
-- **Type check**: `npm run types`
-- **Run tests**: `php artisan test --filter=dashboard`
+<code-snippet name="`<Form>` Component Example" lang="react">
+
+import { Form } from '@inertiajs/react'
+
+export default () => (
+    <Form action="/users" method="post">
+        {({
+            errors,
+            hasErrors,
+            processing,
+            wasSuccessful,
+            recentlySuccessful,
+            clearErrors,
+            resetAndClearErrors,
+            defaults
+        }) => (
+        <>
+        <input type="text" name="name" />
+
+        {errors.name && <div>{errors.name}</div>}
+
+        <button type="submit" disabled={processing}>
+            {processing ? 'Creating...' : 'Create User'}
+        </button>
+
+        {wasSuccessful && <div>User created successfully!</div>}
+        </>
+    )}
+    </Form>
+)
+
+</code-snippet>
+
+
+=== tailwindcss/core rules ===
+
+## Tailwind Core
+
+- Use Tailwind CSS classes to style HTML, check and use existing tailwind conventions within the project before writing your own.
+- Offer to extract repeated patterns into components that match the project's conventions (i.e. Blade, JSX, Vue, etc..)
+- Think through class placement, order, priority, and defaults - remove redundant classes, add classes to parent or child carefully to limit repetition, group elements logically
+- You can use the `search-docs` tool to get exact examples from the official documentation when needed.
+
+### Spacing
+- When listing items, use gap utilities for spacing, don't use margins.
+
+    <code-snippet name="Valid Flex Gap Spacing Example" lang="html">
+        <div class="flex gap-8">
+            <div>Superior</div>
+            <div>Michigan</div>
+            <div>Erie</div>
+        </div>
+    </code-snippet>
+
+
+### Dark Mode
+- If existing pages and components support dark mode, new pages and components must support dark mode in a similar way, typically using `dark:`.
+
+
+=== tailwindcss/v4 rules ===
+
+## Tailwind 4
+
+- Always use Tailwind CSS v4 - do not use the deprecated utilities.
+- `corePlugins` is not supported in Tailwind v4.
+- In Tailwind v4, you import Tailwind using a regular CSS `@import` statement, not using the `@tailwind` directives used in v3:
+
+<code-snippet name="Tailwind v4 Import Tailwind Diff" lang="diff">
+   - @tailwind base;
+   - @tailwind components;
+   - @tailwind utilities;
+   + @import "tailwindcss";
+</code-snippet>
+
+
+### Replaced Utilities
+- Tailwind v4 removed deprecated utilities. Do not use the deprecated option - use the replacement.
+- Opacity values are still numeric.
+
+| Deprecated |	Replacement |
+|------------+--------------|
+| bg-opacity-* | bg-black/* |
+| text-opacity-* | text-black/* |
+| border-opacity-* | border-black/* |
+| divide-opacity-* | divide-black/* |
+| ring-opacity-* | ring-black/* |
+| placeholder-opacity-* | placeholder-black/* |
+| flex-shrink-* | shrink-* |
+| flex-grow-* | grow-* |
+| overflow-ellipsis | text-ellipsis |
+| decoration-slice | box-decoration-slice |
+| decoration-clone | box-decoration-clone |
+
+
+=== tests rules ===
+
+## Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test` with a specific filename or filter.
+
+
+=== laravel/fortify rules ===
+
+## Laravel Fortify
+
+Fortify is a headless authentication backend that provides authentication routes and controllers for Laravel applications.
+
+**Before implementing any authentication features, use the `search-docs` tool to get the latest docs for that specific feature.**
+
+### Configuration & Setup
+- Check `config/fortify.php` to see what's enabled. Use `search-docs` for detailed information on specific features.
+- Enable features by adding them to the `'features' => []` array: `Features::registration()`, `Features::resetPasswords()`, etc.
+- To see the all Fortify registered routes, use the `list-routes` tool with the `only_vendor: true` and `action: "Fortify"` parameters.
+- Fortify includes view routes by default (login, register). Set `'views' => false` in the configuration file to disable them if you're handling views yourself.
+
+### Customization
+- Views can be customized in `FortifyServiceProvider`'s `boot()` method using `Fortify::loginView()`, `Fortify::registerView()`, etc.
+- Customize authentication logic with `Fortify::authenticateUsing()` for custom user retrieval / validation.
+- Actions in `app/Actions/Fortify/` handle business logic (user creation, password reset, etc.). They're fully customizable, so you can modify them to change feature behavior.
+
+## Available Features
+- `Features::registration()` for user registration.
+- `Features::emailVerification()` to verify new user emails.
+- `Features::twoFactorAuthentication()` for 2FA with QR codes and recovery codes.
+  - Add options: `['confirmPassword' => true, 'confirm' => true]` to require password confirmation and OTP confirmation before enabling 2FA.
+- `Features::updateProfileInformation()` to let users update their profile.
+- `Features::updatePasswords()` to let users change their passwords.
+- `Features::resetPasswords()` for password reset via email.
+</laravel-boost-guidelines>
