@@ -16,27 +16,15 @@ import {
   FileText,
   Globe,
   Link as LinkIcon,
-  MessageSquare,
-  Scale,
   Star,
-  Users,
   Video,
   Wifi,
 } from 'lucide-react';
 import { useState } from 'react';
 
 // Import tab components
-import {
-  AssessmentTab,
-  AttendanceTab,
-  ForumTab,
-  GradebookTab,
-  PeopleTab,
-  RubricTab,
-  ScoringTab,
-  SyllabusTab,
-} from './tabs';
 import { useRoles } from '@/hooks/use-roles';
+import { AssessmentTab, AttendanceTab, GradebookTab, ScoringTab } from './tabs';
 
 interface CourseShowProps {
   course: Course & {
@@ -57,7 +45,10 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
   const page = usePage<{ auth?: { user?: { id: number } } }>();
   const currentUserId = page.props.auth?.user?.id;
   const canManageCourse =
-    isAdmin || (isTutor && currentUserId !== undefined && course.instructor_id === currentUserId);
+    isAdmin ||
+    (isTutor &&
+      currentUserId !== undefined &&
+      course.instructor_id === currentUserId);
 
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,
@@ -138,20 +129,6 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                 Session
               </TabsTrigger>
               <TabsTrigger
-                value="syllabus"
-                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-              >
-                <FileText className="mr-1.5 h-4 w-4" />
-                Syllabus
-              </TabsTrigger>
-              <TabsTrigger
-                value="forum"
-                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-              >
-                <MessageSquare className="mr-1.5 h-4 w-4" />
-                Forum
-              </TabsTrigger>
-              <TabsTrigger
                 value="assessment"
                 className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
               >
@@ -166,25 +143,11 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                 Gradebook
               </TabsTrigger>
               <TabsTrigger
-                value="rubric"
-                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-              >
-                <Scale className="mr-1.5 h-4 w-4" />
-                Assessment Rubric
-              </TabsTrigger>
-              <TabsTrigger
                 value="scoring"
                 className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
               >
                 <CheckCircle className="mr-1.5 h-4 w-4" />
                 Scoring
-              </TabsTrigger>
-              <TabsTrigger
-                value="people"
-                className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-              >
-                <Users className="mr-1.5 h-4 w-4" />
-                People
               </TabsTrigger>
               <TabsTrigger
                 value="attendance"
@@ -263,7 +226,10 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                           Update course details, lessons, and content.
                         </p>
                         <Button className="w-full" asChild>
-                          <Link href={`/courses/manage/${course.id}/edit`} prefetch>
+                          <Link
+                            href={`/courses/manage/${course.id}/edit`}
+                            prefetch
+                          >
                             Manage Course
                           </Link>
                         </Button>
@@ -348,16 +314,6 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
             )}
           </TabsContent>
 
-          {/* Syllabus Tab Content */}
-          <TabsContent value="syllabus" className="mt-6">
-            <SyllabusTab course={course} />
-          </TabsContent>
-
-          {/* Forum Tab Content */}
-          <TabsContent value="forum" className="mt-6">
-            <ForumTab course={course} isEnrolled={isEnrolled} />
-          </TabsContent>
-
           {/* Assessment Tab Content */}
           <TabsContent value="assessment" className="mt-6">
             <AssessmentTab course={course} />
@@ -368,19 +324,9 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
             <GradebookTab course={course} isEnrolled={isEnrolled} />
           </TabsContent>
 
-          {/* Assessment Rubric Tab Content */}
-          <TabsContent value="rubric" className="mt-6">
-            <RubricTab course={course} />
-          </TabsContent>
-
           {/* Scoring Tab Content */}
           <TabsContent value="scoring" className="mt-6">
             <ScoringTab course={course} isEnrolled={isEnrolled} />
-          </TabsContent>
-
-          {/* People Tab Content */}
-          <TabsContent value="people" className="mt-6">
-            <PeopleTab course={course} isEnrolled={isEnrolled} />
           </TabsContent>
 
           {/* Attendance Tab Content */}
