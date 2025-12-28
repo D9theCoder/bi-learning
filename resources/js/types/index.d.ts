@@ -344,6 +344,14 @@ export interface ManageCoursesPageProps {
     last_page: number;
     per_page: number;
     total: number;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  filters?: {
+    search?: string;
   };
 }
 

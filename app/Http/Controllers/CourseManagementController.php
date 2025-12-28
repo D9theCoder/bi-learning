@@ -29,6 +29,13 @@ class CourseManagementController extends Controller
             $query->where('instructor_id', $user->id);
         }
 
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
         $courses = $query
             ->latest()
             ->paginate(12)
@@ -50,6 +57,7 @@ class CourseManagementController extends Controller
 
         return Inertia::render('courses/manage/index', [
             'courses' => $courses,
+            'filters' => $request->only(['search']),
         ]);
     }
 

@@ -21,7 +21,7 @@ import {
   tutors,
 } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
   BookOpen,
   Calendar as CalendarIcon,
@@ -88,6 +88,7 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
   const { isAdmin, isStudent, isTutor } = useRoles();
+  const { url } = usePage();
 
   const hideStudentOnly = isTutor && !isAdmin && !isStudent;
   const studentOnlyTitles = new Set(['Dashboard', 'Achievements', 'Rewards', 'Calendar']);
@@ -109,6 +110,13 @@ export function AppSidebar() {
     } else {
       navItems.unshift(manageLink);
     }
+  }
+
+  // Fix active state for My Courses to avoid highlighting when in Manage Courses
+  const myCoursesIndex = navItems.findIndex((item) => item.title === 'My Courses');
+  if (myCoursesIndex >= 0) {
+    navItems[myCoursesIndex].isActive =
+      url === '/courses' || (url.startsWith('/courses/') && !url.startsWith('/courses/manage'));
   }
 
   const homeHref = navItems[0]?.href ?? home().url;

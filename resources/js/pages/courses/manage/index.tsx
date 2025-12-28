@@ -1,12 +1,29 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { ManageCoursesPageProps } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus, ShieldCheck, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-export default function ManageCourses({ courses }: ManageCoursesPageProps) {
+export default function ManageCourses({ courses, filters }: ManageCoursesPageProps) {
+  const [search, setSearch] = useState(filters?.search || '');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (search !== (filters?.search || '')) {
+        router.get(
+          '/courses/manage',
+          { search },
+          { preserveState: true, replace: true, preserveScroll: true }
+        );
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -25,12 +42,20 @@ export default function ManageCourses({ courses }: ManageCoursesPageProps) {
               Create and maintain courses. Tutors only see their own courses; admins see everything.
             </p>
           </div>
-          <Link href="/courses/manage/create" prefetch>
-            <Button className="inline-flex items-center gap-2">
-              <Plus className="size-4" />
-              New Course
-            </Button>
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Search courses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full sm:w-64"
+            />
+            <Link href="/courses/manage/create" prefetch>
+              <Button className="inline-flex items-center gap-2">
+                <Plus className="size-4" />
+                New Course
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <Card>
@@ -99,12 +124,31 @@ export default function ManageCourses({ courses }: ManageCoursesPageProps) {
               ))}
             </div>
             <Separator />
-            <div className="flex items-center justify-between px-6 py-4 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between px-6 pt-4 text-xs text-muted-foreground">
               <span>
                 Showing {courses.data.length} of {courses.total}
               </span>
-              <div className="flex items-center gap-2">
-                <span>Page {courses.current_page}</span>
+              <div className="flex items-center gap-1">
+                {courses.links.map((link, i) =>
+                  link.url ? (
+                    <Link
+                      key={i}
+                      href={link.url}
+                      className={`flex h-8 min-w-8 items-center justify-center rounded-md border px-3 ${
+                        link.active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'border-transparent hover:bg-muted'
+                      }`}
+                      dangerouslySetInnerHTML={{ __html: link.label }}
+                    />
+                  ) : (
+                    <span
+                      key={i}
+                      className="flex h-8 min-w-8 items-center justify-center px-3 text-muted-foreground opacity-50"
+                      dangerouslySetInnerHTML={{ __html: link.label }}
+                    />
+                  )
+                )}
               </div>
             </div>
           </CardContent>
