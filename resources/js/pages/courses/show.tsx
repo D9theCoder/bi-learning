@@ -102,7 +102,7 @@ export default function CourseShow({
     >
       <Head title={course.title} />
 
-      <div className="flex flex-col gap-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
         {/* Header Section */}
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
@@ -181,7 +181,7 @@ export default function CourseShow({
           </div>
 
           {/* Session Tab Content */}
-          <TabsContent value="session" className="mt-6 space-y-6">
+          <TabsContent value="session" className="mt-4 space-y-6">
             {/* Session Navigation (Horizontal Scroll) */}
             <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
               {course.lessons.map((lesson, index) => (
@@ -508,7 +508,7 @@ export default function CourseShow({
           </TabsContent>
 
           {/* Assessment Tab Content */}
-          <TabsContent value="assessment" className="mt-6">
+          <TabsContent value="assessment" className="mt-4">
             <AssessmentTab
               course={course}
               assessments={assessments}
@@ -517,7 +517,7 @@ export default function CourseShow({
           </TabsContent>
 
           {/* Gradebook Tab Content */}
-          <TabsContent value="gradebook" className="mt-6">
+          <TabsContent value="gradebook" className="mt-4">
             <GradebookTab
               course={course}
               isEnrolled={isEnrolled}
@@ -529,7 +529,7 @@ export default function CourseShow({
           </TabsContent>
 
           {/* Scoring Tab Content */}
-          <TabsContent value="scoring" className="mt-6">
+          <TabsContent value="scoring" className="mt-4">
             <ScoringTab
               course={course}
               isEnrolled={isEnrolled}
@@ -541,7 +541,7 @@ export default function CourseShow({
           </TabsContent>
 
           {/* Attendance Tab Content */}
-          <TabsContent value="attendance" className="mt-6">
+          <TabsContent value="attendance" className="mt-4">
             <AttendanceTab
               course={course}
               isEnrolled={isEnrolled}

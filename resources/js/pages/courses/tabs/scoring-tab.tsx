@@ -43,7 +43,7 @@ export function ScoringTab({
 
   if (!canView) {
     return (
-      <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
+      <Card className="gap-0 border-yellow-200 bg-yellow-50 py-0 dark:border-yellow-800 dark:bg-yellow-900/10">
         <CardContent className="py-12 text-center">
           <Award className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
           <h3 className="mb-2 text-lg font-semibold text-yellow-800 dark:text-yellow-400">
@@ -61,7 +61,7 @@ export function ScoringTab({
   if (isTutor) {
     if (assessments.length === 0) {
       return (
-        <Card>
+        <Card className="gap-0 overflow-hidden py-0">
           <CardContent className="py-12 text-center text-muted-foreground">
             No assessments available to grade.
           </CardContent>
@@ -107,7 +107,7 @@ export function ScoringTab({
         </div>
 
         {assessments.map((assessment) => (
-          <Card key={assessment.id} className="overflow-hidden">
+          <Card key={assessment.id} className="gap-0 overflow-hidden py-0">
             <div
               className="flex cursor-pointer items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
               onClick={() =>
@@ -254,7 +254,7 @@ export function ScoringTab({
   // STUDENT VIEW
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="gap-0 overflow-hidden py-0">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             My Scores
