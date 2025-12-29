@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FilterCoursesRequest;
+use App\Models\Attendance;
 use App\Models\Course;
+use App\Models\Lesson;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -114,7 +116,7 @@ class CourseController extends Controller
         ]);
     }
 
-    public function markAttendance(\App\Models\Lesson $lesson)
+    public function markAttendance(Lesson $lesson)
     {
         $user = auth()->user();
         
@@ -132,7 +134,7 @@ class CourseController extends Controller
         // }
 
         // Mark or update attendance
-        \App\Models\Attendance::updateOrCreate(
+        Attendance::updateOrCreate(
             [
                 'user_id' => $user->id,
                 'lesson_id' => $lesson->id,
