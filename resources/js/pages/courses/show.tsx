@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { Course, CourseContent, Lesson, User } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
   BookOpen,
   CalendarCheck,
@@ -215,6 +215,147 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Meeting Section */}
+                  {activeSession.meeting_url && (
+                    <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/10">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">
+                          Meeting
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const now = new Date();
+
+                          // Parse datetime strings as local time by taking first 19 chars (YYYY-MM-DDTHH:MM:SS)
+                          const startTime = activeSession.meeting_start_time
+                            ? new Date(
+                                activeSession.meeting_start_time.substring(
+                                  0,
+                                  19,
+                                ),
+                              )
+                            : null;
+                          const endTime = activeSession.meeting_end_time
+                            ? new Date(
+                                activeSession.meeting_end_time.substring(0, 19),
+                              )
+                            : null;
+
+                          const isActive =
+                            startTime &&
+                            endTime &&
+                            now >= startTime &&
+                            now <= endTime;
+                          const isPast = endTime && now > endTime;
+                          const isFuture = startTime && now < startTime;
+
+                          const handleJoinMeeting = () => {
+                            // Mark attendance using Inertia
+                            router.post(
+                              `/lessons/${activeSession.id}/attend`,
+                              {},
+                              {
+                                preserveScroll: true,
+                                onSuccess: () => {
+                                  // Open meeting in new tab after successful attendance marking
+                                  window.open(
+                                    activeSession.meeting_url!,
+                                    '_blank',
+                                  );
+                                },
+                                onError: (errors) => {
+                                  console.error(
+                                    'Failed to mark attendance:',
+                                    errors,
+                                  );
+                                  alert(
+                                    'Failed to mark attendance. Please try again.',
+                                  );
+                                },
+                              },
+                            );
+                          };
+
+                          // DEBUG: Temporary attend button - REMOVE AFTER TESTING
+                          // Only visible to students (not admin/tutor)
+                          const handleDebugAttend = () => {
+                            router.post(
+                              `/lessons/${activeSession.id}/attend`,
+                              {},
+                              {
+                                preserveScroll: true,
+                                onError: (errors) => {
+                                  console.error(
+                                    'Failed to mark attendance:',
+                                    errors,
+                                  );
+                                  alert(
+                                    'Failed to mark attendance: ' +
+                                      JSON.stringify(errors),
+                                  );
+                                },
+                              },
+                            );
+                          };
+
+                          return (
+                            <div className="space-y-3">
+                              {startTime && (
+                                <p className="text-sm text-gray-600">
+                                  <strong>Scheduled:</strong>{' '}
+                                  {startTime.toLocaleString()} -{' '}
+                                  {endTime?.toLocaleTimeString()}
+                                </p>
+                              )}
+                              {activeSession.has_attended && (
+                                <div className="flex items-center gap-2 text-sm text-green-600">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>Attended</span>
+                                </div>
+                              )}
+                              {isActive ? (
+                                <Button
+                                  onClick={handleJoinMeeting}
+                                  className="w-full bg-blue-600 hover:bg-blue-700"
+                                >
+                                  Join Meeting
+                                </Button>
+                              ) : isPast ? (
+                                <Button disabled className="w-full">
+                                  Meeting Ended
+                                </Button>
+                              ) : isFuture ? (
+                                <Button disabled className="w-full">
+                                  Starts {startTime.toLocaleString()}
+                                </Button>
+                              ) : (
+                                <Button
+                                  onClick={handleJoinMeeting}
+                                  className="w-full bg-blue-600 hover:bg-blue-700"
+                                >
+                                  Join Meeting
+                                </Button>
+                              )}
+
+                              {/* DEBUG: Remove this button after testing */}
+                              {/* Only show to students, not admin/tutor */}
+                              {!isAdmin && !isTutor && (
+                                <Button
+                                  onClick={handleDebugAttend}
+                                  variant="outline"
+                                  className="w-full border-red-500 text-red-500 hover:bg-red-50"
+                                >
+                                  [DEBUG] Mark Attendance
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 {/* Right Column: Things to do */}

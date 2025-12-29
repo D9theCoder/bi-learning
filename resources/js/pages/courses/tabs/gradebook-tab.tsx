@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
 import { Course, User } from '@/types';
 import { BookCheck } from 'lucide-react';
 
@@ -10,7 +11,10 @@ interface GradebookTabProps {
 }
 
 export function GradebookTab({ course, isEnrolled }: GradebookTabProps) {
-  if (!isEnrolled) {
+  const { isAdmin, isTutor } = useRoles();
+  const canView = isEnrolled || isAdmin || isTutor;
+
+  if (!canView) {
     return (
       <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
         <CardContent className="py-12 text-center">

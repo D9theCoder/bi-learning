@@ -1,10 +1,7 @@
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { useRoles } from '@/hooks/use-roles';
 import { Course, User } from '@/types';
-import {
-  Award,
-} from 'lucide-react';
+import { Award } from 'lucide-react';
 
 interface ScoringTabProps {
   course: Course & {
@@ -14,7 +11,10 @@ interface ScoringTabProps {
 }
 
 export function ScoringTab({ isEnrolled }: ScoringTabProps) {
-  if (!isEnrolled) {
+  const { isAdmin, isTutor } = useRoles();
+  const canView = isEnrolled || isAdmin || isTutor;
+
+  if (!canView) {
     return (
       <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
         <CardContent className="py-12 text-center">

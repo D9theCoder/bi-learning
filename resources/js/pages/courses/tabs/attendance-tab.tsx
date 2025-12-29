@@ -1,10 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
 import { Course, Lesson, User } from '@/types';
-import {
-  AlertCircle,
-  CalendarCheck,
-} from 'lucide-react';
+import { CalendarCheck, CheckCircle, XCircle } from 'lucide-react';
 
 interface AttendanceTabProps {
   course: Course & {
@@ -15,7 +13,10 @@ interface AttendanceTabProps {
 }
 
 export function AttendanceTab({ course, isEnrolled }: AttendanceTabProps) {
-  if (!isEnrolled) {
+  const { isAdmin, isTutor } = useRoles();
+  const canView = isEnrolled || isAdmin || isTutor;
+
+  if (!canView) {
     return (
       <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
         <CardContent className="py-12 text-center">
@@ -41,17 +42,60 @@ export function AttendanceTab({ course, isEnrolled }: AttendanceTabProps) {
     );
   }
 
+  // Calculate attendance stats
+  const totalSessions = course.lessons.length;
+  const attendedSessions = course.lessons.filter(
+    (lesson) => lesson.has_attended,
+  ).length;
+  const attendanceRate =
+    totalSessions > 0
+      ? Math.round((attendedSessions / totalSessions) * 100)
+      : 0;
+
   return (
     <div className="space-y-6">
+      {/* Attendance Summary */}
+      {isEnrolled && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <p className="text-sm text-gray-500">Total Sessions</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{totalSessions}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <p className="text-sm text-gray-500">Attended</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">
+                {attendedSessions}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <p className="text-sm text-gray-500">Attendance Rate</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-600">
+                {attendanceRate}%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
             <CalendarCheck className="h-5 w-5 text-yellow-600" />
-            Attendance
+            Session Attendance
           </CardTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Attendance tracking is not available for this course yet. Sessions
-            listed below are provided for reference.
+            View attendance records for each session
           </p>
         </CardHeader>
         <CardContent>
@@ -71,9 +115,17 @@ export function AttendanceTab({ course, isEnrolled }: AttendanceTabProps) {
                       : 'Duration not set'}
                   </p>
                 </div>
-                <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                  Not tracked
-                </Badge>
+                {lesson.has_attended ? (
+                  <Badge className="flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    <CheckCircle className="h-3 w-3" />
+                    Attended
+                  </Badge>
+                ) : (
+                  <Badge className="flex items-center gap-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    <XCircle className="h-3 w-3" />
+                    Not Attended
+                  </Badge>
+                )}
               </div>
             ))}
           </div>

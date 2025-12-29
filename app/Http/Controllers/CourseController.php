@@ -95,12 +95,54 @@ class CourseController extends Controller
 
         if ($user) {
             $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
+            
+            // Load user's attendance for each lesson
+            $attendedLessonIds = $user->attendances()
+                ->whereIn('lesson_id', $course->lessons->pluck('id'))
+                ->pluck('lesson_id')
+                ->toArray();
+                
+            // Add attendance status to each lesson
+            $course->lessons->each(function ($lesson) use ($attendedLessonIds) {
+                $lesson->has_attended = in_array($lesson->id, $attendedLessonIds);
+            });
         }
 
         return Inertia::render('courses/show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
         ]);
+    }
+
+    public function markAttendance(\App\Models\Lesson $lesson)
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return back()->withErrors(['error' => 'Unauthorized']);
+        }
+
+        // Check if meeting is currently active (optional time validation)
+        // Commented out for debug mode - uncomment in production
+        // $now = now();
+        // if ($lesson->meeting_start_time && $lesson->meeting_end_time) {
+        //     if ($now < $lesson->meeting_start_time || $now > $lesson->meeting_end_time) {
+        //         return back()->withErrors(['error' => 'Meeting is not active']);
+        //     }
+        // }
+
+        // Mark or update attendance
+        \App\Models\Attendance::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'lesson_id' => $lesson->id,
+            ],
+            [
+                'attended_at' => now(),
+            ]
+        );
+
+        return back();
     }
 
 

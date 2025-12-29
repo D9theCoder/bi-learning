@@ -114,6 +114,11 @@ class User extends Authenticatable
         return $this->hasMany(TutorMessage::class, 'tutor_id');
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     // Helper methods for dashboard statistics
     public function currentStreak(): int
     {

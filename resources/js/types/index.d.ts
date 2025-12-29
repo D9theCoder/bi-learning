@@ -72,6 +72,10 @@ export interface Lesson {
   duration_minutes: number | null;
   order: number | null;
   video_url?: string | null;
+  meeting_url?: string | null;
+  meeting_start_time?: string | null;
+  meeting_end_time?: string | null;
+  has_attended?: boolean;
   is_completed?: boolean;
   created_at: string;
   updated_at: string;
@@ -356,12 +360,14 @@ export interface ManageCoursesPageProps {
 }
 
 export interface EditCoursePageProps {
-  course: (Course & {
-    is_published?: boolean;
-    duration_minutes?: number | null;
-    instructor_id?: number | null;
-    lessons?: Lesson[];
-  }) | null;
+  course:
+    | (Course & {
+        is_published?: boolean;
+        duration_minutes?: number | null;
+        instructor_id?: number | null;
+        lessons?: Lesson[];
+      })
+    | null;
   mode: 'create' | 'edit';
 }
 
