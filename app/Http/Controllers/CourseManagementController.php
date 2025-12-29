@@ -8,6 +8,7 @@ use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateCourseContentRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Requests\UpdateLessonRequest;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -216,7 +217,7 @@ class CourseManagementController extends Controller
         $this->ensureCanManageCourse($request->user(), $course);
 
         $data = $request->validated();
-        
+
         // Handle file upload
         if ($request->hasFile('file_path')) {
             $file = $request->file('file_path');
@@ -224,7 +225,19 @@ class CourseManagementController extends Controller
             $data['file_path'] = $path;
         }
 
-        $lesson->contents()->create($data);
+        $content = $lesson->contents()->create($data);
+
+        // Sync Assessment if type is quiz
+        if ($content->type === 'quiz') {
+            Assessment::create([
+                'course_id' => $course->id,
+                'lesson_id' => $lesson->id,
+                'type' => 'quiz',
+                'title' => $content->title,
+                'description' => $content->description,
+                'due_date' => $content->due_date,
+            ]);
+        }
 
         return redirect()
             ->route('courses.manage.edit', $course)
@@ -238,14 +251,14 @@ class CourseManagementController extends Controller
         $this->ensureCanManageCourse($request->user(), $course);
 
         $data = $request->validated();
-        
+
         // Handle file upload
         if ($request->hasFile('file_path')) {
             // Delete old file if exists
             if ($content->file_path && \Storage::disk('public')->exists($content->file_path)) {
                 \Storage::disk('public')->delete($content->file_path);
             }
-            
+
             $file = $request->file('file_path');
             $path = $file->store('course-content', 'public');
             $data['file_path'] = $path;
@@ -254,7 +267,32 @@ class CourseManagementController extends Controller
             unset($data['file_path']);
         }
 
+        $originalTitle = $content->title;
         $content->update($data);
+
+        // Sync Assessment if type is quiz
+        if ($content->type === 'quiz') {
+            $assessment = Assessment::where('lesson_id', $lesson->id)
+                ->where('title', $originalTitle)
+                ->first();
+
+            if ($assessment) {
+                $assessment->update([
+                    'title' => $content->title,
+                    'description' => $content->description,
+                    'due_date' => $content->due_date,
+                ]);
+            } else {
+                Assessment::create([
+                    'course_id' => $course->id,
+                    'lesson_id' => $lesson->id,
+                    'type' => 'quiz',
+                    'title' => $content->title,
+                    'description' => $content->description,
+                    'due_date' => $content->due_date,
+                ]);
+            }
+        }
 
         return redirect()
             ->route('courses.manage.edit', $course)
@@ -266,6 +304,12 @@ class CourseManagementController extends Controller
         $this->ensureLessonBelongsToCourse($lesson, $course);
         $this->ensureContentBelongsToLesson($content, $lesson);
         $this->ensureCanManageCourse($request->user(), $course);
+
+        if ($content->type === 'quiz') {
+            Assessment::where('lesson_id', $lesson->id)
+                ->where('title', $content->title)
+                ->delete();
+        }
 
         $content->delete();
 

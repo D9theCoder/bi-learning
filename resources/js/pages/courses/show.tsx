@@ -4,7 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
-import { Course, CourseContent, Lesson, User } from '@/types';
+import {
+  Assessment,
+  AssessmentSubmission,
+  Course,
+  CourseContent,
+  Lesson,
+  User,
+} from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
   BookOpen,
@@ -34,14 +41,25 @@ interface CourseShowProps {
     })[];
   };
   isEnrolled: boolean;
+  isTutor?: boolean;
+  students?: any[];
+  assessments?: Assessment[];
+  submissions?: AssessmentSubmission[];
 }
 
-export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
+export default function CourseShow({
+  course,
+  isEnrolled,
+  isTutor = false,
+  students = [],
+  assessments = [],
+  submissions = [],
+}: CourseShowProps) {
   const [activeSessionId, setActiveSessionId] = useState<string>(
     course.lessons.length > 0 ? course.lessons[0].id.toString() : '',
   );
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
-  const { isAdmin, isTutor } = useRoles();
+  const { isAdmin } = useRoles();
   const page = usePage<{ auth?: { user?: { id: number } } }>();
   const currentUserId = page.props.auth?.user?.id;
   const canManageCourse =
@@ -491,22 +509,45 @@ export default function CourseShow({ course, isEnrolled }: CourseShowProps) {
 
           {/* Assessment Tab Content */}
           <TabsContent value="assessment" className="mt-6">
-            <AssessmentTab course={course} />
+            <AssessmentTab
+              course={course}
+              assessments={assessments}
+              isTutor={isTutor}
+            />
           </TabsContent>
 
           {/* Gradebook Tab Content */}
           <TabsContent value="gradebook" className="mt-6">
-            <GradebookTab course={course} isEnrolled={isEnrolled} />
+            <GradebookTab
+              course={course}
+              isEnrolled={isEnrolled}
+              isTutor={isTutor}
+              students={students}
+              assessments={assessments}
+              submissions={submissions}
+            />
           </TabsContent>
 
           {/* Scoring Tab Content */}
           <TabsContent value="scoring" className="mt-6">
-            <ScoringTab course={course} isEnrolled={isEnrolled} />
+            <ScoringTab
+              course={course}
+              isEnrolled={isEnrolled}
+              isTutor={isTutor}
+              students={students}
+              assessments={assessments}
+              submissions={submissions}
+            />
           </TabsContent>
 
           {/* Attendance Tab Content */}
           <TabsContent value="attendance" className="mt-6">
-            <AttendanceTab course={course} isEnrolled={isEnrolled} />
+            <AttendanceTab
+              course={course}
+              isEnrolled={isEnrolled}
+              isTutor={isTutor}
+              students={students}
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FilterCoursesRequest;
+use App\Models\Assessment;
+use App\Models\AssessmentSubmission;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Lesson;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -90,37 +93,81 @@ class CourseController extends Controller
         $course->load(['instructor', 'lessons.contents']);
 
         $user = auth()->user();
-        if ($user && $user->hasRole('tutor') && ! $user->hasRole('admin') && $course->instructor_id !== $user->id) {
+        $isAdmin = $user?->hasRole('admin') ?? false;
+        $hasTutorRole = $user?->hasRole('tutor') ?? false;
+        $isInstructor = $user && $course->instructor_id === $user->id;
+        $isTutor = $isAdmin || ($hasTutorRole && $isInstructor) || $isInstructor;
+
+        if ($user && $hasTutorRole && ! $isAdmin && ! $isInstructor) {
             abort(403);
         }
+
         $isEnrolled = false;
+        $students = [];
+        $assessments = [];
+        $submissions = [];
 
         if ($user) {
-            $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
-            
-            // Load user's attendance for each lesson
-            $attendedLessonIds = $user->attendances()
-                ->whereIn('lesson_id', $course->lessons->pluck('id'))
-                ->pluck('lesson_id')
-                ->toArray();
-                
-            // Add attendance status to each lesson
-            $course->lessons->each(function ($lesson) use ($attendedLessonIds) {
-                $lesson->has_attended = in_array($lesson->id, $attendedLessonIds);
-            });
+            if (! $isInstructor) {
+                $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
+            }
+
+            if ($isTutor) {
+                // Fetch enrolled students with attendance
+                $students = \App\Models\Enrollment::where('course_id', $course->id)
+                    ->with(['user', 'user.attendances' => function ($q) use ($course) {
+                        $q->whereIn('lesson_id', $course->lessons->pluck('id'));
+                    }])
+                    ->get()
+                    ->map(function ($enrollment) use ($course) {
+                        $userData = $enrollment->user->toArray();
+                        $userData['enrollment_status'] = $enrollment->status;
+                        $userData['attendances'] = $enrollment->user->attendances;
+                        // Add submissions
+                        $userData['submissions'] = AssessmentSubmission::whereHas('assessment', function ($q) use ($course) {
+                            $q->where('course_id', $course->id);
+                        })->where('user_id', $enrollment->user->id)->get();
+
+                        return $userData;
+                    });
+
+                $assessments = Assessment::where('course_id', $course->id)
+                    ->with(['submissions.user'])
+                    ->get();
+            } else {
+                $attendedLessonIds = $user->attendances()
+                    ->whereIn('lesson_id', $course->lessons->pluck('id'))
+                    ->pluck('lesson_id')
+                    ->toArray();
+
+                $course->lessons->each(function ($lesson) use ($attendedLessonIds) {
+                    $lesson->has_attended = in_array($lesson->id, $attendedLessonIds);
+                });
+
+                if ($isEnrolled) {
+                    $assessments = Assessment::where('course_id', $course->id)->get();
+                    $submissions = AssessmentSubmission::whereIn('assessment_id', $assessments->pluck('id'))
+                        ->where('user_id', $user->id)
+                        ->get();
+                }
+            }
         }
 
         return Inertia::render('courses/show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
+            'isTutor' => $isTutor,
+            'students' => $students,
+            'assessments' => $assessments,
+            'submissions' => $submissions,
         ]);
     }
 
     public function markAttendance(Lesson $lesson)
     {
         $user = auth()->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             return back()->withErrors(['error' => 'Unauthorized']);
         }
 
@@ -133,7 +180,6 @@ class CourseController extends Controller
         //     }
         // }
 
-        // Mark or update attendance
         Attendance::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -147,5 +193,36 @@ class CourseController extends Controller
         return back();
     }
 
+    public function updateScore(Request $request, Assessment $assessment)
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(401);
+        }
 
+        $course = $assessment->course;
+        if (! $user->hasRole('admin') && $course->instructor_id !== $user->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'score' => 'required|integer|min:0|max:'.$assessment->max_score,
+            'feedback' => 'nullable|string',
+        ]);
+
+        AssessmentSubmission::updateOrCreate(
+            [
+                'assessment_id' => $assessment->id,
+                'user_id' => $validated['user_id'],
+            ],
+            [
+                'score' => $validated['score'],
+                'feedback' => $validated['feedback'],
+                'submitted_at' => now(),
+            ]
+        );
+
+        return back()->with('message', 'Score updated.');
+    }
 }

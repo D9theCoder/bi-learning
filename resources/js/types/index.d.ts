@@ -267,6 +267,32 @@ export interface TutorRosterEntry {
   average_progress: number;
 }
 
+export interface Assessment {
+  id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  type: string;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  max_score: number;
+  created_at: string;
+  updated_at: string;
+  submissions?: AssessmentSubmission[];
+}
+
+export interface AssessmentSubmission {
+  id: number;
+  assessment_id: number;
+  user_id: number;
+  score?: number | null;
+  feedback?: string | null;
+  submitted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+}
+
 // Page Props Interfaces
 
 export interface AchievementsPageProps {

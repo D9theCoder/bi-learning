@@ -1,11 +1,13 @@
 <?php
 
+use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -137,4 +139,36 @@ it('prevents tutors from enrolling in courses', function () {
     $this->actingAs($tutor)
         ->post(route('courses.enroll', $course))
         ->assertForbidden();
+});
+
+it('shows student attendance to the course tutor', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $lessons = Lesson::factory()->for($course)->count(2)->create();
+
+    Enrollment::factory()->for($student)->for($course)->create(['status' => 'active']);
+
+    $attendedLesson = $lessons->first();
+
+    Attendance::create([
+        'user_id' => $student->id,
+        'lesson_id' => $attendedLesson->id,
+        'attended_at' => now(),
+    ]);
+
+    $response = $this->actingAs($tutor)->get(route('courses.show', $course));
+
+    $response->assertSuccessful();
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->where('isTutor', true)
+        ->has('students', 1)
+        ->where('students.0.id', $student->id)
+        ->where('students.0.attendances.0.lesson_id', $attendedLesson->id)
+    );
 });

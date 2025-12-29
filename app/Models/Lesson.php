@@ -56,4 +56,9 @@ class Lesson extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
 }

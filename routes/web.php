@@ -70,6 +70,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:student|admin|tutor')
         ->whereNumber('lesson')
         ->name('lessons.attend');
+    Route::post('assessments/{assessment}/score', [CourseController::class, 'updateScore'])
+        ->middleware('role:tutor|admin')
+        ->name('assessments.score');
 
     // Message routes
     Route::get('messages', [MessageController::class, 'index'])->name('messages');
