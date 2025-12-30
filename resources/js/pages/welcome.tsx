@@ -15,31 +15,6 @@ export default function Welcome() {
   const { auth } = usePage<SharedData>().props;
 
   useEffect(() => {
-    // const lenis = new Lenis({
-    //   duration: 1.2,
-    //   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    //   orientation: 'vertical',
-    //   gestureOrientation: 'vertical',
-    //   smoothWheel: true,
-    //   wheelMultiplier: 1,
-    //   touchMultiplier: 2,
-    // });
-
-    // Custom damping as requested
-    // Note: lenis v1 uses 'lerp' or 'duration'. Damping factor of 0.1 usually implies lerp = 0.1 in other libs,
-    // but in Lenis it's often configured via duration/easing.
-    // However, the user specifically asked for "damping factor of 0.1".
-    // Standard Lenis doesn't have a direct "damping" prop in the options interface shown commonly,
-    // but React-Lenis or specific smooth-scrollbar libs do.
-    // We'll stick to a smooth configuration.
-    // If strict "damping: 0.1" is needed (like basic lerp), we can try to set it if the lib supports it,
-    // but I'll stick to the "smooth" preset which is high quality.
-
-    // Wait, documentation says Lenis options include `lerp`.
-    // If `lerp` is defined, `duration` is ignored. `lerp: 0.1` is the damping.
-    // Let's use that.
-
-    // Creating a new instance with specific options
     const lenisInstance = new Lenis({
       lerp: 0.1,
       smoothWheel: true,
