@@ -1,0 +1,130 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useForm } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+
+interface NewQuestionFormProps {
+  courseId: number;
+  assessmentId: number;
+  type: 'multiple_choice' | 'fill_blank' | 'essay';
+  onCancel: () => void;
+  onSuccess: () => void;
+}
+
+export function NewQuestionForm({
+  courseId,
+  assessmentId,
+  type,
+  onCancel,
+  onSuccess,
+}: NewQuestionFormProps) {
+  const form = useForm({
+    type,
+    question: '',
+    options: ['', '', '', ''],
+    correct_answer: '',
+    points: 1,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    form.post(`/courses/${courseId}/quiz/${assessmentId}/questions`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        form.reset();
+        onSuccess();
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="new-question">Question</Label>
+        <Textarea
+          id="new-question"
+          value={form.data.question}
+          onChange={(e) => form.setData('question', e.target.value)}
+          placeholder="Enter your question..."
+          rows={3}
+        />
+        {form.errors.question && (
+          <p className="text-xs text-destructive">{form.errors.question}</p>
+        )}
+      </div>
+
+      {type === 'multiple_choice' && (
+        <div className="space-y-2">
+          <Label>Options (select the correct one)</Label>
+          {form.data.options.map((option, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="correct_answer"
+                checked={form.data.correct_answer === String(idx)}
+                onChange={() => form.setData('correct_answer', String(idx))}
+                className="h-4 w-4"
+              />
+              <Input
+                value={option}
+                onChange={(e) => {
+                  const newOptions = [...form.data.options];
+                  newOptions[idx] = e.target.value;
+                  form.setData('options', newOptions);
+                }}
+                placeholder={`Option ${idx + 1}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {type === 'fill_blank' && (
+        <div className="space-y-2">
+          <Label htmlFor="correct-answer">Correct Answer</Label>
+          <Input
+            id="correct-answer"
+            value={form.data.correct_answer}
+            onChange={(e) => form.setData('correct_answer', e.target.value)}
+            placeholder="Enter the correct answer..."
+          />
+          <p className="text-xs text-muted-foreground">
+            Case-insensitive exact match
+          </p>
+        </div>
+      )}
+
+      {type === 'essay' && (
+        <p className="text-sm text-muted-foreground">
+          Essay answers will require manual grading by the tutor.
+        </p>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="points">Points</Label>
+        <Input
+          id="points"
+          type="number"
+          min={1}
+          value={form.data.points}
+          onChange={(e) =>
+            form.setData('points', parseInt(e.target.value) || 1)
+          }
+          className="w-24"
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={form.processing}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Question
+        </Button>
+      </div>
+    </form>
+  );
+}

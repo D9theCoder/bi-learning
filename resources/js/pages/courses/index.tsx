@@ -75,7 +75,6 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {courses.data.map((course) => (
-            // @ts-ignore
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
