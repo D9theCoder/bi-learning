@@ -16,7 +16,7 @@ export function ManageCourseRow({ course }: ManageCourseRowProps) {
           <h3 className="text-base font-semibold text-foreground">
             {course.title}
           </h3>
-          <PublishStatusPill isPublished={course.is_published} />
+          <PublishStatusPill isPublished={course.is_published ?? false} />
         </div>
         <p className="text-sm text-muted-foreground">
           {course.category ?? 'Uncategorized'} ·{' '}

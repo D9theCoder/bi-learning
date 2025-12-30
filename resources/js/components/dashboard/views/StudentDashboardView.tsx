@@ -59,7 +59,11 @@ export function StudentDashboardView({
       />
 
       <DashboardErrorBoundary>
-        {isLoading ? <StatsSkeleton /> : <DashboardStatsSection stats={stats} />}
+        {isLoading ? (
+          <StatsSkeleton />
+        ) : (
+          <DashboardStatsSection stats={stats} />
+        )}
       </DashboardErrorBoundary>
 
       <div className="grid gap-8 lg:grid-cols-3">

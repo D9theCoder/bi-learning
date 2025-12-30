@@ -55,4 +55,3 @@ export interface AdminActiveThread {
 }
 
 export type ActiveThread = ParticipantActiveThread | AdminActiveThread;
-

@@ -27,9 +27,8 @@ export function useMessagePolling({
   messagesUrl,
 }: UseMessagePollingOptions): UseMessagePollingReturn {
   const [threadsState, setThreadsState] = useState<Thread[]>(threads);
-  const [activeThreadState, setActiveThreadState] = useState<ActiveThread | null>(
-    activeThread,
-  );
+  const [activeThreadState, setActiveThreadState] =
+    useState<ActiveThread | null>(activeThread);
   const [contactsState, setContactsState] = useState<ContactUser[]>(contacts);
 
   const conversationKey = useMemo(() => {

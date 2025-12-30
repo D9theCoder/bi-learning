@@ -1,12 +1,21 @@
 import { TaskDateCard } from '@/components/calendar/task-date-card';
 import { EmptyState } from '@/components/shared/empty-state';
-import type { DailyTask } from '@/types';
+
+type CalendarTaskSummary = {
+  id: number;
+  title: string;
+  due_date: string;
+  completed: boolean;
+  xp_reward?: number;
+  course_title?: string;
+  type?: string;
+};
 
 interface CalendarTaskListProps {
   isFiltered: boolean;
   activeDateLabel: string | null;
   filteredDates: string[];
-  tasksByDate: Record<string, DailyTask[]>;
+  tasksByDate: Record<string, CalendarTaskSummary[]>;
 }
 
 export function CalendarTaskList({
@@ -23,7 +32,7 @@ export function CalendarTaskList({
         </h2>
         <p className="text-sm text-muted-foreground">
           {isFiltered
-            ? activeDateLabel ?? 'No tasks scheduled for this date.'
+            ? (activeDateLabel ?? 'No tasks scheduled for this date.')
             : 'Showing every scheduled task on your calendar.'}
         </p>
       </div>

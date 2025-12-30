@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useRoles } from '@/hooks/use-roles';
 import {
   achievements,
   calendar,
@@ -33,7 +34,6 @@ import {
   Users,
 } from 'lucide-react';
 import AppLogo from './app-logo';
-import { useRoles } from '@/hooks/use-roles';
 
 const mainNavItems: NavItem[] = [
   {
@@ -91,7 +91,12 @@ export function AppSidebar() {
   const { url } = usePage();
 
   const hideStudentOnly = isTutor && !isAdmin && !isStudent;
-  const studentOnlyTitles = new Set(['Dashboard', 'Achievements', 'Rewards', 'Calendar']);
+  const studentOnlyTitles = new Set([
+    'Dashboard',
+    'Achievements',
+    'Rewards',
+    'Calendar',
+  ]);
   const filteredNavItems = hideStudentOnly
     ? mainNavItems.filter((item) => !studentOnlyTitles.has(item.title))
     : mainNavItems;
@@ -104,7 +109,9 @@ export function AppSidebar() {
       icon: Folder,
     };
 
-    const insertIndex = navItems.findIndex((item) => item.title === 'My Courses');
+    const insertIndex = navItems.findIndex(
+      (item) => item.title === 'My Courses',
+    );
     if (insertIndex >= 0) {
       navItems.splice(insertIndex + 1, 0, manageLink);
     } else {
@@ -113,10 +120,13 @@ export function AppSidebar() {
   }
 
   // Fix active state for My Courses to avoid highlighting when in Manage Courses
-  const myCoursesIndex = navItems.findIndex((item) => item.title === 'My Courses');
+  const myCoursesIndex = navItems.findIndex(
+    (item) => item.title === 'My Courses',
+  );
   if (myCoursesIndex >= 0) {
     navItems[myCoursesIndex].isActive =
-      url === '/courses' || (url.startsWith('/courses/') && !url.startsWith('/courses/manage'));
+      url === '/courses' ||
+      (url.startsWith('/courses/') && !url.startsWith('/courses/manage'));
   }
 
   const homeHref = navItems[0]?.href ?? home().url;

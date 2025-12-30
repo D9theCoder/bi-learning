@@ -1,7 +1,7 @@
+import { DashedEmptyState } from '@/components/courses/shared';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assessment, AssessmentSubmission } from '@/types';
-import { DashedEmptyState } from '@/components/courses/shared';
 
 interface MyScoresCardProps {
   assessments: Assessment[];

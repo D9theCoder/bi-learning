@@ -4,9 +4,9 @@ import { DifficultyBadge } from './DifficultyBadge';
 
 interface CourseHeaderProps {
   title: string;
-  category: string | null;
-  durationMinutes: number;
-  difficulty: string | null;
+  category?: string | null;
+  durationMinutes?: number | null;
+  difficulty?: string | null;
   instructor: {
     name: string;
     avatar?: string;
@@ -31,7 +31,7 @@ export function CourseHeader({
             <Globe className="h-4 w-4" /> {category || 'General'}
           </span>
           <span className="flex items-center gap-1">
-            <Clock className="h-4 w-4" /> {durationMinutes} mins
+            <Clock className="h-4 w-4" /> {durationMinutes ?? 0} mins
           </span>
           <DifficultyBadge difficulty={difficulty || 'All Levels'} />
         </div>
@@ -43,7 +43,7 @@ export function CourseHeader({
           <AvatarFallback>{instructor.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="text-xs font-medium uppercase text-gray-500">
+          <p className="text-xs font-medium text-gray-500 uppercase">
             Primary Instructor
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">

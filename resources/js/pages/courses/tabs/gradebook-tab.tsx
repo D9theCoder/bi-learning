@@ -1,11 +1,11 @@
-import { useRoles } from '@/hooks/use-roles';
-import { Assessment, AssessmentSubmission, Course, User } from '@/types';
-import { BookCheck } from 'lucide-react';
 import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
   GradebookStudentGrid,
   GradebookTutorMatrix,
 } from '@/components/courses/tabs/gradebook';
+import { useRoles } from '@/hooks/use-roles';
+import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import { BookCheck } from 'lucide-react';
 
 interface GradebookTabProps {
   course: Course & {

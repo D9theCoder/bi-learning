@@ -1,6 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
   Dialog,
   DialogClose,
   DialogContent,
@@ -10,14 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import type { Reward } from '@/types';
 import { Form } from '@inertiajs/react';
 import { Coins } from 'lucide-react';
@@ -64,7 +64,9 @@ export function RewardCard({ reward }: RewardCardProps) {
             <Coins className="size-5 text-yellow-500" />
             {reward.cost} points
           </div>
-          {stockText && <p className="text-xs text-muted-foreground">{stockText}</p>}
+          {stockText && (
+            <p className="text-xs text-muted-foreground">{stockText}</p>
+          )}
         </CardContent>
         <CardFooter className="mt-auto">
           <DialogTrigger asChild>

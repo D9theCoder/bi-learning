@@ -1,6 +1,6 @@
 export { ContentRow } from './ContentRow';
-export { NewContentForm } from './NewContentForm';
-export { LessonCard } from './LessonCard';
 export { CourseDetailsForm } from './CourseDetailsForm';
+export { LessonCard } from './LessonCard';
 export { LessonsSection } from './LessonsSection';
 export { ManageCourseRow } from './ManageCourseRow';
+export { NewContentForm } from './NewContentForm';

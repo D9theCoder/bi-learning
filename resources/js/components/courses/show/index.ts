@@ -1,9 +1,9 @@
+export { EnrollPromptCard, ManageCourseCard } from './CourseActionCards';
 export { CourseHeader } from './CourseHeader';
-export { DifficultyBadge } from './DifficultyBadge';
-export { SessionSelector } from './SessionSelector';
-export { MeetingCard } from './MeetingCard';
-export { SessionTodoList } from './SessionTodoList';
-export { SessionDetails } from './SessionDetails';
-export { ManageCourseCard, EnrollPromptCard } from './CourseActionCards';
 export { CourseTabs } from './CourseTabs';
+export { DifficultyBadge } from './DifficultyBadge';
+export { MeetingCard } from './MeetingCard';
+export { SessionDetails } from './SessionDetails';
+export { SessionSelector } from './SessionSelector';
 export { SessionTabContent } from './SessionTabContent';
+export { SessionTodoList } from './SessionTodoList';

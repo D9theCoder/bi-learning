@@ -49,8 +49,7 @@ export function QuizActionPanel({
             </div>
             {bestAttempt.completed_at && (
               <p className="mt-2 text-xs text-green-600 dark:text-green-500">
-                Completed:{' '}
-                {new Date(bestAttempt.completed_at).toLocaleString()}
+                Completed: {new Date(bestAttempt.completed_at).toLocaleString()}
               </p>
             )}
             {!bestAttempt.is_graded && (

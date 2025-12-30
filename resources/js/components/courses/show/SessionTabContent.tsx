@@ -1,12 +1,12 @@
-import type { CourseContent, Lesson } from '@/types';
 import {
-  ManageCourseCard,
   EnrollPromptCard,
+  ManageCourseCard,
   MeetingCard,
   SessionDetails,
   SessionSelector,
   SessionTodoList,
 } from '@/components/courses/show';
+import type { CourseContent, Lesson } from '@/types';
 
 interface SessionTabContentProps {
   lessons: (Lesson & { contents: CourseContent[] })[];
@@ -52,8 +52,8 @@ export function SessionTabContent({
               <MeetingCard
                 lessonId={activeSession.id}
                 meetingUrl={activeSession.meeting_url}
-                meetingStartTime={activeSession.meeting_start_time}
-                meetingEndTime={activeSession.meeting_end_time}
+                meetingStartTime={activeSession.meeting_start_time ?? null}
+                meetingEndTime={activeSession.meeting_end_time ?? null}
                 hasAttended={activeSession.has_attended}
                 isAdmin={isAdmin}
                 isTutor={isTutor}

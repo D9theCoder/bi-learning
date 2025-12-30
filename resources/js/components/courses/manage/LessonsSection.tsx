@@ -128,11 +128,7 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
         <div className="flex flex-col gap-4">
           {lessons && lessons.length > 0 ? (
             lessons.map((lesson) => (
-              <LessonCard
-                key={lesson.id}
-                courseId={courseId}
-                lesson={lesson}
-              />
+              <LessonCard key={lesson.id} courseId={courseId} lesson={lesson} />
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No lessons yet.</p>

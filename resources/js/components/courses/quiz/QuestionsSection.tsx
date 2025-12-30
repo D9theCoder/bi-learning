@@ -1,6 +1,6 @@
+import { NewQuestionForm, QuestionCard } from '@/components/courses/quiz';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NewQuestionForm, QuestionCard } from '@/components/courses/quiz';
 import type { QuizQuestion } from '@/types';
 import { HelpCircle, ListOrdered, PenLine, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -46,10 +46,7 @@ export function QuestionsSection({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Questions</CardTitle>
-        <Button
-          size="sm"
-          onClick={() => setShowNewQuestion(!showNewQuestion)}
-        >
+        <Button size="sm" onClick={() => setShowNewQuestion(!showNewQuestion)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Question
         </Button>

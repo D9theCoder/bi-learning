@@ -1,26 +1,26 @@
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Assessment } from '@/types';
-import { UseFormReturn } from '@inertiajs/react';
+import type { InertiaFormProps } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 
 type SettingsFormData = {
   title: string;
   description: string;
-  lesson_id: number | '';
+  lesson_id: number | '' | string;
   due_date: string;
   max_score: number;
   allow_retakes: boolean;
-  time_limit_minutes: number | '';
+  time_limit_minutes: number | '' | string;
   is_published: boolean;
 };
 
 interface QuizSettingsCardProps {
-  form: UseFormReturn<SettingsFormData>;
+  form: InertiaFormProps<SettingsFormData>;
   assessment: Assessment;
   onSave: () => void;
 }

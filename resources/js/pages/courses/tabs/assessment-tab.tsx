@@ -1,11 +1,11 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Assessment, AssessmentSubmission, Course, User } from '@/types';
-import { router } from '@inertiajs/react';
+import { DashedEmptyState } from '@/components/courses/shared';
 import {
   AssessmentListItem,
   AssessmentsHeader,
 } from '@/components/courses/tabs/assessment';
-import { DashedEmptyState } from '@/components/courses/shared';
+import { Card, CardContent } from '@/components/ui/card';
+import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import { router } from '@inertiajs/react';
 
 interface AssessmentTabProps {
   course: Course & {

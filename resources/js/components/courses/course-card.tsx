@@ -9,11 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
 import type { Course, User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Play } from 'lucide-react';
 import { useState } from 'react';
-import { useRoles } from '@/hooks/use-roles';
 
 const difficultyColors = {
   beginner: 'bg-green-500/20 text-green-400',
@@ -38,7 +38,10 @@ export function CourseCard({ course }: CourseCardProps) {
   const page = usePage<{ auth?: { user?: { id: number } } }>();
   const currentUserId = page.props.auth?.user?.id;
   const canManageCourse =
-    isAdmin || (isTutor && currentUserId !== undefined && course.instructor_id === currentUserId);
+    isAdmin ||
+    (isTutor &&
+      currentUserId !== undefined &&
+      course.instructor_id === currentUserId);
 
   return (
     <>

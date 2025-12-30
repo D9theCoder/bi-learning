@@ -1,13 +1,13 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { useRoles } from '@/hooks/use-roles';
-import { Course, Lesson, User } from '@/types';
-import { CalendarCheck } from 'lucide-react';
 import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
   AttendanceSessionList,
   AttendanceSummaryCards,
   AttendanceTutorMatrix,
 } from '@/components/courses/tabs/attendance';
+import { Card, CardContent } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
+import { Course, Lesson, User } from '@/types';
+import { CalendarCheck } from 'lucide-react';
 
 interface AttendanceTabProps {
   course: Course & {

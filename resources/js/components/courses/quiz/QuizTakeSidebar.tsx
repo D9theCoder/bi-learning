@@ -38,7 +38,7 @@ export function QuizTakeSidebar({
   ).length;
 
   return (
-    <div className="border-b bg-muted/30 p-4 lg:w-64 lg:border-b-0 lg:border-r">
+    <div className="border-b bg-muted/30 p-4 lg:w-64 lg:border-r lg:border-b-0">
       {/* Timer */}
       {remainingTime !== null && (
         <div

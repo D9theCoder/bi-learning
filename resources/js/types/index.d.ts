@@ -58,6 +58,7 @@ export interface Course {
   duration_minutes?: number;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   category?: string;
+  is_published?: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -1,9 +1,9 @@
-export { DashboardStatsSection } from './DashboardStatsSection';
-export { DashboardCoursesSection } from './DashboardCoursesSection';
 export { DashboardActivityChartSection } from './DashboardActivityChartSection';
+export { DashboardCoursesSection } from './DashboardCoursesSection';
+export { DashboardStatsSection } from './DashboardStatsSection';
 export { DashboardWelcomeHeader } from './DashboardWelcomeHeader';
-export { TutorStatsSection } from './TutorStatsSection';
 export { TutorActivityChartSection } from './TutorActivityChartSection';
-export { TutorCourseListSection } from './TutorCourseListSection';
 export { TutorCalendarSection } from './TutorCalendarSection';
+export { TutorCourseListSection } from './TutorCourseListSection';
 export { TutorRosterSection } from './TutorRosterSection';
+export { TutorStatsSection } from './TutorStatsSection';

@@ -102,7 +102,7 @@ export function MiniCalendar({
     >
       <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex flex-col leading-tight">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+          <span className="text-xs tracking-wide text-muted-foreground uppercase">
             Calendar
           </span>
           <span className="text-sm font-semibold">

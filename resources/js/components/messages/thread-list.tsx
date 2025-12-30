@@ -2,8 +2,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { messages as messagesRoute } from '@/routes';
-import type { AdminThread, ParticipantThread, Thread } from './types';
 import { Link } from '@inertiajs/react';
+import type { AdminThread, ParticipantThread, Thread } from './types';
 
 type ThreadListProps =
   | {
@@ -84,7 +84,9 @@ export function ThreadList({ threads, isAdmin }: ThreadListProps) {
                 >
                   <Avatar>
                     <AvatarImage src={thread.tutor.avatar} />
-                    <AvatarFallback>{thread.tutor.name?.[0] ?? 'T'}</AvatarFallback>
+                    <AvatarFallback>
+                      {thread.tutor.name?.[0] ?? 'T'}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">

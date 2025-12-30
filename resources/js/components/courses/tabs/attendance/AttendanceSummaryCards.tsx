@@ -26,7 +26,9 @@ export function AttendanceSummaryCards({
           <p className="text-sm text-gray-500">Attended</p>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-green-600">{attendedSessions}</p>
+          <p className="text-2xl font-bold text-green-600">
+            {attendedSessions}
+          </p>
         </CardContent>
       </Card>
       <Card>

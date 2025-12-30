@@ -91,7 +91,7 @@ export function QuizQuestionPanel({
 
         {/* Question */}
         <div className="mb-6">
-          <p className="whitespace-pre-wrap text-lg">{question.question}</p>
+          <p className="text-lg whitespace-pre-wrap">{question.question}</p>
         </div>
 
         {/* Answer Input */}

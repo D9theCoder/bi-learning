@@ -25,8 +25,8 @@ export function CourseTabs({
 }: CourseTabsProps) {
   return (
     <Tabs defaultValue="session" className="w-full">
-      <div className="scrollbar-hide overflow-x-auto border-b">
-        <TabsList className="inline-flex w-max gap-0 rounded-none bg-transparent p-0">
+      <div className="border-b">
+        <TabsList className="flex h-auto w-full flex-wrap items-center justify-start gap-0 rounded-none bg-transparent p-0">
           <TabsTrigger
             value="session"
             className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"

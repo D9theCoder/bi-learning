@@ -18,4 +18,3 @@ export function useRoles(): RoleState {
     isTutor: roles.includes('tutor'),
   };
 }
-

@@ -7,7 +7,10 @@ interface TaskDateCardProps {
     id: number;
     title: string;
     completed: boolean;
+    due_date?: string;
     xp_reward?: number;
+    course_title?: string;
+    type?: string;
   }>;
 }
 

@@ -5,7 +5,12 @@ import { LevelProgressBar } from '@/components/dashboard/level-progress-bar';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed';
 import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type {
   Achievement,
   Activity,
@@ -45,68 +50,77 @@ export const DashboardSidebar = memo(
       {/* Level Progress - Sticky */}
       <div className="sticky top-4 z-10">
         <DashboardErrorBoundary>
-            <LevelProgressBar
+          <LevelProgressBar
             currentLevel={stats.level}
             currentXp={stats.total_xp}
             xpForNextLevel={stats.level * XP_PER_LEVEL}
             totalXp={stats.total_xp}
-            />
+          />
         </DashboardErrorBoundary>
       </div>
 
       {/* Achievements - Trophy Case */}
       <DashboardErrorBoundary>
         <section aria-labelledby="achievements-heading">
-          <Card className="gap-4 pb-4 pt-6">
+          <Card className="gap-4 pt-6 pb-4">
             <CardHeader className="pb-0">
-              <CardTitle id="achievements-heading">
-                Trophy Case
-              </CardTitle>
+              <CardTitle id="achievements-heading">Trophy Case</CardTitle>
             </CardHeader>
             <CardContent>
               {recentAchievements.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
-                   <TooltipProvider>
-                      {recentAchievements.map((achievement) => (
-                        <Tooltip key={achievement.id}>
-                            <TooltipTrigger asChild>
-                                <div>
-                                    <AchievementBadge
-                                    achievement={achievement}
-                                    unlocked={!!achievement.earned_at}
-                                    unlockedAt={achievement.earned_at}
-                                    variant="tile"
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p className="font-semibold">{achievement.name}</p>
-                                <p className="text-xs text-muted-foreground">{achievement.description}</p>
-                                {achievement.earned_at && (
-                                    <p className="text-[10px] text-green-500 mt-1">Unlocked: {new Date(achievement.earned_at).toLocaleDateString()}</p>
-                                )}
-                            </TooltipContent>
-                        </Tooltip>
-                      ))}
-                      {nextMilestone && (
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div>
-                                    <AchievementBadge
-                                        achievement={nextMilestone}
-                                        unlocked={false}
-                                        variant="tile"
-                                        className="border-dashed"
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p className="font-semibold">Next Goal: {nextMilestone.name}</p>
-                                <p className="text-xs text-muted-foreground">{nextMilestone.description}</p>
-                            </TooltipContent>
-                         </Tooltip>
-                      )}
-                   </TooltipProvider>
+                  <TooltipProvider>
+                    {recentAchievements.map((achievement) => (
+                      <Tooltip key={achievement.id}>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <AchievementBadge
+                              achievement={achievement}
+                              unlocked={!!achievement.earned_at}
+                              unlockedAt={achievement.earned_at}
+                              variant="tile"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-semibold">{achievement.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {achievement.description}
+                          </p>
+                          {achievement.earned_at && (
+                            <p className="mt-1 text-[10px] text-green-500">
+                              Unlocked:{' '}
+                              {new Date(
+                                achievement.earned_at,
+                              ).toLocaleDateString()}
+                            </p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {nextMilestone && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <AchievementBadge
+                              achievement={nextMilestone}
+                              unlocked={false}
+                              variant="tile"
+                              className="border-dashed"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-semibold">
+                            Next Goal: {nextMilestone.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {nextMilestone.description}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TooltipProvider>
                 </div>
               ) : (
                 <p className="text-center text-sm text-muted-foreground">

@@ -39,7 +39,7 @@ export const TutorCalendarSection = memo(
                     <span className="text-xs text-muted-foreground">
                       {item.course_title}
                     </span>
-                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <span className="text-[11px] tracking-wide text-muted-foreground uppercase">
                       {item.type}
                     </span>
                   </div>

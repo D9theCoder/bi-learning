@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Link, UseFormReturn } from '@inertiajs/react';
+import { Link, type InertiaFormProps } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 
 const difficulties = [
@@ -17,13 +17,13 @@ type CourseFormData = {
   description: string;
   category: string;
   difficulty: string;
-  duration_minutes: number | '';
+  duration_minutes: number | '' | string;
   thumbnail: string;
   is_published: boolean;
 };
 
 interface CourseDetailsFormProps {
-  form: UseFormReturn<CourseFormData>;
+  form: InertiaFormProps<CourseFormData>;
   isEdit: boolean;
   onSubmit: () => void;
 }
@@ -127,9 +127,11 @@ export function CourseDetailsForm({
 
         {form.errors && (
           <div className="text-sm text-destructive">
-            {Object.values(form.errors).map((error) => (
-              <div key={error as string}>{error}</div>
-            ))}
+            {Object.entries(form.errors)
+              .filter(([, message]) => Boolean(message))
+              .map(([field, message]) => (
+                <div key={field}>{message}</div>
+              ))}
           </div>
         )}
 

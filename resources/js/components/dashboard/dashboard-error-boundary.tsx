@@ -43,4 +43,3 @@ export class DashboardErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
-

@@ -44,7 +44,10 @@ export function QuizGradingAssessmentCard({
 }: QuizGradingAssessmentCardProps) {
   const [grades, setGrades] = useState<Record<string, string>>({});
 
-  const questions = useMemo(() => assessment.questions ?? [], [assessment.questions]);
+  const questions = useMemo(
+    () => assessment.questions ?? [],
+    [assessment.questions],
+  );
 
   return (
     <Card className="gap-0 overflow-hidden py-0">

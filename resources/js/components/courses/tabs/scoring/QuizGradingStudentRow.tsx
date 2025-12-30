@@ -34,7 +34,8 @@ function computeAutoPoints(question: QuizQuestion, answer: unknown): number {
   }
 
   if (question.type === 'fill_blank') {
-    return normalizeFillBlank(answer) === normalizeFillBlank(question.correct_answer)
+    return normalizeFillBlank(answer) ===
+      normalizeFillBlank(question.correct_answer)
       ? question.points
       : 0;
   }
@@ -52,7 +53,10 @@ function getAnswer(answers: AttemptAnswers, questionId: number): unknown {
   return (answers as Record<string, unknown>)[String(questionId)];
 }
 
-function getStoredGrade(answers: AttemptAnswers, questionId: number): number | null {
+function getStoredGrade(
+  answers: AttemptAnswers,
+  questionId: number,
+): number | null {
   if (!answers) {
     return null;
   }
@@ -148,7 +152,9 @@ export function QuizGradingStudentRow({
         <div className="flex min-w-0 items-center gap-3">
           <Avatar>
             <AvatarImage src={student.avatar} />
-            <AvatarFallback>{String(student.name ?? '?').charAt(0)}</AvatarFallback>
+            <AvatarFallback>
+              {String(student.name ?? '?').charAt(0)}
+            </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="truncate font-medium">{student.name}</p>
@@ -185,7 +191,11 @@ export function QuizGradingStudentRow({
               const autoPoints = computeAutoPoints(question, answer);
               const gradeKey = `${attempt.id}-${question.id}`;
 
-              const displayedGrade = grades[gradeKey] ?? (existingGrade !== null ? String(existingGrade) : String(autoPoints));
+              const displayedGrade =
+                grades[gradeKey] ??
+                (existingGrade !== null
+                  ? String(existingGrade)
+                  : String(autoPoints));
 
               const error = validation.issues[question.id];
 
@@ -196,17 +206,23 @@ export function QuizGradingStudentRow({
                 >
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold">Q{question.order}: {question.question}</p>
+                      <p className="text-sm font-semibold">
+                        Q{question.order}: {question.question}
+                      </p>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <span>Type: {question.type.replace('_', ' ')}</span>
                         <span>•</span>
                         <span>Max: {question.points}</span>
-                        {question.type !== 'essay' && question.correct_answer !== null && question.correct_answer !== undefined && (
-                          <>
-                            <span>•</span>
-                            <span>Answer key: {String(question.correct_answer)}</span>
-                          </>
-                        )}
+                        {question.type !== 'essay' &&
+                          question.correct_answer !== null &&
+                          question.correct_answer !== undefined && (
+                            <>
+                              <span>•</span>
+                              <span>
+                                Answer key: {String(question.correct_answer)}
+                              </span>
+                            </>
+                          )}
                       </div>
                     </div>
 
@@ -235,7 +251,9 @@ export function QuizGradingStudentRow({
                           min={0}
                           max={question.points}
                           value={displayedGrade}
-                          onChange={(e) => onGradeChange(gradeKey, e.target.value)}
+                          onChange={(e) =>
+                            onGradeChange(gradeKey, e.target.value)
+                          }
                           className={
                             error
                               ? 'mt-1 border-red-500 focus-visible:ring-red-500/30'
@@ -248,7 +266,8 @@ export function QuizGradingStudentRow({
                           </p>
                         ) : (
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Defaults to auto-score for objective questions. Edit to override.
+                            Defaults to auto-score for objective questions. Edit
+                            to override.
                           </p>
                         )}
                       </div>
@@ -271,14 +290,20 @@ export function QuizGradingStudentRow({
                 const key = `${attempt.id}-${q.id}`;
                 const answer = getAnswer(attemptAnswers, q.id);
                 const existingGrade = getStoredGrade(attemptAnswers, q.id);
-                const fallback = existingGrade !== null ? existingGrade : computeAutoPoints(q, answer);
+                const fallback =
+                  existingGrade !== null
+                    ? existingGrade
+                    : computeAutoPoints(q, answer);
 
                 const raw = grades[key];
-                const parsed = raw === undefined || raw === '' ? fallback : Number(raw);
+                const parsed =
+                  raw === undefined || raw === '' ? fallback : Number(raw);
 
                 return {
                   question_id: q.id,
-                  points: Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, q.points)) : 0,
+                  points: Number.isFinite(parsed)
+                    ? Math.max(0, Math.min(parsed, q.points))
+                    : 0,
                 };
               });
 
@@ -287,7 +312,9 @@ export function QuizGradingStudentRow({
                   setIsSuccessOpen(true);
                 },
                 onError: () => {
-                  setSaveError('Failed to save grades. Please check the inputs and try again.');
+                  setSaveError(
+                    'Failed to save grades. Please check the inputs and try again.',
+                  );
                 },
                 onFinish: () => {
                   setIsSaving(false);
@@ -317,7 +344,8 @@ export function QuizGradingStudentRow({
           <DialogHeader>
             <DialogTitle>Grades saved</DialogTitle>
             <DialogDescription>
-              The scores for <strong>{student.name}</strong> were saved successfully.
+              The scores for <strong>{student.name}</strong> were saved
+              successfully.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

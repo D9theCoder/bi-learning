@@ -14,27 +14,31 @@ interface TodayTaskListProps {
   className?: string;
 }
 
-export function TodayTaskList({ tasks, onToggle, className }: TodayTaskListProps) {
+export function TodayTaskList({
+  tasks,
+  onToggle,
+  className,
+}: TodayTaskListProps) {
   const completedCount = tasks.filter((task) => task.is_completed).length;
   const totalCount = tasks.length;
-  
+
   // Local state for optimistic updates if onToggle updates parent state slowly
   const [justCompleted, setJustCompleted] = useState<number[]>([]);
 
   const handleToggle = (task: DailyTask) => {
     if (!task.is_completed && !justCompleted.includes(task.id)) {
-        // Trigger confetti
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#22c55e', '#eab308', '#3b82f6'] // Green, Yellow, Blue
-        });
-        setJustCompleted(prev => [...prev, task.id]);
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#22c55e', '#eab308', '#3b82f6'], // Green, Yellow, Blue
+      });
+      setJustCompleted((prev) => [...prev, task.id]);
     }
-    
+
     if (onToggle) {
-        onToggle(task.id);
+      onToggle(task.id);
     }
   };
 
@@ -53,18 +57,19 @@ export function TodayTaskList({ tasks, onToggle, className }: TodayTaskListProps
           <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
               {tasks.length === 0 ? (
-                <motion.p 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
-                    className="text-center text-sm text-muted-foreground"
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center text-sm text-muted-foreground"
                 >
                   No quests available today
                 </motion.p>
               ) : (
                 tasks.map((task) => {
-                   const isCompleted = task.is_completed || justCompleted.includes(task.id);
-                   return (
+                  const isCompleted =
+                    task.is_completed || justCompleted.includes(task.id);
+                  return (
                     <motion.div
                       layout
                       initial={{ opacity: 0, y: 20 }}
@@ -75,29 +80,31 @@ export function TodayTaskList({ tasks, onToggle, className }: TodayTaskListProps
                       onClick={() => handleToggle(task)}
                       className={cn(
                         'group flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-4 transition-all hover:border-accent hover:bg-accent hover:shadow-sm',
-                        isCompleted
-                          ? 'bg-muted/50 opacity-60'
-                          : 'border-muted',
+                        isCompleted ? 'bg-muted/50 opacity-60' : 'border-muted',
                       )}
                     >
                       <div className="mt-0.5">
                         <motion.div
-                            initial={false}
-                            animate={{ scale: isCompleted ? [1, 1.2, 1] : 1 }}
-                            transition={{ duration: 0.3 }}
+                          initial={false}
+                          animate={{ scale: isCompleted ? [1, 1.2, 1] : 1 }}
+                          transition={{ duration: 0.3 }}
                         >
-                            {isCompleted ? (
-                              <CheckCircle2 className="size-5 text-green-500" />
-                            ) : (
-                              <Circle className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
-                            )}
+                          {isCompleted ? (
+                            <CheckCircle2 className="size-5 text-green-500" />
+                          ) : (
+                            <Circle className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                          )}
                         </motion.div>
                       </div>
                       <div className="flex-1 space-y-1">
                         <motion.label
-                          animate={{ 
-                             textDecorationLine: isCompleted ? "line-through" : "none",
-                             color: isCompleted ? "var(--muted-foreground)" : "var(--foreground)" 
+                          animate={{
+                            textDecorationLine: isCompleted
+                              ? 'line-through'
+                              : 'none',
+                            color: isCompleted
+                              ? 'var(--muted-foreground)'
+                              : 'var(--foreground)',
                           }}
                           className={cn(
                             'cursor-pointer text-sm leading-none font-semibold',

@@ -26,7 +26,9 @@ export function DashboardWelcomeHeader({
       <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
         <Coins className="size-4 text-primary" />
         <span className="text-foreground">Points</span>
-        <span className="text-lg font-bold text-foreground">{pointsBalance}</span>
+        <span className="text-lg font-bold text-foreground">
+          {pointsBalance}
+        </span>
       </div>
     </div>
   );

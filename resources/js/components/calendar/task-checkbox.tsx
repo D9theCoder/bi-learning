@@ -6,7 +6,10 @@ interface TaskCheckboxProps {
     id: number;
     title: string;
     completed: boolean;
+    due_date?: string;
     xp_reward?: number;
+    course_title?: string;
+    type?: string;
   };
 }
 
@@ -22,8 +25,10 @@ export function TaskCheckbox({ task }: TaskCheckboxProps) {
       </div>
       <div className="flex-1">
         <div
-          className={cn('font-medium',
-            task.completed && 'text-muted-foreground line-through')}
+          className={cn(
+            'font-medium',
+            task.completed && 'text-muted-foreground line-through',
+          )}
         >
           {task.title}
         </div>

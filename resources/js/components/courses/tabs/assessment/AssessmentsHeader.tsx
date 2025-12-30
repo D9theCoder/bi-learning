@@ -1,9 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardList, Plus } from 'lucide-react';
 
 interface AssessmentsHeaderProps {

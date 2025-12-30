@@ -1,4 +1,7 @@
-import { StudentDashboardView, TutorDashboardView } from '@/components/dashboard/views';
+import {
+  StudentDashboardView,
+  TutorDashboardView,
+} from '@/components/dashboard/views';
 import { useRoles } from '@/hooks/use-roles';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';

@@ -1,9 +1,6 @@
+import { CourseDetailsForm, LessonsSection } from '@/components/courses/manage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  CourseDetailsForm,
-  LessonsSection,
-} from '@/components/courses/manage';
 import AppLayout from '@/layouts/app-layout';
 import type { EditCoursePageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -47,7 +44,7 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
             </Button>
           </Link>
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs tracking-wide text-muted-foreground uppercase">
               {isEdit ? 'Update course' : 'New course'}
             </p>
             <h1 className="text-2xl font-bold text-foreground">

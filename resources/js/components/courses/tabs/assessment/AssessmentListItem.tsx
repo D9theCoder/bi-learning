@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Assessment, AssessmentSubmission, Course } from '@/types';
+import { Assessment, AssessmentSubmission } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
   CheckCircle,

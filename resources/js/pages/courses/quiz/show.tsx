@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button';
 import {
   QuizActionPanel,
   QuizInfoCard,
   QuizInstructionsCard,
 } from '@/components/courses/quiz';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { Assessment, Course, QuizAttempt, QuizQuestion } from '@/types';
 import { Head, router } from '@inertiajs/react';

@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { messages as messagesRoute } from '@/routes';
 import { useForm } from '@inertiajs/react';
-import React, { useEffect, useMemo } from 'react';
 import { Send } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useMemo } from 'react';
 import type {
   ActiveThread,
   AdminActiveThread,
@@ -20,11 +20,11 @@ interface MessageThreadProps {
 }
 
 const isParticipantThread = (
-  thread: ActiveThread | null | undefined
+  thread: ActiveThread | null | undefined,
 ): thread is ParticipantActiveThread => Boolean(thread && 'partner' in thread);
 
 const isAdminThread = (
-  thread: ActiveThread | null | undefined
+  thread: ActiveThread | null | undefined,
 ): thread is AdminActiveThread =>
   Boolean(thread && 'tutor' in thread && 'student' in thread);
 
@@ -63,11 +63,19 @@ export function MessageThread({
       return null;
     }
 
-    if (activeThread.messages.data.some((message) => message.tutor_id === currentUserId)) {
+    if (
+      activeThread.messages.data.some(
+        (message) => message.tutor_id === currentUserId,
+      )
+    ) {
       return 'tutor';
     }
 
-    if (activeThread.messages.data.some((message) => message.user_id === currentUserId)) {
+    if (
+      activeThread.messages.data.some(
+        (message) => message.user_id === currentUserId,
+      )
+    ) {
       return 'student';
     }
 
@@ -85,11 +93,15 @@ export function MessageThread({
 
     // Fallback for legacy records without sender_id: treat as incoming to avoid false positives
     if (participantRole === 'tutor') {
-      return message.tutor_id === currentUserId && message.user_id === currentUserId;
+      return (
+        message.tutor_id === currentUserId && message.user_id === currentUserId
+      );
     }
 
     if (participantRole === 'student') {
-      return message.user_id === currentUserId && message.tutor_id === currentUserId;
+      return (
+        message.user_id === currentUserId && message.tutor_id === currentUserId
+      );
     }
 
     return false;
@@ -116,11 +128,13 @@ export function MessageThread({
                 const participantThread = isParticipantThread(activeThread);
                 const adminThread = isAdminThread(activeThread);
                 const isTutorMessage = adminThread
-                  ? message.sender_id !== undefined && message.sender_id !== null
+                  ? message.sender_id !== undefined &&
+                    message.sender_id !== null
                     ? message.sender_id === activeThread.tutor.id
                     : message.tutor_id === activeThread.tutor.id
                   : false;
-                const isMine = !isAdmin && participantThread && isMyMessage(message);
+                const isMine =
+                  !isAdmin && participantThread && isMyMessage(message);
                 const timestamp = message.sent_at ?? message.created_at ?? '';
                 const formattedTimestamp =
                   timestamp && !Number.isNaN(new Date(timestamp).valueOf())
@@ -137,15 +151,17 @@ export function MessageThread({
                           ? 'ml-auto bg-primary text-primary-foreground'
                           : 'mr-auto bg-muted text-foreground'
                         : isMine
-                        ? 'ml-auto bg-primary text-primary-foreground'
-                        : 'mr-auto bg-muted text-foreground'
+                          ? 'ml-auto bg-primary text-primary-foreground'
+                          : 'mr-auto bg-muted text-foreground',
                     )}
                   >
                     {isAdmin && adminThread && (
                       <p
                         className={cn(
                           'mb-1 text-xs font-semibold',
-                          isTutorMessage ? 'text-primary-foreground' : 'text-muted-foreground'
+                          isTutorMessage
+                            ? 'text-primary-foreground'
+                            : 'text-muted-foreground',
                         )}
                       >
                         {isTutorMessage ? 'Tutor' : 'Student'}
@@ -160,8 +176,8 @@ export function MessageThread({
                             ? 'text-primary-foreground/70'
                             : 'text-muted-foreground'
                           : isMine
-                          ? 'text-primary-foreground/70'
-                          : 'text-muted-foreground'
+                            ? 'text-primary-foreground/70'
+                            : 'text-muted-foreground',
                       )}
                     >
                       {formattedTimestamp}

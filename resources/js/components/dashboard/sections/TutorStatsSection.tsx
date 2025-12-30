@@ -15,7 +15,11 @@ interface TutorStatsSectionProps {
 }
 
 export const TutorStatsSection = memo(
-  ({ summary, attendanceAverage, assignmentAverage }: TutorStatsSectionProps) => (
+  ({
+    summary,
+    attendanceAverage,
+    assignmentAverage,
+  }: TutorStatsSectionProps) => (
     <section
       className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
       aria-label="Tutor statistics"

@@ -130,7 +130,9 @@ export function LessonCard({ courseId, lesson }: LessonCardProps) {
               <Input
                 id={`lesson-video-${lesson.id}`}
                 value={lessonForm.data.video_url ?? ''}
-                onChange={(e) => lessonForm.setData('video_url', e.target.value)}
+                onChange={(e) =>
+                  lessonForm.setData('video_url', e.target.value)
+                }
                 placeholder="https://..."
               />
               {lessonForm.errors.duration_minutes ? (

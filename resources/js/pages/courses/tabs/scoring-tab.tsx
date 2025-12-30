@@ -1,15 +1,15 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { useRoles } from '@/hooks/use-roles';
-import { Assessment, AssessmentSubmission, Course, User } from '@/types';
-import { router } from '@inertiajs/react';
-import { Award } from 'lucide-react';
-import { useState } from 'react';
 import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
   GradingAssessmentCard,
   MyScoresCard,
   QuizGradingAssessmentCard,
 } from '@/components/courses/tabs/scoring';
+import { Card, CardContent } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
+import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import { router } from '@inertiajs/react';
+import { Award } from 'lucide-react';
+import { useState } from 'react';
 
 interface ScoringTabProps {
   course: Course & {
@@ -101,7 +101,9 @@ export function ScoringTab({
                 isExpanded={expandedAssessmentId === assessment.id}
                 onToggle={() =>
                   setExpandedAssessmentId(
-                    expandedAssessmentId === assessment.id ? null : assessment.id,
+                    expandedAssessmentId === assessment.id
+                      ? null
+                      : assessment.id,
                   )
                 }
               />

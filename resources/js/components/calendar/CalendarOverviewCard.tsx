@@ -4,7 +4,7 @@ interface CalendarOverviewCardProps {
   stats: {
     total: number;
     completed: number;
-    pending: number;
+    overdue: number;
   };
 }
 

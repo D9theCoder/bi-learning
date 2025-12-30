@@ -40,7 +40,7 @@ export default function ManageCourses({
       <div className="flex flex-col gap-6 p-4 lg:p-8">
         <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs tracking-wide text-muted-foreground uppercase">
               Admin / Tutor
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -132,4 +132,3 @@ export default function ManageCourses({
     </AppLayout>
   );
 }
-
