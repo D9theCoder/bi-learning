@@ -86,7 +86,7 @@ export default function QuizShow({
             />
 
             <QuizInstructionsCard
-              timeLimitMinutes={assessment.time_limit_minutes}
+              timeLimitMinutes={assessment.time_limit_minutes ?? null}
               hasEssayQuestions={hasEssayQuestions}
             />
           </div>
