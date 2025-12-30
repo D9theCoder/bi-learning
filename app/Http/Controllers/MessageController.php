@@ -135,6 +135,7 @@ class MessageController extends Controller
         TutorMessage::create([
             'tutor_id' => $tutorId,
             'user_id' => $userId,
+            'sender_id' => $user->id,
             'content' => $request->input('content'),
             'sent_at' => now(),
             'is_read' => false,

@@ -30,6 +30,7 @@ export interface Message {
   id: number;
   tutor_id: number;
   user_id: number;
+  sender_id?: number | null;
   content?: string;
   body?: string;
   sent_at?: string;

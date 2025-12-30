@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { messages as messagesRoute } from '@/routes';
 import { useForm } from '@inertiajs/react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
@@ -58,18 +58,41 @@ export function MessageThread({
   };
 
   // Helper to determine if current user sent the message
-  const isMyMessage = (message: Message): boolean => {
-    if (!isParticipantThread(activeThread)) return false;
-    const partnerId = activeThread.partner.id;
-    if (!partnerId) return false;
-    
-    // If partner is the tutor, then I (user) am the sender when user_id matches my ID
-    // If partner is the user, then I (tutor) am the sender when tutor_id matches my ID
-    if (message.tutor_id === partnerId) {
-      return message.user_id === currentUserId;
-    } else {
-      return message.tutor_id === currentUserId;
+  const participantRole = useMemo<'tutor' | 'student' | null>(() => {
+    if (!isParticipantThread(activeThread)) {
+      return null;
     }
+
+    if (activeThread.messages.data.some((message) => message.tutor_id === currentUserId)) {
+      return 'tutor';
+    }
+
+    if (activeThread.messages.data.some((message) => message.user_id === currentUserId)) {
+      return 'student';
+    }
+
+    return null;
+  }, [activeThread, currentUserId]);
+
+  const isMyMessage = (message: Message): boolean => {
+    if (!isParticipantThread(activeThread)) {
+      return false;
+    }
+
+    if (message.sender_id !== undefined && message.sender_id !== null) {
+      return message.sender_id === currentUserId;
+    }
+
+    // Fallback for legacy records without sender_id: treat as incoming to avoid false positives
+    if (participantRole === 'tutor') {
+      return message.tutor_id === currentUserId && message.user_id === currentUserId;
+    }
+
+    if (participantRole === 'student') {
+      return message.user_id === currentUserId && message.tutor_id === currentUserId;
+    }
+
+    return false;
   };
 
   const heading = isParticipantThread(activeThread)
@@ -92,8 +115,11 @@ export function MessageThread({
               {activeThread.messages.data.map((message) => {
                 const participantThread = isParticipantThread(activeThread);
                 const adminThread = isAdminThread(activeThread);
-                const isTutorMessage =
-                  adminThread && message.tutor_id === activeThread.tutor.id;
+                const isTutorMessage = adminThread
+                  ? message.sender_id !== undefined && message.sender_id !== null
+                    ? message.sender_id === activeThread.tutor.id
+                    : message.tutor_id === activeThread.tutor.id
+                  : false;
                 const isMine = !isAdmin && participantThread && isMyMessage(message);
                 const timestamp = message.sent_at ?? message.created_at ?? '';
                 const formattedTimestamp =
@@ -105,14 +131,14 @@ export function MessageThread({
                   <div
                     key={message.id}
                     className={cn(
-                      'rounded-lg p-3',
+                      'max-w-[80%] rounded-lg p-3',
                       adminThread
                         ? isTutorMessage
-                          ? 'ml-auto max-w-[80%] bg-primary text-primary-foreground'
-                          : 'mr-auto max-w-[80%] bg-accent'
+                          ? 'ml-auto bg-primary text-primary-foreground'
+                          : 'mr-auto bg-muted text-foreground'
                         : isMine
-                        ? 'ml-auto max-w-[80%] bg-primary text-primary-foreground'
-                        : 'mr-auto max-w-[80%] bg-accent'
+                        ? 'ml-auto bg-primary text-primary-foreground'
+                        : 'mr-auto bg-muted text-foreground'
                     )}
                   >
                     {isAdmin && adminThread && (
@@ -134,8 +160,8 @@ export function MessageThread({
                             ? 'text-primary-foreground/70'
                             : 'text-muted-foreground'
                           : isMine
-                            ? 'text-primary-foreground/70'
-                            : 'text-muted-foreground'
+                          ? 'text-primary-foreground/70'
+                          : 'text-muted-foreground'
                       )}
                     >
                       {formattedTimestamp}
