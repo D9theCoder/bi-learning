@@ -512,6 +512,7 @@ export default function CourseShow({
             <AssessmentTab
               course={course}
               assessments={assessments}
+              submissions={submissions}
               isTutor={isTutor}
             />
           </TabsContent>

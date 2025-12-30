@@ -160,8 +160,8 @@ class FixedScenarioSeeder extends Seeder
             'description' => 'Please complete this quiz to finish the course.',
         ]);
 
-        // Sync Assessment
-        Assessment::create([
+        // Sync Assessment with Questions
+        $assessment = Assessment::create([
             'course_id' => $course->id,
             'lesson_id' => $lesson4->id,
             'type' => 'quiz',
@@ -169,6 +169,76 @@ class FixedScenarioSeeder extends Seeder
             'description' => $content4->description,
             'due_date' => $content4->due_date,
             'max_score' => 100,
+            'allow_retakes' => true,
+            'time_limit_minutes' => 30,
+            'is_published' => true,
+        ]);
+
+        // Add quiz questions
+        $assessment->questions()->createMany([
+            [
+                'type' => 'multiple_choice',
+                'question' => 'What is the primary purpose of Laravel migrations?',
+                'options' => [
+                    'To deploy applications to production',
+                    'To manage database schema changes',
+                    'To handle user authentication',
+                    'To create API endpoints',
+                ],
+                'correct_answer' => '1',
+                'points' => 10,
+                'order' => 1,
+            ],
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which command is used to create a new Laravel controller?',
+                'options' => [
+                    'php artisan create:controller',
+                    'php artisan new controller',
+                    'php artisan make:controller',
+                    'php artisan generate:controller',
+                ],
+                'correct_answer' => '2',
+                'points' => 10,
+                'order' => 2,
+            ],
+            [
+                'type' => 'fill_blank',
+                'question' => 'In Laravel, the ___ file is the entry point for all HTTP requests.',
+                'options' => null,
+                'correct_answer' => 'index.php',
+                'points' => 10,
+                'order' => 3,
+            ],
+            [
+                'type' => 'fill_blank',
+                'question' => 'The ___ pattern in Laravel helps to avoid tight coupling between classes.',
+                'options' => null,
+                'correct_answer' => 'dependency injection',
+                'points' => 10,
+                'order' => 4,
+            ],
+            [
+                'type' => 'essay',
+                'question' => 'Explain the MVC (Model-View-Controller) architecture and how it is implemented in Laravel. Provide examples of each component.',
+                'options' => null,
+                'correct_answer' => null,
+                'points' => 30,
+                'order' => 5,
+            ],
+            [
+                'type' => 'essay',
+                'question' => 'Describe the benefits of using Eloquent ORM over raw SQL queries. When would you choose one approach over the other?',
+                'options' => null,
+                'correct_answer' => null,
+                'points' => 30,
+                'order' => 6,
+            ],
+        ]);
+
+        // Recalculate max score based on questions
+        $assessment->update([
+            'max_score' => $assessment->questions()->sum('points'),
         ]);
     }
 }

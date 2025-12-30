@@ -8,6 +8,7 @@ use App\Http\Controllers\DailyTaskController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\RewardRedemptionController;
 use App\Http\Controllers\TutorController;
@@ -57,6 +58,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{course}/lessons/{lesson}/contents', [CourseManagementController::class, 'storeContent'])->name('contents.store');
         Route::put('/{course}/lessons/{lesson}/contents/{content}', [CourseManagementController::class, 'updateContent'])->name('contents.update');
         Route::delete('/{course}/lessons/{lesson}/contents/{content}', [CourseManagementController::class, 'destroyContent'])->name('contents.destroy');
+    });
+
+    // Quiz management routes (admin/tutor)
+    Route::middleware('role:admin|tutor')->prefix('courses/{course}/quiz')->name('quiz.')->group(function () {
+        Route::post('/', [QuizController::class, 'store'])->name('store');
+        Route::get('/{assessment}/edit', [QuizController::class, 'edit'])->name('edit');
+        Route::put('/{assessment}', [QuizController::class, 'update'])->name('update');
+        Route::post('/{assessment}/questions', [QuizController::class, 'storeQuestion'])->name('questions.store');
+        Route::put('/{assessment}/questions/{question}', [QuizController::class, 'updateQuestion'])->name('questions.update');
+        Route::delete('/{assessment}/questions/{question}', [QuizController::class, 'destroyQuestion'])->name('questions.destroy');
+        Route::post('/{assessment}/questions/reorder', [QuizController::class, 'reorderQuestions'])->name('questions.reorder');
+        Route::post('/{assessment}/attempts/{attempt}/grade-essay', [QuizController::class, 'gradeEssay'])->name('grade-essay');
+    });
+
+    // Quiz taking routes (students)
+    Route::prefix('courses/{course}/quiz/{assessment}')->name('quiz.')->group(function () {
+        Route::get('/', [QuizController::class, 'show'])->name('show');
+        Route::post('/start', [QuizController::class, 'startAttempt'])->name('start');
+        Route::get('/take', [QuizController::class, 'take'])->name('take');
+        Route::post('/save', [QuizController::class, 'saveProgress'])->name('save');
+        Route::post('/submit', [QuizController::class, 'submit'])->name('submit');
     });
 
     Route::get('courses/{course}', [CourseController::class, 'show'])

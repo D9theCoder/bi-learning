@@ -276,9 +276,13 @@ export interface Assessment {
   description?: string | null;
   due_date?: string | null;
   max_score: number;
+  allow_retakes?: boolean;
+  time_limit_minutes?: number | null;
+  is_published?: boolean;
   created_at: string;
   updated_at: string;
   submissions?: AssessmentSubmission[];
+  questions?: QuizQuestion[];
 }
 
 export interface AssessmentSubmission {
@@ -288,6 +292,35 @@ export interface AssessmentSubmission {
   score?: number | null;
   feedback?: string | null;
   submitted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+}
+
+export interface QuizQuestion {
+  id: number;
+  assessment_id: number;
+  type: 'multiple_choice' | 'fill_blank' | 'essay';
+  question: string;
+  options?: string[] | null;
+  correct_answer?: string | null;
+  points: number;
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuizAttempt {
+  id: number;
+  assessment_id: number;
+  user_id: number;
+  answers?: Record<number, string> | null;
+  score?: number | null;
+  total_points: number;
+  started_at?: string | null;
+  completed_at?: string | null;
+  is_graded: boolean;
+  remaining_time?: number | null;
   created_at: string;
   updated_at: string;
   user?: User;
