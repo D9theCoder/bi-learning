@@ -1,2 +1,2 @@
-export * from './GradebookStudentGrid';
-export * from './GradebookTutorMatrix';
+export * from './gradebook-student-grid';
+export * from './gradebook-tutor-matrix';

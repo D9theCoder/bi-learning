@@ -1,5 +1,5 @@
 import { MessageThread } from '@/components/messages/message-thread';
-import { NewConversationCard } from '@/components/messages/NewConversationCard';
+import { NewConversationCard } from '@/components/messages/new-conversation-card';
 import { ThreadList } from '@/components/messages/thread-list';
 import type {
   ActiveThread,

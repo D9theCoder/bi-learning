@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Assessment } from '@/types';
 import { Award, ChevronDown, ChevronUp } from 'lucide-react';
-import { GradingStudentRow } from './GradingStudentRow';
+import { GradingStudentRow } from './grading-student-row';
 
 interface GradingAssessmentCardProps {
   assessment: Assessment;

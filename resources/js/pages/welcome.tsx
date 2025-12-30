@@ -1,9 +1,9 @@
-import FeaturesBento from '@/components/landing/FeaturesBento';
-import HeroSection from '@/components/landing/HeroSection';
-import LiveProgressDashboard from '@/components/landing/LiveProgressDashboard';
-import TestimonialsMarquee from '@/components/landing/TestimonialsMarquee';
+import FeaturesBento from '@/components/landing/features-bento';
+import HeroSection from '@/components/landing/hero-section';
+import LiveProgressDashboard from '@/components/landing/live-progress-dashboard';
+import TestimonialsMarquee from '@/components/landing/testimonials-marquee';
 import { Button } from '@/components/ui/button';
-import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import RevealOnScroll from '@/components/ui/reveal-on-scroll';
 import { dashboard, login, register } from '@/routes';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';

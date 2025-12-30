@@ -4,8 +4,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Lesson } from '@/types';
 import { router, useForm } from '@inertiajs/react';
-import { ContentRow } from './ContentRow';
-import { NewContentForm } from './NewContentForm';
+import { ContentRow } from './content-row';
+import { NewContentForm } from './new-content-form';
 
 type LessonWithContents = Lesson & { contents?: CourseContent[] };
 

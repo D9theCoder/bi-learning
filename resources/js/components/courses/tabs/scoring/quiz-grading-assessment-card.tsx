@@ -4,7 +4,7 @@ import { Assessment } from '@/types';
 import { router } from '@inertiajs/react';
 import { Award, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { QuizGradingStudentRow } from './QuizGradingStudentRow';
+import { QuizGradingStudentRow } from './quiz-grading-student-row';
 
 type StudentForQuizGrading = {
   id: number;

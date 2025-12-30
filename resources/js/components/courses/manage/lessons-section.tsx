@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Lesson } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
-import { LessonCard } from './LessonCard';
+import { LessonCard } from './lesson-card';
 
 type LessonWithContents = Lesson & { contents?: CourseContent[] };
 

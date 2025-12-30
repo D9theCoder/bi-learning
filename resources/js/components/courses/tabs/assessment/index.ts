@@ -1,2 +1,2 @@
-export * from './AssessmentListItem';
-export * from './AssessmentsHeader';
+export * from './assessment-list-item';
+export * from './assessments-header';

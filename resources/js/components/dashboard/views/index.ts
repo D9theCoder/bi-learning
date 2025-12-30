@@ -1,2 +1,2 @@
-export { StudentDashboardView } from './StudentDashboardView';
-export { TutorDashboardView } from './TutorDashboardView';
+export { StudentDashboardView } from './student-dashboard-view';
+export { TutorDashboardView } from './tutor-dashboard-view';

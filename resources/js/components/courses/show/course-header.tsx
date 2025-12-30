@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Clock, Globe } from 'lucide-react';
-import { DifficultyBadge } from './DifficultyBadge';
+import { DifficultyBadge } from './difficulty-badge';
 
 interface CourseHeaderProps {
   title: string;

@@ -1,5 +1,5 @@
-import { CalendarOverviewCard } from '@/components/calendar/CalendarOverviewCard';
-import { CalendarTaskList } from '@/components/calendar/CalendarTaskList';
+import { CalendarOverviewCard } from '@/components/calendar/calendar-overview-card';
+import { CalendarTaskList } from '@/components/calendar/calendar-task-list';
 import { MiniCalendar } from '@/components/calendar/mini-calendar';
 import { PageHeader } from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
