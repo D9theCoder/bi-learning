@@ -4,7 +4,13 @@ import {
   GradebookTutorMatrix,
 } from '@/components/courses/tabs/gradebook';
 import { useRoles } from '@/hooks/use-roles';
-import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import {
+  Assessment,
+  AssessmentSubmission,
+  Course,
+  StudentWithSubmissions,
+  User,
+} from '@/types';
 import { BookCheck } from 'lucide-react';
 
 interface GradebookTabProps {
@@ -13,13 +19,12 @@ interface GradebookTabProps {
   };
   isEnrolled: boolean;
   isTutor?: boolean;
-  students?: any[];
+  students?: StudentWithSubmissions[];
   assessments?: Assessment[];
   submissions?: AssessmentSubmission[];
 }
 
 export function GradebookTab({
-  course,
   isEnrolled,
   isTutor = false,
   students = [],

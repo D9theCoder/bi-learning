@@ -296,6 +296,11 @@ export interface AssessmentSubmission {
   created_at: string;
   updated_at: string;
   user?: User;
+  assessment?: Assessment;
+}
+
+export interface StudentWithSubmissions extends User {
+  submissions?: AssessmentSubmission[];
 }
 
 export interface QuizQuestion {

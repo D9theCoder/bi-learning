@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Assessment } from '@/types';
+import { Assessment, StudentWithSubmissions } from '@/types';
 
 interface GradebookTutorMatrixProps {
-  students: any[];
+  students: StudentWithSubmissions[];
   assessments: Assessment[];
 }
 
@@ -65,7 +65,7 @@ export function GradebookTutorMatrix({
                     </td>
                     {assessments.map((a) => {
                       const sub = student.submissions?.find(
-                        (s: any) => s.assessment_id === a.id,
+                        (s) => s.assessment_id === a.id,
                       );
                       const score = sub?.score;
                       if (score !== undefined && score !== null) {
