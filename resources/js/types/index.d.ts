@@ -314,7 +314,7 @@ export interface QuizAttempt {
   id: number;
   assessment_id: number;
   user_id: number;
-  answers?: Record<number, string> | null;
+  answers?: Record<string, unknown> | null;
   score?: number | null;
   total_points: number;
   started_at?: string | null;

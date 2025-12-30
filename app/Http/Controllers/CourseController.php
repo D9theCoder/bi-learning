@@ -8,6 +8,7 @@ use App\Models\AssessmentSubmission;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -132,8 +133,67 @@ class CourseController extends Controller
                     });
 
                 $assessments = Assessment::where('course_id', $course->id)
-                    ->with(['submissions.user'])
+                    ->with(['submissions.user', 'questions'])
                     ->get();
+
+                $quizAssessmentIds = $assessments
+                    ->where('type', 'quiz')
+                    ->pluck('id')
+                    ->values();
+
+                if ($quizAssessmentIds->isNotEmpty() && $students instanceof \Illuminate\Support\Collection && $students->isNotEmpty()) {
+                    $studentIds = $students->pluck('id')->values();
+
+                    $latestAttemptsByKey = QuizAttempt::query()
+                        ->whereIn('assessment_id', $quizAssessmentIds)
+                        ->whereIn('user_id', $studentIds)
+                        ->orderByDesc('completed_at')
+                        ->orderByDesc('created_at')
+                        ->get()
+                        ->groupBy(function (QuizAttempt $attempt) {
+                            return $attempt->assessment_id.'-'.$attempt->user_id;
+                        })
+                        ->map(function ($attempts) {
+                            return $attempts->first();
+                        });
+
+                    $students = $students->map(function (array $student) use ($quizAssessmentIds, $latestAttemptsByKey) {
+                        $studentId = $student['id'] ?? null;
+
+                        if (! $studentId) {
+                            $student['quiz_attempts'] = [];
+
+                            return $student;
+                        }
+
+                        $student['quiz_attempts'] = $quizAssessmentIds
+                            ->map(function (int $assessmentId) use ($studentId, $latestAttemptsByKey) {
+                                $attempt = $latestAttemptsByKey[$assessmentId.'-'.$studentId] ?? null;
+
+                                if (! $attempt) {
+                                    return null;
+                                }
+
+                                return [
+                                    'id' => $attempt->id,
+                                    'assessment_id' => $attempt->assessment_id,
+                                    'user_id' => $attempt->user_id,
+                                    'answers' => $attempt->answers,
+                                    'score' => $attempt->score,
+                                    'total_points' => $attempt->total_points,
+                                    'started_at' => $attempt->started_at?->toIsoString(),
+                                    'completed_at' => $attempt->completed_at?->toIsoString(),
+                                    'is_graded' => (bool) $attempt->is_graded,
+                                    'created_at' => $attempt->created_at?->toIsoString(),
+                                    'updated_at' => $attempt->updated_at?->toIsoString(),
+                                ];
+                            })
+                            ->filter()
+                            ->values();
+
+                        return $student;
+                    });
+                }
             } else {
                 $attendedLessonIds = $user->attendances()
                     ->whereIn('lesson_id', $course->lessons->pluck('id'))

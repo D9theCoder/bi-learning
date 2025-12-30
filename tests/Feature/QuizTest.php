@@ -327,6 +327,77 @@ it('allows tutor to grade essay question', function () {
     $attempt->refresh();
     expect($attempt->score)->toBe(15);
     expect($attempt->is_graded)->toBeTrue();
+
+    // Idempotent: saving the same grade again should not add points twice.
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$assessment->id}/attempts/{$attempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $question->id,
+                'points' => 15,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect();
+    $attempt->refresh();
+    expect($attempt->score)->toBe(15);
+});
+
+it('allows tutor to manually grade objective questions per-question', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $assessment = Assessment::factory()->for($course)->create();
+
+    $question = QuizQuestion::factory()->for($assessment)->create([
+        'type' => 'multiple_choice',
+        'question' => 'What is 2 + 2?',
+        'options' => ['1', '2', '3', '4'],
+        'correct_answer' => '4',
+        'points' => 10,
+    ]);
+
+    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'completed_at' => now(),
+        'answers' => [$question->id => '1'],
+        'score' => 0,
+        'total_points' => 10,
+        'is_graded' => true,
+    ]);
+
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$assessment->id}/attempts/{$attempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $question->id,
+                'points' => 7,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect();
+    $attempt->refresh();
+
+    expect($attempt->score)->toBe(7);
+    expect($attempt->is_graded)->toBeTrue();
+
+    // Overwrite (not add): update grade to 9, score should become 9.
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$assessment->id}/attempts/{$attempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $question->id,
+                'points' => 9,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect();
+    $attempt->refresh();
+
+    expect($attempt->score)->toBe(9);
 });
 
 it('keeps highest score when retakes are allowed', function () {

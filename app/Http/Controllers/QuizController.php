@@ -14,6 +14,68 @@ use Inertia\Response;
 class QuizController extends Controller
 {
     /**
+     * Calculate attempt score using a mix of:
+     * - Manual per-question grades stored at "{questionId}_grade" in the answers payload
+     * - Auto-grading for objective questions when no manual grade exists
+     *
+     * @param  array<string, mixed>  $answers
+     * @return array{score:int, is_graded:bool}
+     */
+    protected function calculateAttemptScore(Assessment $assessment, array $answers): array
+    {
+        $questions = $assessment->questions()->get();
+
+        $score = 0;
+        $hasUngradedEssay = false;
+
+        foreach ($questions as $question) {
+            $gradeKey = $question->id.'_grade';
+
+            if (array_key_exists($gradeKey, $answers)) {
+                $awardedPoints = (int) $answers[$gradeKey];
+                $awardedPoints = max(0, min($awardedPoints, (int) $question->points));
+                $score += $awardedPoints;
+
+                continue;
+            }
+
+            $answer = $answers[$question->id] ?? null;
+
+            if ($question->type === 'essay') {
+                $hasUngradedEssay = true;
+
+                continue;
+            }
+
+            if ($answer === null || $answer === '') {
+                continue;
+            }
+
+            if ($question->type === 'multiple_choice') {
+                if ((string) $answer === (string) $question->correct_answer) {
+                    $score += (int) $question->points;
+                }
+
+                continue;
+            }
+
+            if ($question->type === 'fill_blank') {
+                $normalizedAnswer = strtolower(trim((string) $answer));
+                $normalizedCorrect = strtolower(trim((string) ($question->correct_answer ?? '')));
+
+                if ($normalizedAnswer === $normalizedCorrect) {
+                    $score += (int) $question->points;
+                }
+            }
+        }
+
+        return [
+            'score' => $score,
+            'is_graded' => ! $hasUngradedEssay,
+        ];
+    }
+
+    /**
      * Show quiz builder for tutors.
      */
     public function edit(Course $course, Assessment $assessment): Response
@@ -407,42 +469,14 @@ class QuizController extends Controller
     protected function gradeAttempt(QuizAttempt $attempt): void
     {
         $assessment = $attempt->assessment;
-        $questions = $assessment->questions()->get();
+        /** @var array<string, mixed> $answers */
         $answers = $attempt->answers ?? [];
-        $score = 0;
-        $hasEssay = false;
-
-        foreach ($questions as $question) {
-            $answer = $answers[$question->id] ?? null;
-
-            if ($question->type === 'essay') {
-                $hasEssay = true;
-
-                continue;
-            }
-
-            if ($answer === null || $answer === '') {
-                continue;
-            }
-
-            if ($question->type === 'multiple_choice') {
-                if ((string) $answer === (string) $question->correct_answer) {
-                    $score += $question->points;
-                }
-            } elseif ($question->type === 'fill_blank') {
-                $normalizedAnswer = strtolower(trim($answer));
-                $normalizedCorrect = strtolower(trim($question->correct_answer ?? ''));
-
-                if ($normalizedAnswer === $normalizedCorrect) {
-                    $score += $question->points;
-                }
-            }
-        }
+        $calculated = $this->calculateAttemptScore($assessment, $answers);
 
         $attempt->update([
-            'score' => $score,
+            'score' => $calculated['score'],
             'completed_at' => now(),
-            'is_graded' => ! $hasEssay,
+            'is_graded' => $calculated['is_graded'],
         ]);
 
         $this->syncSubmission($attempt);
@@ -482,7 +516,7 @@ class QuizController extends Controller
             ],
             [
                 'score' => $score,
-                'submitted_at' => $attempt->completed_at,
+                'submitted_at' => $attempt->completed_at ?? now(),
             ]
         );
     }
@@ -507,35 +541,50 @@ class QuizController extends Controller
             abort(403);
         }
 
+        if ($assessment->course_id !== $course->id) {
+            abort(404);
+        }
+
+        if ($attempt->assessment_id !== $assessment->id) {
+            abort(404);
+        }
+
         $validated = $request->validate([
             'grades' => 'required|array',
             'grades.*.question_id' => 'required|exists:quiz_questions,id',
             'grades.*.points' => 'required|integer|min:0',
         ]);
 
+        /** @var array<string, mixed> $answers */
         $answers = $attempt->answers ?? [];
         $questions = $assessment->questions()->get()->keyBy('id');
-        $additionalScore = 0;
 
         foreach ($validated['grades'] as $grade) {
-            $question = $questions[$grade['question_id']] ?? null;
+            $questionId = (int) $grade['question_id'];
+            $question = $questions[$questionId] ?? null;
 
-            if ($question && $question->type === 'essay') {
-                $maxPoints = $question->points;
-                $awardedPoints = min($grade['points'], $maxPoints);
-                $additionalScore += $awardedPoints;
-                $answers[$question->id.'_grade'] = $awardedPoints;
+            if (! $question) {
+                continue;
             }
+
+            $maxPoints = (int) $question->points;
+            $awardedPoints = min((int) $grade['points'], $maxPoints);
+            $awardedPoints = max(0, $awardedPoints);
+
+            $answers[$question->id.'_grade'] = $awardedPoints;
         }
+
+        $calculated = $this->calculateAttemptScore($assessment, $answers);
 
         $attempt->update([
             'answers' => $answers,
-            'score' => ($attempt->score ?? 0) + $additionalScore,
-            'is_graded' => true,
+            'score' => $calculated['score'],
+            'is_graded' => $calculated['is_graded'],
+            'completed_at' => $attempt->completed_at ?? now(),
         ]);
 
         $this->syncSubmission($attempt);
 
-        return back()->with('message', 'Essay grades saved successfully.');
+        return back()->with('message', 'Grades saved successfully.');
     }
 }

@@ -8,6 +8,7 @@ import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
   GradingAssessmentCard,
   MyScoresCard,
+  QuizGradingAssessmentCard,
 } from '@/components/courses/tabs/scoring';
 
 interface ScoringTabProps {
@@ -87,28 +88,49 @@ export function ScoringTab({
           <h3 className="text-lg font-semibold">Grading Dashboard</h3>
         </div>
 
-        {assessments.map((assessment) => (
-          <GradingAssessmentCard
-            key={assessment.id}
-            assessment={assessment}
-            students={students}
-            isExpanded={expandedAssessmentId === assessment.id}
-            onToggle={() =>
-              setExpandedAssessmentId(
-                expandedAssessmentId === assessment.id ? null : assessment.id,
-              )
-            }
-            scores={scores}
-            feedbacks={feedbacks}
-            onScoreChange={(key, value) =>
-              setScores({ ...scores, [key]: value })
-            }
-            onFeedbackChange={(key, value) =>
-              setFeedbacks({ ...feedbacks, [key]: value })
-            }
-            onSave={(studentId) => handleSave(assessment.id, studentId)}
-          />
-        ))}
+        {assessments.map((assessment) => {
+          const isQuiz = assessment.type === 'quiz';
+
+          if (isQuiz) {
+            return (
+              <QuizGradingAssessmentCard
+                key={assessment.id}
+                courseId={course.id}
+                assessment={assessment}
+                students={students}
+                isExpanded={expandedAssessmentId === assessment.id}
+                onToggle={() =>
+                  setExpandedAssessmentId(
+                    expandedAssessmentId === assessment.id ? null : assessment.id,
+                  )
+                }
+              />
+            );
+          }
+
+          return (
+            <GradingAssessmentCard
+              key={assessment.id}
+              assessment={assessment}
+              students={students}
+              isExpanded={expandedAssessmentId === assessment.id}
+              onToggle={() =>
+                setExpandedAssessmentId(
+                  expandedAssessmentId === assessment.id ? null : assessment.id,
+                )
+              }
+              scores={scores}
+              feedbacks={feedbacks}
+              onScoreChange={(key, value) =>
+                setScores({ ...scores, [key]: value })
+              }
+              onFeedbackChange={(key, value) =>
+                setFeedbacks({ ...feedbacks, [key]: value })
+              }
+              onSave={(studentId) => handleSave(assessment.id, studentId)}
+            />
+          );
+        })}
       </div>
     );
   }
