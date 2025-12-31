@@ -247,7 +247,7 @@ export interface TutorDashboardCourse {
 export interface TutorDashboardChartPoint {
   course: string;
   attendance: number;
-  assignments: number;
+  quiz: number;
   students: number;
 }
 

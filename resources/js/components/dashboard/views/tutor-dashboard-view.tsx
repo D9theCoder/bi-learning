@@ -57,6 +57,7 @@ export function TutorDashboardView({
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
+          {/* Course Activity Chart */}
           {isLoading ? (
             <ActivityChartSkeleton />
           ) : tutorData ? (
@@ -65,6 +66,7 @@ export function TutorDashboardView({
             </DashboardErrorBoundary>
           ) : null}
 
+          {/* Courses you teach */}
           {isLoading ? (
             <CoursesSkeleton />
           ) : tutorData ? (
@@ -79,16 +81,21 @@ export function TutorDashboardView({
             <SidebarSkeleton />
           ) : (
             <>
+              {/* Upcoming deadlines */}
               {tutorData && (
                 <DashboardErrorBoundary>
                   <TutorCalendarSection items={tutorData.calendar} />
                 </DashboardErrorBoundary>
               )}
+
+              {/* Student snapshot */}
               {tutorData && (
                 <DashboardErrorBoundary>
                   <TutorRosterSection roster={tutorData.roster} />
                 </DashboardErrorBoundary>
               )}
+
+              {/* Chat widget */}
               {tutorMessages.length > 0 && (
                 <DashboardErrorBoundary>
                   <TutorChatWidget

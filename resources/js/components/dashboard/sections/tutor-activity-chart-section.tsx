@@ -26,7 +26,7 @@ export const TutorActivityChartSection = memo(
           id="tutor-activity-heading"
           className="text-xl font-bold tracking-tight text-foreground"
         >
-          Course Activity (Attendance vs Assignments)
+          Course Activity (Attendance vs Quiz Completion)
         </h2>
       </div>
       <Card>
@@ -70,8 +70,8 @@ export const TutorActivityChartSection = memo(
                     radius={[6, 6, 0, 0]}
                   />
                   <Bar
-                    dataKey="assignments"
-                    name="Assignments"
+                    dataKey="quiz"
+                    name="Quiz Completion"
                     fill="var(--chart-2)"
                     radius={[6, 6, 0, 0]}
                   />

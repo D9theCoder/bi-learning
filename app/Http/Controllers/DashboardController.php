@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\CourseContentCompletion;
+use App\Models\QuizAttempt;
 use App\Models\Reward;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -99,6 +101,7 @@ class DashboardController extends Controller
             $taughtCourses = Course::with([
                 'lessons.contents',
                 'enrollments.user',
+                'assessments',
             ])
                 ->where('instructor_id', $user->id)
                 ->get();
@@ -112,6 +115,14 @@ class DashboardController extends Controller
                 ->get()
                 ->groupBy('course_content_id');
 
+            $lessonIds = $taughtCourses->flatMap(fn (Course $course) => $course->lessons->pluck('id'));
+            $attendanceRecords = Attendance::whereIn('lesson_id', $lessonIds)->get();
+
+            $assessmentIds = $taughtCourses->flatMap(fn (Course $course) => $course->assessments->pluck('id'));
+            $completedQuizAttempts = QuizAttempt::whereIn('assessment_id', $assessmentIds)
+                ->whereNotNull('completed_at')
+                ->get();
+
             $courseSnapshots = [];
             $chartSeries = [];
             $upcomingItems = [];
@@ -123,25 +134,26 @@ class DashboardController extends Controller
                 $activeStudents = $enrollments->where('status', 'active')->count();
                 $avgProgress = round((float) ($enrollments->avg('progress_percentage') ?? 0), 1);
 
-                $attendanceContents = $course->lessons->flatMap(
-                    fn ($lesson) => $lesson->contents->where('type', 'attendance')
-                );
-                $assignmentContents = $course->lessons->flatMap(
-                    fn ($lesson) => $lesson->contents->reject(fn ($content) => $content->type === 'attendance')
-                );
+                $courseLessonIds = $course->lessons->pluck('id');
+                $lessonCount = $courseLessonIds->count();
 
-                $attendanceCompleted = $attendanceContents->sum(
-                    fn (CourseContent $content) => $completions->get($content->id)?->count() ?? 0
-                );
-                $assignmentCompleted = $assignmentContents->sum(
-                    fn (CourseContent $content) => $completions->get($content->id)?->count() ?? 0
-                );
+                $attendanceCount = $attendanceRecords
+                    ->whereIn('lesson_id', $courseLessonIds)
+                    ->count();
 
-                $attendancePossible = max(1, $attendanceContents->count() * max(1, $studentCount));
-                $assignmentPossible = max(1, $assignmentContents->count() * max(1, $studentCount));
+                $attendancePossible = max(1, $lessonCount * max(1, $studentCount));
+                $attendanceRate = round(($attendanceCount / $attendancePossible) * 100, 1);
 
-                $attendanceRate = round(($attendanceCompleted / $attendancePossible) * 100, 1);
-                $assignmentRate = round(($assignmentCompleted / $assignmentPossible) * 100, 1);
+                $courseAssessmentIds = $course->assessments->pluck('id');
+                $assessmentCount = $courseAssessmentIds->count();
+
+                $quizCompletedCount = $completedQuizAttempts
+                    ->whereIn('assessment_id', $courseAssessmentIds)
+                    ->unique(fn ($attempt) => $attempt->user_id.'-'.$attempt->assessment_id)
+                    ->count();
+
+                $quizPossible = max(1, $assessmentCount * max(1, $studentCount));
+                $quizRate = round(($quizCompletedCount / $quizPossible) * 100, 1);
 
                 $nextMeeting = $course->lessons
                     ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
@@ -162,7 +174,7 @@ class DashboardController extends Controller
                 $chartSeries[] = [
                     'course' => $course->title,
                     'attendance' => $attendanceRate,
-                    'assignments' => $assignmentRate,
+                    'quiz' => $quizRate,
                     'students' => $studentCount,
                 ];
 
