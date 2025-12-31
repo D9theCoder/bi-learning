@@ -43,6 +43,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:student|tutor|admin')
         ->name('tasks.toggle');
 
+    // Debug: Generate daily tasks manually
+    Route::post('tasks/generate', [DailyTaskController::class, 'generate'])
+        ->middleware('role:student|tutor|admin')
+        ->name('tasks.generate');
+    Route::post('tasks/force-generate', [DailyTaskController::class, 'forceGenerate'])
+        ->middleware('role:student|tutor|admin')
+        ->name('tasks.force-generate');
+
     // Course routes
     Route::get('courses', [CourseController::class, 'index'])->name('courses');
 

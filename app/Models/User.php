@@ -86,7 +86,9 @@ class User extends Authenticatable
 
     public function achievements(): BelongsToMany
     {
-        return $this->belongsToMany(Achievement::class)->withTimestamps()->withPivot('earned_at');
+        return $this->belongsToMany(Achievement::class)
+            ->withTimestamps()
+            ->withPivot(['earned_at', 'progress']);
     }
 
     public function rewards(): BelongsToMany
@@ -135,9 +137,9 @@ class User extends Authenticatable
         $weekStart = now()->startOfWeek();
 
         return $this->activities()
-            ->where('type', 'lesson_completed')
             ->where('created_at', '>=', $weekStart)
-            ->count() * 50; // Assume 50 XP per lesson
+            ->whereIn('type', ['task_completed', 'lesson_completed', 'achievement_earned', 'streak_milestone'])
+            ->sum('xp_earned');
     }
 
     public function hoursThisWeek(): float
@@ -176,9 +178,9 @@ class User extends Authenticatable
                 ->sum('estimated_minutes');
 
             $xp = $this->activities()
-                ->where('type', 'lesson_completed')
+                ->whereIn('type', ['task_completed', 'lesson_completed', 'achievement_earned', 'streak_milestone'])
                 ->whereDate('created_at', $date)
-                ->count() * 50;
+                ->sum('xp_earned');
 
             $data[] = [
                 'day' => $dayName,

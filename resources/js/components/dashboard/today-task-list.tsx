@@ -1,29 +1,46 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { DailyTask } from '@/types';
+import { router } from '@inertiajs/react';
 import confetti from 'canvas-confetti';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Circle, ScrollText, Zap } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  RefreshCw,
+  ScrollText,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface TodayTaskListProps {
   tasks: DailyTask[];
   onToggle?: (taskId: number) => void;
   className?: string;
+  showDebugButton?: boolean;
 }
 
 export function TodayTaskList({
   tasks,
   onToggle,
   className,
+  showDebugButton = true,
 }: TodayTaskListProps) {
   const completedCount = tasks.filter((task) => task.is_completed).length;
   const totalCount = tasks.length;
 
   // Local state for optimistic updates if onToggle updates parent state slowly
   const [justCompleted, setJustCompleted] = useState<number[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleToggle = (task: DailyTask) => {
     if (!task.is_completed && !justCompleted.includes(task.id)) {
@@ -42,15 +59,84 @@ export function TodayTaskList({
     }
   };
 
+  const handleGenerateTasks = () => {
+    setIsGenerating(true);
+    router.post(
+      '/tasks/generate',
+      {},
+      {
+        preserveScroll: true,
+        onFinish: () => setIsGenerating(false),
+      },
+    );
+  };
+
+  const handleForceRegenerate = () => {
+    if (
+      !confirm(
+        'This will delete incomplete tasks and generate new ones. Continue?',
+      )
+    ) {
+      return;
+    }
+    setIsGenerating(true);
+    router.post(
+      '/tasks/force-generate',
+      {},
+      {
+        preserveScroll: true,
+        onFinish: () => setIsGenerating(false),
+      },
+    );
+  };
+
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <ScrollText className="size-5" /> Daily Quests
         </CardTitle>
-        <Badge variant="secondary" className="bg-primary/10 text-primary">
-          {completedCount}/{totalCount} Completed
-        </Badge>
+        <div className="flex items-center gap-2">
+          {showDebugButton && (
+            <div className="flex gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={handleGenerateTasks}
+                    disabled={isGenerating}
+                  >
+                    <Sparkles
+                      className={cn('size-4', isGenerating && 'animate-pulse')}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Generate tasks (if none exist)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={handleForceRegenerate}
+                    disabled={isGenerating}
+                  >
+                    <RefreshCw
+                      className={cn('size-4', isGenerating && 'animate-spin')}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Force regenerate tasks</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+          <Badge variant="secondary" className="bg-primary/10 text-primary">
+            {completedCount}/{totalCount} Completed
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] pr-4">

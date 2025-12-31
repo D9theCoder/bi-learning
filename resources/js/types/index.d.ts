@@ -154,12 +154,16 @@ export interface TutorMessage {
 
 export interface LearningStats {
   streak: number;
+  longest_streak?: number;
   xp_this_week: number;
   hours_learned: number;
   active_courses: number;
   total_xp: number;
   level: number;
   points_balance: number;
+  xp_in_level?: number;
+  xp_for_next_level?: number;
+  level_progress_percentage?: number;
 }
 
 export interface Reward {

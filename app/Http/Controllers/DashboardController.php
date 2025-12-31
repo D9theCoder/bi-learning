@@ -8,12 +8,19 @@ use App\Models\CourseContentCompletion;
 use App\Models\QuizAttempt;
 use App\Models\Reward;
 use App\Models\User;
+use App\Services\AchievementProgressService;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected GamificationService $gamificationService,
+        protected AchievementProgressService $achievementService
+    ) {}
+
     public function index(Request $request): Response
     {
         $user = $request->user();
@@ -25,11 +32,17 @@ class DashboardController extends Controller
             'cohort',
         ]);
 
-        // Get recent achievements separately to avoid ambiguous column issues
-        $recentAchievements = $user->achievements()
-            ->orderByDesc('achievement_user.earned_at')
-            ->limit(3)
-            ->get();
+        // Get level progress data
+        $levelProgress = $this->gamificationService->getLevelProgress($user);
+
+        // Get achievements with progress for dashboard
+        $dashboardAchievements = $this->achievementService->getDashboardAchievements($user);
+
+        // Merge recent earned achievements with in-progress for display
+        $recentAchievements = $dashboardAchievements['recent']->merge($dashboardAchievements['in_progress'])->take(4);
+
+        // Get next milestone (first unearned achievement with most progress)
+        $nextMilestone = $dashboardAchievements['in_progress']->first();
 
         // Get enrolled courses with relationships and compute next_lesson per enrollment
         // Returns arrays preserving nested `course` while adding computed `next_lesson`
@@ -89,10 +102,12 @@ class DashboardController extends Controller
         usort($studentCalendar, fn ($a, $b) => strcmp($a['date'], $b['date']));
         $studentCalendar = array_slice($studentCalendar, 0, 8);
 
-        // Get today's tasks
+        // Get today's tasks (using configured timezone)
+        $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
+        $taskToday = now($taskTimezone)->toDateString();
         $todayTasks = $user->dailyTasks()
             ->with('lesson')
-            ->whereDate('due_date', today())
+            ->whereDate('due_date', $taskToday)
             ->orderBy('is_completed')
             ->orderBy('estimated_minutes')
             ->get();
@@ -313,18 +328,22 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'stats' => [
                 'streak' => $user->currentStreak(),
+                'longest_streak' => $user->longest_streak ?? 0,
                 'xp_this_week' => $user->xpThisWeek(),
                 'hours_learned' => $user->hoursThisWeek(),
                 'active_courses' => $user->enrollments()->where('status', 'active')->count(),
                 'total_xp' => $user->total_xp ?? 0,
                 'level' => $user->level ?? 1,
                 'points_balance' => $user->points_balance ?? 0,
+                'xp_in_level' => $levelProgress['xp_in_level'],
+                'xp_for_next_level' => $levelProgress['xp_for_next_level'],
+                'level_progress_percentage' => $levelProgress['progress_percentage'],
             ],
             'today_tasks' => $todayTasks,
             'enrolled_courses' => $enrolledCourses,
             'student_calendar' => $studentCalendar,
             'recent_achievements' => $recentAchievements,
-            'next_milestone' => $user->nextAchievementMilestone(),
+            'next_milestone' => $nextMilestone,
             'recent_activity' => $recentActivity,
             'tutor_messages' => $tutorMessages,
             'unread_message_count' => $user->tutorMessages()->where('is_read', false)->count(),
