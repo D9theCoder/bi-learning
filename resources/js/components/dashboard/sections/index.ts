@@ -2,6 +2,7 @@ export { DashboardActivityChartSection } from './dashboard-activity-chart-sectio
 export { DashboardCoursesSection } from './dashboard-courses-section';
 export { DashboardStatsSection } from './dashboard-stats-section';
 export { DashboardWelcomeHeader } from './dashboard-welcome-header';
+export { StudentCalendarSection } from './student-calendar-section';
 export { TutorActivityChartSection } from './tutor-activity-chart-section';
 export { TutorCalendarSection } from './tutor-calendar-section';
 export { TutorCourseListSection } from './tutor-course-list-section';

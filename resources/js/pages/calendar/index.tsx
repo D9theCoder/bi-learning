@@ -58,7 +58,7 @@ export default function CalendarPage() {
         <PageHeader
           icon={Calendar}
           title="Calendar"
-          description="Track your daily tasks and stay on top of your learning schedule."
+          description="Track your meetings, assessments, and tasks. Stay on top of your learning schedule."
           className="mb-6 lg:mb-8"
         />
 
@@ -66,6 +66,7 @@ export default function CalendarPage() {
           <div className="space-y-4 lg:space-y-6">
             <MiniCalendar
               currentDate={selectedDate}
+              tasksByDate={tasksByDate}
               markers={markers}
               onDateSelect={handleDateSelect}
               onResetFilter={handleResetFilter}

@@ -1,21 +1,14 @@
 import { TaskDateCard } from '@/components/calendar/task-date-card';
-import { EmptyState } from '@/components/shared/empty-state';
-
-type CalendarTaskSummary = {
-  id: number;
-  title: string;
-  due_date: string;
-  completed: boolean;
-  xp_reward?: number;
-  course_title?: string;
-  type?: string;
-};
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { CalendarTask } from '@/types';
+import { CalendarDays, Clock, FileText, Video } from 'lucide-react';
 
 interface CalendarTaskListProps {
   isFiltered: boolean;
   activeDateLabel: string | null;
   filteredDates: string[];
-  tasksByDate: Record<string, CalendarTaskSummary[]>;
+  tasksByDate: Record<string, CalendarTask[]>;
 }
 
 export function CalendarTaskList({
@@ -25,33 +18,33 @@ export function CalendarTaskList({
   tasksByDate,
 }: CalendarTaskListProps) {
   return (
-    <div className="space-y-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-      <div>
-        <h2 className="text-xl font-semibold">
-          {isFiltered ? 'Tasks for selected date' : 'All scheduled tasks'}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isFiltered
-            ? (activeDateLabel ?? 'No tasks scheduled for this date.')
-            : 'Showing every scheduled task on your calendar.'}
-        </p>
-      </div>
-
-      <div className="space-y-4">
+    <Card className="h-fit rounded-none">
+      <CardHeader className="px-3 py-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <CalendarDays className="size-3.5 text-primary" />
+            {isFiltered ? 'Selected' : 'Scheduled'}
+          </CardTitle>
+          {/* Legend */}
+          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-blue-500" />Meet</span>
+            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-orange-500" />Assess</span>
+            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-green-500" />Task</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2 px-3 pt-0 pb-2">
         {filteredDates.length > 0 ? (
           filteredDates.map((date) => (
             <TaskDateCard key={date} date={date} tasks={tasksByDate[date]} />
           ))
         ) : (
-          <EmptyState
-            message={
-              isFiltered
-                ? 'No tasks scheduled for this date.'
-                : 'No tasks scheduled. Your calendar is clear!'
-            }
-          />
+          <div className="flex items-center justify-center gap-1.5 py-2 text-center text-[10px] text-muted-foreground">
+            <CalendarDays className="size-3.5" />
+            {isFiltered ? 'No items' : 'Clear'}
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

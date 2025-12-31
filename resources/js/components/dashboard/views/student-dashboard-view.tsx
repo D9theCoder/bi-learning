@@ -4,6 +4,7 @@ import {
   DashboardCoursesSection,
   DashboardStatsSection,
   DashboardWelcomeHeader,
+  StudentCalendarSection,
 } from '@/components/dashboard/sections';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
@@ -19,6 +20,7 @@ import type {
   Enrollment,
   LeaderboardEntry,
   LearningStats,
+  StudentCalendarItem,
   TutorMessage,
 } from '@/types';
 
@@ -28,6 +30,7 @@ interface StudentDashboardViewProps {
   isLoading: boolean;
   todayTasks: DailyTask[];
   enrolledCourses: Enrollment[];
+  studentCalendar: StudentCalendarItem[];
   weeklyActivityData: { name: string; value: number }[];
   recentAchievements: Achievement[];
   nextMilestone: Achievement | null;
@@ -43,6 +46,7 @@ export function StudentDashboardView({
   isLoading,
   todayTasks,
   enrolledCourses,
+  studentCalendar,
   weeklyActivityData,
   recentAchievements,
   nextMilestone,
@@ -77,6 +81,13 @@ export function StudentDashboardView({
               <TodayTaskList tasks={todayTasks} />
             )}
           </DashboardErrorBoundary>
+
+          {/* Upcoming Schedule (Meetings & Assessments) */}
+          {!isLoading && studentCalendar.length > 0 && (
+            <DashboardErrorBoundary>
+              <StudentCalendarSection items={studentCalendar} />
+            </DashboardErrorBoundary>
+          )}
           
           {/* My Courses */}
           <DashboardErrorBoundary>

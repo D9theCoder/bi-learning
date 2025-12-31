@@ -14,6 +14,7 @@ import type {
   LeaderboardEntry,
   LearningStats,
   Reward,
+  StudentCalendarItem,
   TutorDashboardData,
   TutorMessage,
   User,
@@ -29,6 +30,7 @@ interface DashboardPageProps {
   stats: LearningStats;
   today_tasks: DailyTask[];
   enrolled_courses: Enrollment[];
+  student_calendar: StudentCalendarItem[];
   recent_achievements: Achievement[];
   next_milestone: Achievement | null;
   recent_activity: Activity[];
@@ -45,6 +47,7 @@ export default function Dashboard({
   stats,
   today_tasks,
   enrolled_courses,
+  student_calendar,
   recent_achievements,
   next_milestone,
   recent_activity,
@@ -76,6 +79,7 @@ export default function Dashboard({
 
   const todayTasks = today_tasks ?? [];
   const enrolledCourses = enrolled_courses ?? [];
+  const studentCalendar = student_calendar ?? [];
   const recentAchievements = recent_achievements ?? [];
   const cohortLeaderboard = cohort_leaderboard ?? [];
   const tutorMessages = tutor_messages ?? [];
@@ -126,6 +130,7 @@ export default function Dashboard({
           isLoading={isLoading}
           todayTasks={todayTasks}
           enrolledCourses={enrolledCourses}
+          studentCalendar={studentCalendar}
           weeklyActivityData={weeklyActivityData}
           recentAchievements={recentAchievements}
           nextMilestone={nextMilestone}

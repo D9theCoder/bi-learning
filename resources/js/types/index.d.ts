@@ -257,6 +257,17 @@ export interface TutorCalendarItem {
   course_title: string;
   due_date: string;
   type: string;
+  category: 'meeting' | 'assessment';
+}
+
+export interface StudentCalendarItem {
+  id: number;
+  title: string;
+  course_title: string;
+  date: string;
+  time?: string | null;
+  type: string;
+  category: 'meeting' | 'assessment';
 }
 
 export interface TutorRosterEntry {
@@ -346,23 +357,26 @@ export interface AchievementsPageProps {
   };
 }
 
+export interface CalendarTask {
+  id: number;
+  title: string;
+  due_date: string;
+  completed: boolean;
+  xp_reward?: number;
+  course_title?: string;
+  type?: string;
+  category: 'task' | 'meeting' | 'assessment';
+  time?: string | null;
+}
+
 export interface CalendarPageProps extends SharedData {
-  tasksByDate: Record<
-    string,
-    Array<{
-      id: number;
-      title: string;
-      due_date: string;
-      completed: boolean;
-      xp_reward?: number;
-      course_title?: string;
-      type?: string;
-    }>
-  >;
+  tasksByDate: Record<string, CalendarTask[]>;
   stats: {
     total: number;
     completed: number;
     overdue: number;
+    meetings: number;
+    assessments: number;
   };
   currentDate: string;
   cursor?: {

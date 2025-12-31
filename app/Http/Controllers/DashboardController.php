@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Course;
-use App\Models\CourseContent;
 use App\Models\CourseContentCompletion;
 use App\Models\QuizAttempt;
 use App\Models\Reward;
@@ -35,7 +34,7 @@ class DashboardController extends Controller
         // Get enrolled courses with relationships and compute next_lesson per enrollment
         // Returns arrays preserving nested `course` while adding computed `next_lesson`
         $enrolledCourses = $user->enrollments()
-            ->with(['course.lessons', 'course.instructor'])
+            ->with(['course.lessons', 'course.instructor', 'course.assessments'])
             ->where('status', 'active')
             ->latest('last_activity_at')
             ->get()
@@ -48,6 +47,47 @@ class DashboardController extends Controller
 
                 return $data;
             });
+
+        // Build student calendar with upcoming meetings and assessments from enrolled courses
+        $studentCalendar = [];
+
+        foreach ($user->enrollments()->with(['course.lessons', 'course.assessments'])->where('status', 'active')->get() as $enrollment) {
+            $course = $enrollment->course;
+
+            // Add upcoming lesson meetings
+            $upcomingMeetings = $course->lessons
+                ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
+                ->map(fn ($lesson) => [
+                    'id' => $lesson->id,
+                    'title' => $lesson->title,
+                    'course_title' => $course->title,
+                    'date' => $lesson->meeting_start_time?->toDateString(),
+                    'time' => $lesson->meeting_start_time?->format('H:i'),
+                    'type' => 'meeting',
+                    'category' => 'meeting',
+                ]);
+
+            $studentCalendar = array_merge($studentCalendar, $upcomingMeetings->all());
+
+            // Add upcoming assessment due dates
+            $upcomingAssessments = $course->assessments
+                ->filter(fn ($assessment) => $assessment->due_date !== null && $assessment->due_date->isFuture() && $assessment->is_published)
+                ->map(fn ($assessment) => [
+                    'id' => $assessment->id,
+                    'title' => $assessment->title,
+                    'course_title' => $course->title,
+                    'date' => $assessment->due_date?->toDateString(),
+                    'time' => $assessment->due_date?->format('H:i'),
+                    'type' => $assessment->type,
+                    'category' => 'assessment',
+                ]);
+
+            $studentCalendar = array_merge($studentCalendar, $upcomingAssessments->all());
+        }
+
+        // Sort by date and limit to 8 items
+        usort($studentCalendar, fn ($a, $b) => strcmp($a['date'], $b['date']));
+        $studentCalendar = array_slice($studentCalendar, 0, 8);
 
         // Get today's tasks
         $todayTasks = $user->dailyTasks()
@@ -178,19 +218,37 @@ class DashboardController extends Controller
                     'students' => $studentCount,
                 ];
 
-                $dueContents = $course->lessons
-                    ->flatMap(fn ($lesson) => $lesson->contents)
-                    ->filter(fn (CourseContent $content) => $content->due_date !== null)
-                    ->sortBy('due_date')
-                    ->map(fn (CourseContent $content) => [
-                        'id' => $content->id,
-                        'title' => $content->title,
+                // Add upcoming lesson meetings
+                $upcomingMeetings = $course->lessons
+                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
+                    ->sortBy('meeting_start_time')
+                    ->map(fn ($lesson) => [
+                        'id' => $lesson->id,
+                        'title' => $lesson->title,
                         'course_title' => $course->title,
-                        'due_date' => $content->due_date?->toDateString(),
-                        'type' => $content->type,
+                        'due_date' => $lesson->meeting_start_time?->toDateString(),
+                        'time' => $lesson->meeting_start_time?->format('H:i'),
+                        'type' => 'meeting',
+                        'category' => 'meeting',
                     ]);
 
-                $upcomingItems = array_merge($upcomingItems, $dueContents->all());
+                $upcomingItems = array_merge($upcomingItems, $upcomingMeetings->all());
+
+                // Add upcoming assessment due dates
+                $upcomingAssessments = $course->assessments
+                    ->filter(fn ($assessment) => $assessment->due_date !== null && $assessment->due_date->isFuture() && $assessment->is_published)
+                    ->sortBy('due_date')
+                    ->map(fn ($assessment) => [
+                        'id' => $assessment->id,
+                        'title' => $assessment->title,
+                        'course_title' => $course->title,
+                        'due_date' => $assessment->due_date?->toDateString(),
+                        'time' => $assessment->due_date?->format('H:i'),
+                        'type' => $assessment->type,
+                        'category' => 'assessment',
+                    ]);
+
+                $upcomingItems = array_merge($upcomingItems, $upcomingAssessments->all());
 
                 foreach ($enrollments as $enrollment) {
                     $student = $enrollment->user;
@@ -264,6 +322,7 @@ class DashboardController extends Controller
             ],
             'today_tasks' => $todayTasks,
             'enrolled_courses' => $enrolledCourses,
+            'student_calendar' => $studentCalendar,
             'recent_achievements' => $recentAchievements,
             'next_milestone' => $user->nextAchievementMilestone(),
             'recent_activity' => $recentActivity,
