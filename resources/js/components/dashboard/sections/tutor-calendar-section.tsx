@@ -20,7 +20,7 @@ export const TutorCalendarSection = memo(
           Upcoming Schedule
         </h2>
       </div>
-      <Card>
+      <Card noPadding className="py-2">
         <CardContent className="p-4">
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -44,7 +44,7 @@ export const TutorCalendarSection = memo(
                 <div
                   key={`${item.category}-${item.id}`}
                   className={cn(
-                    'flex items-start justify-between gap-3 rounded-lg border-l-4 bg-muted/30 p-3',
+                    'flex items-start justify-between gap-3 border-l-2 bg-muted/30 p-3',
                     item.category === 'meeting'
                       ? 'border-l-blue-500'
                       : 'border-l-orange-500'

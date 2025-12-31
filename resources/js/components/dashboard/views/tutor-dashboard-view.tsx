@@ -4,7 +4,6 @@ import {
   TutorActivityChartSection,
   TutorCalendarSection,
   TutorCourseListSection,
-  TutorRosterSection,
   TutorStatsSection,
 } from '@/components/dashboard/sections';
 import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
@@ -85,13 +84,6 @@ export function TutorDashboardView({
               {tutorData && (
                 <DashboardErrorBoundary>
                   <TutorCalendarSection items={tutorData.calendar} />
-                </DashboardErrorBoundary>
-              )}
-
-              {/* Student snapshot */}
-              {tutorData && (
-                <DashboardErrorBoundary>
-                  <TutorRosterSection roster={tutorData.roster} />
                 </DashboardErrorBoundary>
               )}
 
