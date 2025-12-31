@@ -1,13 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useInitials } from '@/hooks/use-initials';
 import { type User } from '@/types';
 
 export function UserInfo({
   user,
   showEmail = false,
+  roles,
 }: {
   user: User;
   showEmail?: boolean;
+  roles?: string[];
 }) {
   const getInitials = useInitials();
 
@@ -27,6 +30,19 @@ export function UserInfo({
           </span>
         )}
       </div>
+      {roles && roles.length > 0 && (
+        <div className="flex flex-wrap gap-1 items-center">
+          {roles.map((role) => (
+            <Badge
+              key={role}
+              variant="secondary"
+              className="capitalize text-xs"
+            >
+              {role}
+            </Badge>
+          ))}
+        </div>
+      )}
     </>
   );
 }
