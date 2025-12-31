@@ -38,7 +38,7 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
 
       <div className="flex flex-col gap-6 p-4 lg:p-8">
         <div className="flex items-center gap-3">
-          <Link href="/courses/manage" prefetch>
+          <Link href="/courses/manage">
             <Button variant="ghost" size="icon" aria-label="Back">
               <ArrowLeft className="size-4" />
             </Button>

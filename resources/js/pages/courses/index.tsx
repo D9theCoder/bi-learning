@@ -19,10 +19,12 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-export default function CoursesPage({ courses, filters }: CoursesPageProps) {
+export default function CoursesPage({ courses, filters, enrolled_courses }: CoursesPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const { isAdmin, isTutor } = useRoles();
+  const { isAdmin, isStudent, isTutor } = useRoles();
   const canManageCourses = isAdmin || isTutor;
+
+  const enrolledCourses = enrolled_courses ?? [];
 
   const handleFilterChange = useCallback(
     (key: keyof typeof filters, value: string) => {
@@ -54,11 +56,15 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
           <PageHeader
             icon={BookOpen}
             title="My Courses"
-            description="Explore and manage your enrolled courses."
+            description={
+              isStudent
+                ? 'Keep learning in your enrolled courses and explore what’s next.'
+                : 'Explore and manage your enrolled courses.'
+            }
           />
           {canManageCourses && (
             <Button className="self-start" size="sm" asChild>
-              <Link href="/courses/manage/create" prefetch>
+                <Link href="/courses/manage/create">
                 <Plus className="mr-2 size-4" />
                 Add Course
               </Link>
@@ -66,29 +72,63 @@ export default function CoursesPage({ courses, filters }: CoursesPageProps) {
           )}
         </div>
 
-        <CourseFilters
-          filters={filters}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onFilterChange={handleFilterChange}
-        />
+        {isStudent && (
+          <section aria-labelledby="enrolled-courses-heading" className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2
+                id="enrolled-courses-heading"
+                className="text-lg font-semibold tracking-tight"
+              >
+                Enrolled Courses
+              </h2>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.data.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
-        </div>
-
-        {courses.data.length === 0 && (
-          <EmptyState message="No courses found. Try adjusting your filters." />
+            {enrolledCourses.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {enrolledCourses.map((course) => (
+                  <CourseCard key={course.id} course={course} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="You’re not enrolled in any courses yet." />
+            )}
+          </section>
         )}
 
-        <CoursePagination
-          currentPage={courses.current_page}
-          lastPage={courses.last_page}
-          filters={filters as Record<string, string>}
-          searchTerm={searchTerm}
-        />
+        <section aria-labelledby="available-courses-heading" className="space-y-4">
+          {isStudent && (
+            <h2
+              id="available-courses-heading"
+              className="text-lg font-semibold tracking-tight"
+            >
+              Available Courses
+            </h2>
+          )}
+
+          <CourseFilters
+            filters={filters}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onFilterChange={handleFilterChange}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.data.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+
+          {courses.data.length === 0 && (
+            <EmptyState message="No courses found. Try adjusting your filters." />
+          )}
+
+          <CoursePagination
+            currentPage={courses.current_page}
+            lastPage={courses.last_page}
+            filters={filters as Record<string, string>}
+            searchTerm={searchTerm}
+          />
+        </section>
       </div>
     </AppLayout>
   );

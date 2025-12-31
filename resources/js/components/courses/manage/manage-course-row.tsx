@@ -31,12 +31,12 @@ export function ManageCourseRow({ course }: ManageCourseRowProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Link href={`/courses/${course.id}`} prefetch>
+        <Link href={`/courses/${course.id}`}>
           <Button variant="outline" size="sm">
             View
           </Button>
         </Link>
-        <Link href={`/courses/manage/${course.id}/edit`} prefetch>
+        <Link href={`/courses/manage/${course.id}/edit`}>
           <Button variant="secondary" size="sm">
             Edit
           </Button>

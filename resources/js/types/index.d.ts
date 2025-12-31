@@ -374,6 +374,15 @@ export interface CalendarPageProps extends SharedData {
 }
 
 export interface CoursesPageProps {
+  enrolled_courses?: Array<
+    Course & {
+      lessons_count: number;
+      user_progress?: {
+        progress_percentage: number;
+        next_lesson?: Lesson;
+      };
+    }
+  >;
   filters: {
     search?: string;
     category?: string;

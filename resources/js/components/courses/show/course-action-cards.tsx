@@ -17,7 +17,7 @@ export function ManageCourseCard({ courseId }: ManageCourseCardProps) {
           Update course details, lessons, and content.
         </p>
         <Button className="w-full" asChild>
-          <Link href={`/courses/manage/${courseId}/edit`} prefetch>
+          <Link href={`/courses/manage/${courseId}`}>
             Manage Course
           </Link>
         </Button>

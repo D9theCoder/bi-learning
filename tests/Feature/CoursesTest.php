@@ -32,7 +32,7 @@ it('requires authentication', function () {
 it('renders courses index page', function () {
     $user = User::factory()->create();
     $user->assignRole('student');
-    Course::factory()->count(5)->create();
+    Course::factory()->count(5)->create(['is_published' => true]);
 
     $response = $this->actingAs($user)->get(route('courses'));
 
@@ -46,8 +46,8 @@ it('renders courses index page', function () {
 it('filters courses by difficulty', function () {
     $user = User::factory()->create();
     $user->assignRole('student');
-    Course::factory()->create(['difficulty' => 'beginner']);
-    Course::factory()->create(['difficulty' => 'advanced']);
+    Course::factory()->create(['difficulty' => 'beginner', 'is_published' => true]);
+    Course::factory()->create(['difficulty' => 'advanced', 'is_published' => true]);
 
     $response = $this->actingAs($user)->get(route('courses', ['difficulty' => 'beginner']));
 
@@ -56,16 +56,28 @@ it('filters courses by difficulty', function () {
     );
 });
 
-it('shows user progress for enrolled courses', function () {
+it('shows enrolled courses separately from available courses', function () {
     $user = User::factory()->create();
     $user->assignRole('student');
-    $course = Course::factory()->create();
-    Enrollment::factory()->for($user)->for($course)->create(['progress_percentage' => 50]);
+    $enrolledCourse = Course::factory()->create(['is_published' => true]);
+    $otherCourse = Course::factory()->create(['is_published' => true]);
+
+    Enrollment::factory()->for($user)->for($enrolledCourse)->create([
+        'progress_percentage' => 50,
+        'status' => 'active',
+    ]);
 
     $response = $this->actingAs($user)->get(route('courses'));
 
     $response->assertInertia(fn (Assert $page) => $page
-        ->where('courses.data.0.user_progress.progress_percentage', 50)
+        ->has('enrolled_courses', 1)
+        ->where('enrolled_courses.0.id', $enrolledCourse->id)
+        ->where('enrolled_courses.0.user_progress.progress_percentage', 50)
+        ->where('courses.data', function (array $data) use ($enrolledCourse, $otherCourse) {
+            $ids = collect($data)->pluck('id');
+
+            return $ids->contains($otherCourse->id) && ! $ids->contains($enrolledCourse->id);
+        })
     );
 });
 

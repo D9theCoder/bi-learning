@@ -62,7 +62,7 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
           size="sm"
           className="translate-y-2 shadow-lg transition-transform duration-300 group-hover:translate-y-0"
         >
-          <Link href={`/courses/${course.id}`} prefetch>
+          <Link href={`/courses/${course.id}`}>
             <Play className="mr-2 size-3" />
             Resume
           </Link>

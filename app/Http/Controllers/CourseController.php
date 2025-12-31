@@ -19,6 +19,9 @@ class CourseController extends Controller
     {
         $user = $request->user();
 
+        $enrolledCourses = collect();
+        $enrolledCourseIds = [];
+
         // Get validated filters
         $filters = $request->validated();
 
@@ -58,6 +61,46 @@ class CourseController extends Controller
         } elseif (! $user->hasAnyRole(['admin', 'tutor'])) {
             // Students can only see published courses
             $query->where('is_published', true);
+
+            $enrolledCourseIds = $user->enrollments()
+                ->pluck('course_id')
+                ->values()
+                ->all();
+
+            if (count($enrolledCourseIds) > 0) {
+                $query->whereNotIn('id', $enrolledCourseIds);
+            }
+
+            $activeEnrollments = $user->enrollments()
+                ->active()
+                ->with([
+                    'course' => function ($q) {
+                        $q->with(['instructor'])
+                            ->withCount(['lessons', 'enrollments']);
+                    },
+                ])
+                ->orderByDesc('last_activity_at')
+                ->orderByDesc('updated_at')
+                ->get();
+
+            $enrolledCourses = $activeEnrollments
+                ->map(function ($enrollment) use ($user) {
+                    $course = $enrollment->course;
+
+                    if (! $course) {
+                        return null;
+                    }
+
+                    $courseData = $course->toArray();
+                    $courseData['user_progress'] = [
+                        'progress_percentage' => (float) ($enrollment->progress_percentage ?? 0),
+                        'next_lesson' => $user->nextLessonForEnrollment($enrollment)?->toArray(),
+                    ];
+
+                    return $courseData;
+                })
+                ->filter()
+                ->values();
         }
 
         $courses = $query->paginate(12)->withQueryString();
@@ -86,6 +129,7 @@ class CourseController extends Controller
         return Inertia::render('courses/index', [
             'filters' => $filters,
             'courses' => $courses,
+            'enrolled_courses' => $enrolledCourses,
         ]);
     }
 

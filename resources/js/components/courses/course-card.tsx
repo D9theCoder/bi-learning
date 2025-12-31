@@ -92,7 +92,7 @@ export function CourseCard({ course }: CourseCardProps) {
         <CardFooter className="pt-2">
           {canManageCourse ? (
             <Button className="w-full" size="sm" asChild>
-              <Link href={`/courses/manage/${course.id}/edit`} prefetch>
+              <Link href={`/courses/manage/${course.id}/edit`}>
                 Manage Course
               </Link>
             </Button>

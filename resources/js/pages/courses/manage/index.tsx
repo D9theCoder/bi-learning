@@ -58,7 +58,7 @@ export default function ManageCourses({
               onChange={(e) => setSearch(e.target.value)}
               className="w-full sm:w-64"
             />
-            <Link href="/courses/manage/create" prefetch>
+            <Link href="/courses/manage/create">
               <Button className="inline-flex items-center gap-2">
                 <Plus className="size-4" />
                 New Course
@@ -88,7 +88,7 @@ export default function ManageCourses({
                   <p className="text-sm text-muted-foreground">
                     Create your first course to get started.
                   </p>
-                  <Link href="/courses/manage/create" prefetch>
+                  <Link href="/courses/manage/create">
                     <Button size="sm">Create course</Button>
                   </Link>
                 </div>

@@ -136,7 +136,7 @@ export function CourseDetailsForm({
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/courses/manage" prefetch>
+          <Link href="/courses/manage">
             <Button variant="ghost">Cancel</Button>
           </Link>
           <Button
