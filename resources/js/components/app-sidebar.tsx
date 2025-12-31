@@ -28,6 +28,7 @@ import {
   Calendar as CalendarIcon,
   Folder,
   Gift,
+  GraduationCap,
   LayoutGrid,
   MessageSquare,
   Trophy,
@@ -35,7 +36,7 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const studentNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: dashboard().url,
@@ -73,6 +74,34 @@ const mainNavItems: NavItem[] = [
   },
 ];
 
+const tutorNavItems: NavItem[] = [
+  {
+    title: 'Dashboard',
+    href: dashboard().url,
+    icon: LayoutGrid,
+  },
+  {
+    title: 'My Courses',
+    href: courses().url,
+    icon: BookOpen,
+  },
+  {
+    title: 'Students',
+    href: '/students',
+    icon: GraduationCap,
+  },
+  {
+    title: 'Calendar',
+    href: calendar().url,
+    icon: CalendarIcon,
+  },
+  {
+    title: 'Messages',
+    href: messages().url,
+    icon: MessageSquare,
+  },
+];
+
 const footerNavItems: NavItem[] = [
   {
     title: 'Repository',
@@ -90,17 +119,9 @@ export function AppSidebar() {
   const { isAdmin, isStudent, isTutor } = useRoles();
   const { url } = usePage();
 
-  const hideStudentOnly = isTutor && !isAdmin && !isStudent;
-  const studentOnlyTitles = new Set([
-    'Dashboard',
-    'Achievements',
-    'Rewards',
-    'Calendar',
-  ]);
-  const filteredNavItems = hideStudentOnly
-    ? mainNavItems.filter((item) => !studentOnlyTitles.has(item.title))
-    : mainNavItems;
-  const navItems: NavItem[] = [...filteredNavItems];
+  const isTutorOnly = isTutor && !isAdmin && !isStudent;
+  const baseNavItems = isTutorOnly ? tutorNavItems : studentNavItems;
+  const navItems: NavItem[] = [...baseNavItems];
 
   if (isAdmin || isTutor) {
     const manageLink: NavItem = {

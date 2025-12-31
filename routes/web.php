@@ -11,6 +11,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\RewardRedemptionController;
+use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TutorController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -109,8 +110,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:student|admin')
         ->name('rewards.redeem');
 
-    // Tutor routes
-    Route::get('tutors', [TutorController::class, 'index'])->name('tutors');
+    // Tutor routes (for students)
+    Route::get('tutors', [TutorController::class, 'index'])
+        ->middleware('role:student|admin')
+        ->name('tutors');
+
+    // Student routes (for tutors)
+    Route::get('students', [StudentController::class, 'index'])
+        ->middleware('role:tutor|admin')
+        ->name('students');
 });
 
 require __DIR__.'/settings.php';

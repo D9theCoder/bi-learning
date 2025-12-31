@@ -523,3 +523,26 @@ export interface TutorsPageProps {
     total: number;
   };
 }
+
+export interface StudentsPageProps {
+  filters: {
+    search?: string;
+    cohort_id?: number;
+  };
+  students: {
+    data: Array<{
+      id: number;
+      name: string;
+      email?: string;
+      avatar?: string;
+      cohort?: {
+        id: number;
+        name: string;
+      };
+    }>;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
