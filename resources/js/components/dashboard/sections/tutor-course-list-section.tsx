@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { TutorDashboardData } from '@/types';
@@ -37,7 +38,10 @@ export const TutorCourseListSection = memo(
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {courses.map((course) => (
-            <Card key={course.id}>
+            <Card
+              key={course.id}
+              className="group relative overflow-hidden"
+            >
               <CardContent className="flex flex-col gap-3 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-col gap-1">
@@ -89,6 +93,30 @@ export const TutorCourseListSection = memo(
                   </div>
                 )}
               </CardContent>
+
+              <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-l from-background/95 via-background/70 to-transparent p-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                <div className="flex gap-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="pointer-events-auto translate-y-2 shadow-lg transition-transform duration-300 group-hover:translate-y-0"
+                  >
+                    <Link href={`/courses/${course.id}`} prefetch>
+                      View course
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="pointer-events-auto translate-y-2 shadow-lg transition-transform duration-300 group-hover:translate-y-0"
+                  >
+                    <Link href={`/courses/manage/${course.id}/edit`} prefetch>
+                      Manage course
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </Card>
           ))}
         </div>
