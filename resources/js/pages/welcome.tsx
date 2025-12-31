@@ -45,8 +45,8 @@ export default function Welcome() {
         <header className="fixed top-0 z-50 w-full border-b border-border/5 bg-background/60 backdrop-blur-md">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
             <div className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-              <div className="h-8 w-8 rounded-lg bg-emerald-600" />
-              Bi-Learning
+              <img src="/bilearning-logo.png" alt="Bi-Learning Logo" className="h-12 w-auto" />
+              <span className="hidden sm:inline">Bi-Learning</span>
             </div>
 
             <nav className="flex items-center gap-4">
@@ -130,8 +130,11 @@ export default function Welcome() {
         </main>
 
         <footer className="border-t border-border bg-muted/20 py-12">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>
+          <div className="container mx-auto px-4 text-center">
+            <div className="mb-4 flex justify-center">
+              <img src="/bilearning-logo.png" alt="Bi-Learning Logo" className="h-16 w-auto" />
+            </div>
+            <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} Bi-Learning. All rights
               reserved.
             </p>
