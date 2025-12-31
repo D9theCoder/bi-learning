@@ -20,7 +20,7 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
   }
 
   return (
-    <Card className="group relative overflow-hidden transition-all hover:shadow-md">
+    <Card noPadding className="group relative overflow-hidden transition-all hover:shadow-md">
       <CardContent className="flex gap-4 p-0">
         {/* Course Thumbnail */}
         <div className="relative size-32 shrink-0 overflow-hidden">
