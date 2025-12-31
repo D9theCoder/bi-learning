@@ -68,6 +68,8 @@ export function StudentDashboardView({
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
+
+          {/* Today's Tasks */}
           <DashboardErrorBoundary>
             {isLoading ? (
               <TodayTasksSkeleton />
@@ -75,7 +77,8 @@ export function StudentDashboardView({
               <TodayTaskList tasks={todayTasks} />
             )}
           </DashboardErrorBoundary>
-
+          
+          {/* My Courses */}
           <DashboardErrorBoundary>
             {isLoading ? (
               <CoursesSkeleton />
@@ -84,6 +87,7 @@ export function StudentDashboardView({
             )}
           </DashboardErrorBoundary>
 
+          {/* Weekly Activity */}
           {isLoading ? (
             <ActivityChartSkeleton />
           ) : (

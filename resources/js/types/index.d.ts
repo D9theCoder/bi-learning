@@ -236,12 +236,11 @@ export interface WeeklyActivityDataPoint {
 export interface TutorDashboardCourse {
   id: number;
   title: string;
+  thumbnail?: string;
   student_count: number;
   active_students: number;
-  average_progress: number;
-  attendance_rate: number;
-  assignment_rate: number;
-  next_due_date?: string | null;
+  next_meeting_date?: string | null;
+  next_meeting_time?: string | null;
   is_published?: boolean;
 }
 

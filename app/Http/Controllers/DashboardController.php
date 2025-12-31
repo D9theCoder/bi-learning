@@ -43,6 +43,7 @@ class DashboardController extends Controller
                 $data['next_lesson'] = $nextLesson ? $nextLesson->toArray() : null;
                 // Ensure numeric type on progress_percentage for frontend typings
                 $data['progress_percentage'] = (float) ($enrollment->progress_percentage ?? 0);
+
                 return $data;
             });
 
@@ -142,21 +143,19 @@ class DashboardController extends Controller
                 $attendanceRate = round(($attendanceCompleted / $attendancePossible) * 100, 1);
                 $assignmentRate = round(($assignmentCompleted / $assignmentPossible) * 100, 1);
 
-                $nextDue = $course->lessons
-                    ->flatMap(fn ($lesson) => $lesson->contents)
-                    ->filter(fn (CourseContent $content) => $content->due_date !== null)
-                    ->sortBy('due_date')
+                $nextMeeting = $course->lessons
+                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
+                    ->sortBy('meeting_start_time')
                     ->first();
 
                 $courseSnapshots[] = [
                     'id' => $course->id,
                     'title' => $course->title,
+                    'thumbnail' => $course->thumbnail,
                     'student_count' => $studentCount,
                     'active_students' => $activeStudents,
-                    'average_progress' => $avgProgress,
-                    'attendance_rate' => $attendanceRate,
-                    'assignment_rate' => $assignmentRate,
-                    'next_due_date' => $nextDue?->due_date?->toDateString(),
+                    'next_meeting_date' => $nextMeeting?->meeting_start_time?->toDateString(),
+                    'next_meeting_time' => $nextMeeting?->meeting_start_time?->format('H:i'),
                     'is_published' => $course->is_published,
                 ];
 
