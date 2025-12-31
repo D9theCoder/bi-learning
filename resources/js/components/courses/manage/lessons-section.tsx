@@ -57,7 +57,13 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
                 value={lessonForm.data.title}
                 onChange={(e) => lessonForm.setData('title', e.target.value)}
                 placeholder="Lesson title"
+                aria-invalid={Boolean(lessonForm.errors.title)}
               />
+              {lessonForm.errors.title ? (
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.title}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-lesson-order">Order</Label>
@@ -71,7 +77,13 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
                     : String(lessonForm.data.order)
                 }
                 onChange={(e) => lessonForm.setData('order', e.target.value)}
+                aria-invalid={Boolean(lessonForm.errors.order)}
               />
+              {lessonForm.errors.order ? (
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.order}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="grid gap-3 pt-3 md:grid-cols-3">
@@ -84,7 +96,13 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
                 onChange={(e) =>
                   lessonForm.setData('description', e.target.value)
                 }
+                aria-invalid={Boolean(lessonForm.errors.description)}
               />
+              {lessonForm.errors.description ? (
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.description}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-lesson-duration">Duration (minutes)</Label>
@@ -100,7 +118,13 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
                 onChange={(e) =>
                   lessonForm.setData('duration_minutes', e.target.value)
                 }
+                aria-invalid={Boolean(lessonForm.errors.duration_minutes)}
               />
+              {lessonForm.errors.duration_minutes ? (
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.duration_minutes}
+                </p>
+              ) : null}
               <Label htmlFor="new-lesson-video">Video URL</Label>
               <Input
                 id="new-lesson-video"
@@ -109,7 +133,13 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
                   lessonForm.setData('video_url', e.target.value)
                 }
                 placeholder="https://..."
+                aria-invalid={Boolean(lessonForm.errors.video_url)}
               />
+              {lessonForm.errors.video_url ? (
+                <p className="text-xs text-destructive">
+                  {lessonForm.errors.video_url}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="mt-3 flex items-center gap-3">

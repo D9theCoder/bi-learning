@@ -30,6 +30,19 @@ export function QuizSettingsCard({
   assessment,
   onSave,
 }: QuizSettingsCardProps) {
+  const handledErrors = [
+    'title',
+    'description',
+    'due_date',
+    'time_limit_minutes',
+    'allow_retakes',
+    'is_published',
+  ];
+
+  const generalErrors = Object.entries(form.errors ?? {})
+    .filter(([field, message]) => Boolean(message) && !handledErrors.includes(field))
+    .map(([, message]) => message as string);
+
   return (
     <Card>
       <CardHeader>
@@ -42,6 +55,7 @@ export function QuizSettingsCard({
             id="title"
             value={form.data.title}
             onChange={(e) => form.setData('title', e.target.value)}
+            aria-invalid={Boolean(form.errors.title)}
           />
           {form.errors.title && (
             <p className="text-xs text-destructive">{form.errors.title}</p>
@@ -55,7 +69,13 @@ export function QuizSettingsCard({
             value={form.data.description}
             onChange={(e) => form.setData('description', e.target.value)}
             rows={3}
+            aria-invalid={Boolean(form.errors.description)}
           />
+          {form.errors.description ? (
+            <p className="text-xs text-destructive">
+              {form.errors.description}
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -65,7 +85,11 @@ export function QuizSettingsCard({
             type="datetime-local"
             value={form.data.due_date}
             onChange={(e) => form.setData('due_date', e.target.value)}
+            aria-invalid={Boolean(form.errors.due_date)}
           />
+          {form.errors.due_date ? (
+            <p className="text-xs text-destructive">{form.errors.due_date}</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -83,10 +107,16 @@ export function QuizSettingsCard({
                 e.target.value ? parseInt(e.target.value) : '',
               )
             }
+            aria-invalid={Boolean(form.errors.time_limit_minutes)}
           />
           <p className="text-xs text-muted-foreground">
             Leave empty for no time limit (due date only)
           </p>
+          {form.errors.time_limit_minutes ? (
+            <p className="text-xs text-destructive">
+              {form.errors.time_limit_minutes}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -96,10 +126,16 @@ export function QuizSettingsCard({
             onCheckedChange={(checked) =>
               form.setData('allow_retakes', !!checked)
             }
+            aria-invalid={Boolean(form.errors.allow_retakes)}
           />
           <Label htmlFor="allow_retakes" className="cursor-pointer">
             Allow retakes (highest score kept)
           </Label>
+          {form.errors.allow_retakes ? (
+            <p className="text-xs text-destructive">
+              {form.errors.allow_retakes}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -109,11 +145,25 @@ export function QuizSettingsCard({
             onCheckedChange={(checked) =>
               form.setData('is_published', !!checked)
             }
+            aria-invalid={Boolean(form.errors.is_published)}
           />
           <Label htmlFor="is_published" className="cursor-pointer">
             Publish quiz (visible to students)
           </Label>
+          {form.errors.is_published ? (
+            <p className="text-xs text-destructive">
+              {form.errors.is_published}
+            </p>
+          ) : null}
         </div>
+
+        {generalErrors.length > 0 ? (
+          <div className="space-y-1 text-xs text-destructive">
+            {generalErrors.map((message, idx) => (
+              <div key={`${message}-${idx}`}>{message}</div>
+            ))}
+          </div>
+        ) : null}
 
         <div className="border-t pt-4">
           <div className="mb-4 rounded-lg bg-muted/50 p-3">

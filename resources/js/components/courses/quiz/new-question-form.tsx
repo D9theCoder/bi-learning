@@ -28,6 +28,19 @@ export function NewQuestionForm({
     points: 1,
   });
 
+  const optionErrors = Object.entries(form.errors)
+    .filter(([field]) => field.startsWith('options'))
+    .map(([, message]) => message);
+
+  const generalErrors = Object.entries(form.errors)
+    .filter(
+      ([field, message]) =>
+        Boolean(message) &&
+        !['question', 'correct_answer', 'points'].includes(field) &&
+        !field.startsWith('options'),
+    )
+    .map(([, message]) => message);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     form.post(`/courses/${courseId}/quiz/${assessmentId}/questions`, {
@@ -49,6 +62,7 @@ export function NewQuestionForm({
           onChange={(e) => form.setData('question', e.target.value)}
           placeholder="Enter your question..."
           rows={3}
+          aria-invalid={Boolean(form.errors.question)}
         />
         {form.errors.question && (
           <p className="text-xs text-destructive">{form.errors.question}</p>
@@ -66,6 +80,7 @@ export function NewQuestionForm({
                 checked={form.data.correct_answer === String(idx)}
                 onChange={() => form.setData('correct_answer', String(idx))}
                 className="h-4 w-4"
+                aria-invalid={Boolean(form.errors.correct_answer)}
               />
               <Input
                 value={option}
@@ -75,9 +90,24 @@ export function NewQuestionForm({
                   form.setData('options', newOptions);
                 }}
                 placeholder={`Option ${idx + 1}`}
+                aria-invalid={Boolean(
+                  form.errors[`options.${idx}` as keyof typeof form.errors],
+                )}
               />
             </div>
           ))}
+          {optionErrors.length > 0 ? (
+            <div className="space-y-1 text-xs text-destructive">
+              {optionErrors.map((message, index) => (
+                <p key={`${message}-${index}`}>{message}</p>
+              ))}
+            </div>
+          ) : null}
+          {form.errors.correct_answer ? (
+            <p className="text-xs text-destructive">
+              {form.errors.correct_answer}
+            </p>
+          ) : null}
         </div>
       )}
 
@@ -89,10 +119,16 @@ export function NewQuestionForm({
             value={form.data.correct_answer}
             onChange={(e) => form.setData('correct_answer', e.target.value)}
             placeholder="Enter the correct answer..."
+            aria-invalid={Boolean(form.errors.correct_answer)}
           />
           <p className="text-xs text-muted-foreground">
             Case-insensitive exact match
           </p>
+          {form.errors.correct_answer ? (
+            <p className="text-xs text-destructive">
+              {form.errors.correct_answer}
+            </p>
+          ) : null}
         </div>
       )}
 
@@ -113,8 +149,20 @@ export function NewQuestionForm({
             form.setData('points', parseInt(e.target.value) || 1)
           }
           className="w-24"
+          aria-invalid={Boolean(form.errors.points)}
         />
+        {form.errors.points ? (
+          <p className="text-xs text-destructive">{form.errors.points}</p>
+        ) : null}
       </div>
+
+      {generalErrors.length > 0 ? (
+        <div className="space-y-1 text-xs text-destructive">
+          {generalErrors.map((message, idx) => (
+            <p key={`${message}-${idx}`}>{message}</p>
+          ))}
+        </div>
+      ) : null}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
