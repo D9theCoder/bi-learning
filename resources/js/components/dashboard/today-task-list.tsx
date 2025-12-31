@@ -10,7 +10,6 @@ import {
 import { cn } from '@/lib/utils';
 import type { DailyTask } from '@/types';
 import { router } from '@inertiajs/react';
-import confetti from 'canvas-confetti';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -24,40 +23,19 @@ import { useState } from 'react';
 
 interface TodayTaskListProps {
   tasks: DailyTask[];
-  onToggle?: (taskId: number) => void;
   className?: string;
   showDebugButton?: boolean;
 }
 
 export function TodayTaskList({
   tasks,
-  onToggle,
   className,
   showDebugButton = true,
 }: TodayTaskListProps) {
   const completedCount = tasks.filter((task) => task.is_completed).length;
   const totalCount = tasks.length;
 
-  // Local state for optimistic updates if onToggle updates parent state slowly
-  const [justCompleted, setJustCompleted] = useState<number[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleToggle = (task: DailyTask) => {
-    if (!task.is_completed && !justCompleted.includes(task.id)) {
-      // Trigger confetti
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#22c55e', '#eab308', '#3b82f6'], // Green, Yellow, Blue
-      });
-      setJustCompleted((prev) => [...prev, task.id]);
-    }
-
-    if (onToggle) {
-      onToggle(task.id);
-    }
-  };
 
   const handleGenerateTasks = () => {
     setIsGenerating(true);
@@ -153,8 +131,7 @@ export function TodayTaskList({
                 </motion.p>
               ) : (
                 tasks.map((task) => {
-                  const isCompleted =
-                    task.is_completed || justCompleted.includes(task.id);
+                  const isCompleted = task.is_completed;
                   return (
                     <motion.div
                       layout
@@ -163,9 +140,8 @@ export function TodayTaskList({
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       key={task.id}
-                      onClick={() => handleToggle(task)}
                       className={cn(
-                        'group flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-4 transition-all hover:border-accent hover:bg-accent hover:shadow-sm',
+                        'group flex items-start gap-4 rounded-xl border bg-card p-4 transition-all',
                         isCompleted ? 'bg-muted/50 opacity-60' : 'border-muted',
                       )}
                     >
@@ -178,7 +154,7 @@ export function TodayTaskList({
                           {isCompleted ? (
                             <CheckCircle2 className="size-5 text-green-500" />
                           ) : (
-                            <Circle className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                            <Circle className="size-5 text-muted-foreground" />
                           )}
                         </motion.div>
                       </div>
@@ -192,9 +168,7 @@ export function TodayTaskList({
                               ? 'var(--muted-foreground)'
                               : 'var(--foreground)',
                           }}
-                          className={cn(
-                            'cursor-pointer text-sm leading-none font-semibold',
-                          )}
+                          className="text-sm leading-none font-semibold"
                         >
                           {task.title}
                         </motion.label>
