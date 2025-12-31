@@ -1,10 +1,9 @@
 <?php
 
 use App\Models\Achievement;
+use App\Models\Assessment;
 use App\Models\Cohort;
 use App\Models\Course;
-use App\Models\CourseContent;
-use App\Models\CourseContentCompletion;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -95,9 +94,14 @@ test('dashboard shows enrolled courses', function () {
 test('dashboard displays today tasks', function () {
     $user = User::factory()->create();
     $user->assignRole('student');
+
+    // Use the same timezone as the dashboard controller
+    $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
+    $taskToday = now($taskTimezone)->toDateString();
+
     DailyTask::factory()->create([
         'user_id' => $user->id,
-        'due_date' => today(),
+        'due_date' => $taskToday,
         'is_completed' => false,
     ]);
 
@@ -159,18 +163,19 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
         'order' => 1,
     ]);
 
-    $attendanceContent = CourseContent::factory()->create([
-        'lesson_id' => $lesson->id,
-        'type' => 'attendance',
-        'due_date' => now()->addDays(2),
-        'order' => 1,
-    ]);
-
-    $assignmentContent = CourseContent::factory()->create([
+    // Create assessments with future due dates for the calendar
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
         'lesson_id' => $lesson->id,
         'type' => 'quiz',
+        'due_date' => now()->addDays(2),
+    ]);
+
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'type' => 'assignment',
         'due_date' => now()->addDays(3),
-        'order' => 2,
     ]);
 
     Enrollment::factory()->create([
@@ -178,16 +183,6 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
         'course_id' => $course->id,
         'status' => 'active',
         'progress_percentage' => 60,
-    ]);
-
-    CourseContentCompletion::factory()->create([
-        'course_content_id' => $attendanceContent->id,
-        'user_id' => $student->id,
-    ]);
-
-    CourseContentCompletion::factory()->create([
-        'course_content_id' => $assignmentContent->id,
-        'user_id' => $student->id,
     ]);
 
     $this->actingAs($tutor)
@@ -198,5 +193,103 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
             ->has('tutor_dashboard.chart', 1)
             ->has('tutor_dashboard.calendar', 2)
             ->has('tutor_dashboard.courses', 1)
+        );
+});
+
+test('leaderboard is sorted by XP descending', function () {
+    $cohort = Cohort::factory()->create();
+
+    // Create users with known XP values
+    $user1 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 500]);
+    $user1->assignRole('student');
+
+    $user2 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1500]);
+    $user2->assignRole('student');
+
+    $user3 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1000]);
+    $user3->assignRole('student');
+
+    $this->actingAs($user1)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('cohort_leaderboard', 3)
+            ->where('cohort_leaderboard.0.xp', 1500) // user2 is first
+            ->where('cohort_leaderboard.0.rank', 1)
+            ->where('cohort_leaderboard.1.xp', 1000) // user3 is second
+            ->where('cohort_leaderboard.1.rank', 2)
+            ->where('cohort_leaderboard.2.xp', 500)  // user1 is third
+            ->where('cohort_leaderboard.2.rank', 3)
+        );
+});
+
+test('leaderboard shows correct current user indicator', function () {
+    $cohort = Cohort::factory()->create();
+
+    $currentUser = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 800]);
+    $currentUser->assignRole('student');
+
+    $otherUser = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1200]);
+    $otherUser->assignRole('student');
+
+    $this->actingAs($currentUser)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('cohort_leaderboard', 2)
+            ->where('cohort_leaderboard.0.isCurrentUser', false) // otherUser is first
+            ->where('cohort_leaderboard.1.isCurrentUser', true)  // currentUser is second
+        );
+});
+
+test('completing daily task awards XP and updates leaderboard position', function () {
+    $cohort = Cohort::factory()->create();
+
+    // Create user initially with lower XP
+    $user = User::factory()->create([
+        'cohort_id' => $cohort->id,
+        'total_xp' => 500,
+    ]);
+    $user->assignRole('student');
+
+    // Create competitor with slightly higher XP
+    $competitor = User::factory()->create([
+        'cohort_id' => $cohort->id,
+        'total_xp' => 520,
+    ]);
+    $competitor->assignRole('student');
+
+    // Use the same timezone as the dashboard controller
+    $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
+    $taskToday = now($taskTimezone)->toDateString();
+
+    // Create a task worth enough XP to overtake competitor
+    $task = DailyTask::factory()->for($user)->create([
+        'is_completed' => false,
+        'xp_reward' => 50,
+        'due_date' => $taskToday,
+    ]);
+
+    // Verify initial rank - user should be rank 2 (competitor has more XP)
+    expect($user->cohortRank())->toBe(2);
+
+    // Complete the task
+    $this->actingAs($user)
+        ->patch(route('tasks.toggle', $task), ['completed' => true])
+        ->assertRedirect();
+
+    // Refresh user and verify XP was awarded (at least task XP, may include achievement bonuses)
+    $user->refresh();
+    expect($user->total_xp)->toBeGreaterThanOrEqual(550);
+
+    // User should now be rank 1 (at least 550 > 520)
+    expect($user->cohortRank())->toBe(1);
+
+    // Verify dashboard shows updated leaderboard with user at rank 1
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('cohort_leaderboard', 2)
+            ->where('cohort_leaderboard.0.id', $user->id)
+            ->where('cohort_leaderboard.0.isCurrentUser', true)
+            ->where('current_user_rank', 1)
         );
 });
