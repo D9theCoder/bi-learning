@@ -102,9 +102,8 @@ class DashboardController extends Controller
         usort($studentCalendar, fn ($a, $b) => strcmp($a['date'], $b['date']));
         $studentCalendar = array_slice($studentCalendar, 0, 8);
 
-        // Get today's tasks (using configured timezone)
-        $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
-        $taskToday = now($taskTimezone)->toDateString();
+        // Get today's tasks (using configured timezone with reset time logic)
+        $taskToday = app(\App\Services\DailyTaskGeneratorService::class)->getTaskDate()->toDateString();
         $todayTasks = $user->dailyTasks()
             ->with('lesson')
             ->whereDate('due_date', $taskToday)

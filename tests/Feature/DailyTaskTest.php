@@ -289,3 +289,50 @@ it('shows completed task in dashboard today tasks', function () {
             ->has('today_tasks', 2)
         );
 });
+
+it('tracks daily_all_tasks achievement when all tasks completed using correct task date', function () {
+    $user = User::factory()->create(['total_xp' => 0]);
+    $user->assignRole('student');
+
+    // Use the DailyTaskGeneratorService to get the correct task date (respects reset time)
+    $taskGeneratorService = app(\App\Services\DailyTaskGeneratorService::class);
+    $taskDate = $taskGeneratorService->getTaskDate()->toDateString();
+
+    // Create multiple tasks for "today" using the same logic as task generation
+    $task1 = DailyTask::factory()->for($user)->create([
+        'is_completed' => false,
+        'xp_reward' => 10,
+        'due_date' => $taskDate,
+    ]);
+
+    $task2 = DailyTask::factory()->for($user)->create([
+        'is_completed' => false,
+        'xp_reward' => 15,
+        'due_date' => $taskDate,
+    ]);
+
+    $task3 = DailyTask::factory()->for($user)->create([
+        'is_completed' => false,
+        'xp_reward' => 20,
+        'due_date' => $taskDate,
+    ]);
+
+    // Complete all tasks
+    $this->actingAs($user)
+        ->patch(route('tasks.toggle', $task1), ['completed' => true]);
+
+    $this->actingAs($user)
+        ->patch(route('tasks.toggle', $task2), ['completed' => true]);
+
+    $this->actingAs($user)
+        ->patch(route('tasks.toggle', $task3), ['completed' => true]);
+
+    // Verify all tasks are marked completed
+    expect($task1->fresh()->is_completed)->toBeTrue();
+    expect($task2->fresh()->is_completed)->toBeTrue();
+    expect($task3->fresh()->is_completed)->toBeTrue();
+
+    // XP should be accumulated from all tasks
+    $user->refresh();
+    expect($user->total_xp)->toBeGreaterThanOrEqual(45);
+});

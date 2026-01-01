@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CourseContentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseManagementController;
 use App\Http\Controllers\DailyTaskController;
@@ -101,6 +102,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:student|admin|tutor')
         ->whereNumber('lesson')
         ->name('lessons.attend');
+    Route::post('contents/{content}/complete', [CourseContentController::class, 'markComplete'])
+        ->whereNumber('content')
+        ->name('contents.complete');
     Route::post('assessments/{assessment}/score', [CourseController::class, 'updateScore'])
         ->middleware('role:tutor|admin')
         ->name('assessments.score');

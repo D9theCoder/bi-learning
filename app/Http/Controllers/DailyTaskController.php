@@ -151,7 +151,7 @@ class DailyTaskController extends Controller
      */
     protected function checkDailyTasksComplete($user): void
     {
-        $taskToday = now(config('gamification.daily_tasks.timezone', 'Asia/Jakarta'))->toDateString();
+        $taskToday = $this->taskGeneratorService->getTaskDate()->toDateString();
         $todayTasks = $user->dailyTasks()->whereDate('due_date', $taskToday)->get();
 
         if ($todayTasks->isEmpty()) {
