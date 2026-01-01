@@ -40,7 +40,9 @@ export function QuizSettingsCard({
   ];
 
   const generalErrors = Object.entries(form.errors ?? {})
-    .filter(([field, message]) => Boolean(message) && !handledErrors.includes(field))
+    .filter(
+      ([field, message]) => Boolean(message) && !handledErrors.includes(field),
+    )
     .map(([, message]) => message as string);
 
   return (

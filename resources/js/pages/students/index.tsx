@@ -9,7 +9,9 @@ import { Head, router } from '@inertiajs/react';
 import { GraduationCap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Students', href: '/students' }];
+const breadcrumbs: BreadcrumbItem[] = [
+  { title: 'Students', href: '/students' },
+];
 
 export default function StudentsPage({ students, filters }: StudentsPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search ?? '');

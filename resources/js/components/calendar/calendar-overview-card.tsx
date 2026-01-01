@@ -1,5 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarCheck, CheckCircle2, Clock, Video, XCircle } from 'lucide-react';
+import {
+  CalendarCheck,
+  CheckCircle2,
+  Clock,
+  Video,
+  XCircle,
+} from 'lucide-react';
 
 interface CalendarOverviewCardProps {
   stats: {

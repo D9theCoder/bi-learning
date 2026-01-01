@@ -20,7 +20,10 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
   }
 
   return (
-    <Card noPadding className="group relative overflow-hidden transition-all hover:shadow-md">
+    <Card
+      noPadding
+      className="group relative overflow-hidden transition-all hover:shadow-md"
+    >
       <CardContent className="flex gap-4 p-0">
         {/* Course Thumbnail */}
         <div className="relative size-32 shrink-0 overflow-hidden">
@@ -42,11 +45,14 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {course.category && (
-                <Badge variant="outline" className="h-5 shrink-0 px-1.5 py-0 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="h-5 shrink-0 px-1.5 py-0 text-[10px]"
+                >
                   {course.category}
                 </Badge>
               )}
-              <h3 className="line-clamp-1 text-sm font-bold leading-none tracking-tight">
+              <h3 className="line-clamp-1 text-sm leading-none font-bold tracking-tight">
                 {course.title || 'Untitled Course'}
               </h3>
             </div>
@@ -73,16 +79,21 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
               <div className="flex items-center gap-1.5">
                 <CalendarIcon className="size-3.5" />
                 <span>
-                  {new Date(next_lesson.meeting_start_time).toLocaleDateString()}
+                  {new Date(
+                    next_lesson.meeting_start_time,
+                  ).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="size-3.5" />
                 <span>
-                  {new Date(next_lesson.meeting_start_time).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {new Date(next_lesson.meeting_start_time).toLocaleTimeString(
+                    [],
+                    {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    },
+                  )}
                 </span>
               </div>
             </div>

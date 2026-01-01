@@ -69,7 +69,7 @@ export const StudentCalendarSection = memo(
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                          'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
                           item.category === 'meeting'
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
                             : 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',

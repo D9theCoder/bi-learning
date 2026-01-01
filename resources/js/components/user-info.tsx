@@ -31,12 +31,12 @@ export function UserInfo({
         )}
       </div>
       {roles && roles.length > 0 && (
-        <div className="flex flex-wrap gap-1 items-center">
+        <div className="flex flex-wrap items-center gap-1">
           {roles.map((role) => (
             <Badge
               key={role}
               variant="secondary"
-              className="capitalize text-xs"
+              className="text-xs capitalize"
             >
               {role}
             </Badge>

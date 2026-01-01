@@ -44,7 +44,9 @@ export function CourseDetailsForm({
   ];
 
   const generalErrors = Object.entries(form.errors ?? {})
-    .filter(([field, message]) => Boolean(message) && !fieldErrorKeys.includes(field))
+    .filter(
+      ([field, message]) => Boolean(message) && !fieldErrorKeys.includes(field),
+    )
     .map(([, message]) => message as string);
 
   return (
@@ -93,7 +95,9 @@ export function CourseDetailsForm({
             aria-invalid={Boolean(form.errors.description)}
           />
           {form.errors.description ? (
-            <p className="text-xs text-destructive">{form.errors.description}</p>
+            <p className="text-xs text-destructive">
+              {form.errors.description}
+            </p>
           ) : null}
         </div>
 
@@ -115,7 +119,9 @@ export function CourseDetailsForm({
               ))}
             </select>
             {form.errors.difficulty ? (
-              <p className="text-xs text-destructive">{form.errors.difficulty}</p>
+              <p className="text-xs text-destructive">
+                {form.errors.difficulty}
+              </p>
             ) : null}
           </div>
           <div className="space-y-2">
@@ -147,7 +153,9 @@ export function CourseDetailsForm({
               aria-invalid={Boolean(form.errors.thumbnail)}
             />
             {form.errors.thumbnail ? (
-              <p className="text-xs text-destructive">{form.errors.thumbnail}</p>
+              <p className="text-xs text-destructive">
+                {form.errors.thumbnail}
+              </p>
             ) : null}
           </div>
         </div>

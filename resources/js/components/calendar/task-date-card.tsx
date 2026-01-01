@@ -37,14 +37,14 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
 
   return (
     <div className={cn('space-y-0.5', isPast && 'opacity-60')}>
-      <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
         {new Date(date).toLocaleDateString('en-US', {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
         })}
         {isOverdue && (
-          <Badge variant="destructive" className="h-3.5 px-1 text-[8px]">
+          <Badge variant="destructive" className="h-3.5 px-1 text-[10px]">
             Late
           </Badge>
         )}
@@ -54,7 +54,7 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
           <div
             key={`${task.category}-${task.id}`}
             className={cn(
-              'flex items-center gap-1.5 border-l-2 bg-muted/10 py-1 px-1.5 text-[11px]',
+              'flex items-center gap-1.5 border-l-2 bg-muted/10 px-1.5 py-1 text-sm',
               getCategoryColor(task.category),
             )}
           >
@@ -68,7 +68,7 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
               {task.title}
             </span>
             {task.time && (
-              <span className="text-[9px] text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
                 {task.time}
               </span>
             )}

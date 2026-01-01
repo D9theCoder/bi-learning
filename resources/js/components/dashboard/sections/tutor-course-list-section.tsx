@@ -37,7 +37,11 @@ export const TutorCourseListSection = memo(
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {courses.map((course) => (
-            <Card noPadding key={course.id} className="group relative overflow-hidden">
+            <Card
+              noPadding
+              key={course.id}
+              className="group relative overflow-hidden"
+            >
               <CardContent className="flex gap-4 p-0">
                 {/* Course Thumbnail */}
                 <div className="relative size-32 shrink-0 overflow-hidden">

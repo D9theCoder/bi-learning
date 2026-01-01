@@ -172,7 +172,8 @@ export function MiniCalendar({
                 onClick={() => onDateSelect?.(dayObj.date)}
                 className={cn(
                   'relative flex h-8 w-full items-center justify-center rounded-md text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                  !dayObj.isCurrentMonth && 'text-muted-foreground/50 opacity-50',
+                  !dayObj.isCurrentMonth &&
+                    'text-muted-foreground/50 opacity-50',
                   isSelected &&
                     'bg-primary font-medium text-primary-foreground hover:bg-primary/90',
                   !isSelected &&

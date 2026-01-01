@@ -1,8 +1,7 @@
 import { TaskDateCard } from '@/components/calendar/task-date-card';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CalendarTask } from '@/types';
-import { CalendarDays, Clock, FileText, Video } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 
 interface CalendarTaskListProps {
   isFiltered: boolean;
@@ -13,23 +12,31 @@ interface CalendarTaskListProps {
 
 export function CalendarTaskList({
   isFiltered,
-  activeDateLabel,
   filteredDates,
   tasksByDate,
 }: CalendarTaskListProps) {
   return (
-    <Card className="h-fit rounded-none">
+    <Card className="h-fit px-4">
       <CardHeader className="px-3 py-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-1.5 text-sm">
+          <CardTitle className="flex items-center gap-1.5 text-base">
             <CalendarDays className="size-3.5 text-primary" />
             {isFiltered ? 'Selected' : 'Scheduled'}
           </CardTitle>
           {/* Legend */}
-          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
-            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-blue-500" />Meet</span>
-            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-orange-500" />Assess</span>
-            <span className="flex items-center gap-0.5"><span className="size-1.5 bg-green-500" />Task</span>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <span className="size-1.5 bg-blue-500" />
+              Meet
+            </span>
+            <span className="flex items-center gap-0.5">
+              <span className="size-1.5 bg-orange-500" />
+              Assess
+            </span>
+            <span className="flex items-center gap-0.5">
+              <span className="size-1.5 bg-green-500" />
+              Task
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -39,7 +46,7 @@ export function CalendarTaskList({
             <TaskDateCard key={date} date={date} tasks={tasksByDate[date]} />
           ))
         ) : (
-          <div className="flex items-center justify-center gap-1.5 py-2 text-center text-[10px] text-muted-foreground">
+          <div className="flex items-center justify-center gap-1.5 py-2 text-center text-sm text-muted-foreground">
             <CalendarDays className="size-3.5" />
             {isFiltered ? 'No items' : 'Clear'}
           </div>

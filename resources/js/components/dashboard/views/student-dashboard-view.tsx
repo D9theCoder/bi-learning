@@ -72,7 +72,6 @@ export function StudentDashboardView({
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
-
           {/* Today's Tasks */}
           <DashboardErrorBoundary>
             {isLoading ? (
@@ -88,7 +87,7 @@ export function StudentDashboardView({
               <StudentCalendarSection items={studentCalendar} />
             </DashboardErrorBoundary>
           )}
-          
+
           {/* My Courses */}
           <DashboardErrorBoundary>
             {isLoading ? (

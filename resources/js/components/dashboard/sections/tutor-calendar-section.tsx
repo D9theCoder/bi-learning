@@ -29,17 +29,19 @@ export const TutorCalendarSection = memo(
           ) : (
             <div className="flex flex-col gap-3">
               {/* Legend */}
-              <div className="flex items-center gap-4 border-b pb-2 mb-1">
+              <div className="mb-1 flex items-center gap-4 border-b pb-2">
                 <div className="flex items-center gap-1.5">
                   <div className="size-2.5 rounded-full bg-blue-500" />
                   <span className="text-xs text-muted-foreground">Meeting</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="size-2.5 rounded-full bg-orange-500" />
-                  <span className="text-xs text-muted-foreground">Assessment</span>
+                  <span className="text-xs text-muted-foreground">
+                    Assessment
+                  </span>
                 </div>
               </div>
-              
+
               {items.map((item) => (
                 <div
                   key={`${item.category}-${item.id}`}
@@ -47,7 +49,7 @@ export const TutorCalendarSection = memo(
                     'flex items-start justify-between gap-3 border-l-2 bg-muted/30 p-3',
                     item.category === 'meeting'
                       ? 'border-l-blue-500'
-                      : 'border-l-orange-500'
+                      : 'border-l-orange-500',
                   )}
                 >
                   <div className="flex flex-col gap-1">
@@ -66,10 +68,10 @@ export const TutorCalendarSection = memo(
                     </span>
                     <span
                       className={cn(
-                        'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                        'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
                         item.category === 'meeting'
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300'
+                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
                       )}
                     >
                       {item.type}

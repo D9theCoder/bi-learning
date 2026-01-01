@@ -108,7 +108,9 @@ export const DashboardSidebar = memo(
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="font-semibold">{achievement.name}</p>
+                              <p className="font-semibold">
+                                {achievement.name}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {achievement.description}
                               </p>

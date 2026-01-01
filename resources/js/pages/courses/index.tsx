@@ -19,7 +19,11 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-export default function CoursesPage({ courses, filters, enrolled_courses }: CoursesPageProps) {
+export default function CoursesPage({
+  courses,
+  filters,
+  enrolled_courses,
+}: CoursesPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const { isAdmin, isStudent, isTutor } = useRoles();
   const canManageCourses = isAdmin || isTutor;
@@ -64,7 +68,7 @@ export default function CoursesPage({ courses, filters, enrolled_courses }: Cour
           />
           {canManageCourses && (
             <Button className="self-start" size="sm" asChild>
-                <Link href="/courses/manage/create">
+              <Link href="/courses/manage/create">
                 <Plus className="mr-2 size-4" />
                 Add Course
               </Link>
@@ -73,7 +77,10 @@ export default function CoursesPage({ courses, filters, enrolled_courses }: Cour
         </div>
 
         {isStudent && (
-          <section aria-labelledby="enrolled-courses-heading" className="space-y-4">
+          <section
+            aria-labelledby="enrolled-courses-heading"
+            className="space-y-4"
+          >
             <div className="flex items-center justify-between gap-4">
               <h2
                 id="enrolled-courses-heading"
@@ -95,7 +102,10 @@ export default function CoursesPage({ courses, filters, enrolled_courses }: Cour
           </section>
         )}
 
-        <section aria-labelledby="available-courses-heading" className="space-y-4">
+        <section
+          aria-labelledby="available-courses-heading"
+          className="space-y-4"
+        >
           {isStudent && (
             <h2
               id="available-courses-heading"
