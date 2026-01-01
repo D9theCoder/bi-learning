@@ -14,8 +14,8 @@ import {
   Lesson,
   User,
 } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { AssessmentTab, AttendanceTab, GradebookTab, ScoringTab } from './tabs';
 
 interface CourseShowProps {
@@ -40,13 +40,31 @@ export default function CourseShow({
   assessments = [],
   submissions = [],
 }: CourseShowProps) {
-  const [activeSessionId, setActiveSessionId] = useState<string>(
-    course.lessons.length > 0 ? course.lessons[0].id.toString() : '',
-  );
+  // Read initial session from URL query parameter
+  const getInitialSessionId = (): string => {
+    if (typeof window === 'undefined')
+      return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionParam = params.get('session');
+
+    if (
+      sessionParam &&
+      course.lessons.some((l) => l.id.toString() === sessionParam)
+    ) {
+      return sessionParam;
+    }
+
+    return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
+  };
+
+  const [activeSessionId, setActiveSessionId] =
+    useState<string>(getInitialSessionId);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const { isAdmin } = useRoles();
   const page = usePage<{ auth?: { user?: { id: number } } }>();
   const currentUserId = page.props.auth?.user?.id;
+
   const canManageCourse =
     isAdmin ||
     (isTutor &&
@@ -54,6 +72,34 @@ export default function CourseShow({
       course.instructor_id === currentUserId);
 
   const canViewContent = isAdmin || canManageCourse || isEnrolled;
+
+  const handleSessionChange = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+
+    // Update URL with new session parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set('session', sessionId);
+
+    router.get(
+      url.pathname + url.search,
+      {},
+      {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      },
+    );
+  };
+
+  // Listen to browser navigation changes
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSessionId(getInitialSessionId());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,
@@ -82,7 +128,7 @@ export default function CourseShow({
             <SessionTabContent
               lessons={course.lessons}
               activeSessionId={activeSessionId}
-              onSessionChange={setActiveSessionId}
+              onSessionChange={handleSessionChange}
               activeSession={activeSession}
               canViewContent={canViewContent}
               canManageCourse={canManageCourse}

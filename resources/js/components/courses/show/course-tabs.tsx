@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { router } from '@inertiajs/react';
 import {
   BookOpen,
   CalendarCheck,
@@ -7,6 +8,7 @@ import {
   Star,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 
 interface CourseTabsProps {
   sessionContent: ReactNode;
@@ -16,6 +18,21 @@ interface CourseTabsProps {
   attendanceContent: ReactNode;
 }
 
+type TabValue =
+  | 'session'
+  | 'assessment'
+  | 'gradebook'
+  | 'scoring'
+  | 'attendance';
+
+const validTabs: TabValue[] = [
+  'session',
+  'assessment',
+  'gradebook',
+  'scoring',
+  'attendance',
+];
+
 export function CourseTabs({
   sessionContent,
   assessmentContent,
@@ -23,8 +40,56 @@ export function CourseTabs({
   scoringContent,
   attendanceContent,
 }: CourseTabsProps) {
+  // Read initial tab from URL query parameter
+  const getInitialTab = (): TabValue => {
+    if (typeof window === 'undefined') return 'session';
+
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab') as TabValue | null;
+
+    // Validate tab parameter
+    if (tabParam && validTabs.includes(tabParam)) {
+      return tabParam;
+    }
+
+    return 'session';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabValue>(getInitialTab);
+
+  // Sync tab changes to URL
+  const handleTabChange = (value: string) => {
+    const newTab = value as TabValue;
+    setActiveTab(newTab);
+
+    // Update URL with new tab parameter using Inertia router
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', newTab);
+
+    router.get(
+      url.pathname + url.search,
+      {},
+      {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      },
+    );
+  };
+
+  // Listen to browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const newTab = getInitialTab();
+      setActiveTab(newTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   return (
-    <Tabs defaultValue="session" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="border-b">
         <TabsList className="flex h-auto w-full flex-wrap items-center justify-start gap-0 rounded-none bg-transparent p-0">
           <TabsTrigger
