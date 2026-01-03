@@ -25,7 +25,7 @@ class TutorController extends Controller
             ->values();
 
         // Query tutors using Spatie Laravel Permission or fallback to enrolled instructors
-        $query = User::query()->with('cohort');
+        $query = User::query();
 
         if ($instructorIds->isNotEmpty()) {
             // Only show instructors tied to the student's enrollments (role is optional)
@@ -40,10 +40,6 @@ class TutorController extends Controller
             $query->where('name', 'like', "%{$filters['search']}%");
         }
 
-        if (! empty($filters['cohort_id'])) {
-            $query->where('cohort_id', $filters['cohort_id']);
-        }
-
         if (! empty($filters['expertise'])) {
             // Assuming expertise is stored as JSON or similar
             $query->whereJsonContains('expertise', $filters['expertise']);
@@ -56,10 +52,6 @@ class TutorController extends Controller
                 'id' => $tutor->id,
                 'name' => $tutor->name,
                 'avatar' => $tutor->avatar,
-                'cohort' => $tutor->cohort ? [
-                    'id' => $tutor->cohort->id,
-                    'name' => $tutor->cohort->name,
-                ] : null,
                 'expertise' => $tutor->expertise ?? [],
                 'rating' => $tutor->rating ?? null,
             ];

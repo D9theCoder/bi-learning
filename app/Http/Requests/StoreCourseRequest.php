@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\CourseCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCourseRequest extends FormRequest
 {
@@ -32,7 +34,8 @@ class StoreCourseRequest extends FormRequest
             'thumbnail' => ['nullable', 'string', 'max:255'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'difficulty' => ['nullable', 'in:beginner,intermediate,advanced'],
-            'category' => ['nullable', 'string', 'max:100'],
+            // !Locked STEM categories only.
+            'category' => ['required', Rule::enum(CourseCategory::class)],
             'is_published' => ['sometimes', 'boolean'],
             'instructor_id' => ['nullable', 'exists:users,id'],
         ];

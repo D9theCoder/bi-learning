@@ -15,9 +15,8 @@ interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-interface CohortLeaderboardProps {
+interface LeaderboardProps {
   entries: LeaderboardEntry[];
-  cohortName?: string;
   className?: string;
 }
 
@@ -47,17 +46,16 @@ const getRankColor = (rank: number) => {
   }
 };
 
-export function CohortLeaderboard({
+export function Leaderboard({
   entries,
-  cohortName,
   className,
-}: CohortLeaderboardProps) {
+}: LeaderboardProps) {
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="text-lg font-semibold">Leaderboard</span>
-          {cohortName && <Badge variant="outline">{cohortName}</Badge>}
+          <Badge variant="outline">Global</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>

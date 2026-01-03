@@ -18,10 +18,6 @@ interface StudentCardProps {
     name: string;
     email?: string;
     avatar?: string;
-    cohort?: {
-      id: number;
-      name: string;
-    };
   };
 }
 
@@ -36,9 +32,6 @@ export function StudentCard({ student }: StudentCardProps) {
           </Avatar>
           <div className="flex-1">
             <CardTitle className="text-base">{student.name}</CardTitle>
-            {student.cohort && (
-              <CardDescription>{student.cohort.name}</CardDescription>
-            )}
           </div>
         </div>
       </CardHeader>

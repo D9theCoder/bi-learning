@@ -39,7 +39,6 @@ export interface User {
   avatar?: string;
   email_verified_at: string | null;
   two_factor_enabled?: boolean;
-  cohort_id?: number;
   total_xp?: number;
   level?: number;
   points_balance?: number;
@@ -240,13 +239,6 @@ export interface PowerupUsage {
   slug: string;
   used_at?: string | null;
   details?: Record<string, unknown> | null;
-}
-
-export interface Cohort {
-  id: number;
-  name: string;
-  description?: string;
-  created_at: string;
 }
 
 export interface WeeklyActivityDataPoint {
@@ -481,6 +473,7 @@ export interface EditCoursePageProps {
       })
     | null;
   mode: 'create' | 'edit';
+  categories: Array<{ value: string; label: string }>;
 }
 
 export interface MessagesPageProps {
@@ -550,17 +543,12 @@ export interface TutorsPageProps {
   filters: {
     search?: string;
     expertise?: string;
-    cohort_id?: number;
   };
   tutors: {
     data: Array<{
       id: number;
       name: string;
       avatar?: string;
-      cohort?: {
-        id: number;
-        name: string;
-      };
       expertise?: string[];
       rating?: number;
     }>;
@@ -574,7 +562,6 @@ export interface TutorsPageProps {
 export interface StudentsPageProps {
   filters: {
     search?: string;
-    cohort_id?: number;
   };
   students: {
     data: Array<{
@@ -582,10 +569,6 @@ export interface StudentsPageProps {
       name: string;
       email?: string;
       avatar?: string;
-      cohort?: {
-        id: number;
-        name: string;
-      };
     }>;
     current_page: number;
     last_page: number;

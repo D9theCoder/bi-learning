@@ -27,11 +27,6 @@ class DashboardController extends Controller
         $isTutor = $user->hasRole('tutor');
         $isAdmin = $user->hasRole('admin');
 
-        // Load all relationships needed for dashboard
-        $user->load([
-            'cohort',
-        ]);
-
         // Get level progress data
         $levelProgress = $this->gamificationService->getLevelProgress($user);
 
@@ -125,29 +120,25 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        // Get cohort leaderboard
-        $cohortLeaderboard = [];
-        $currentUserRank = null;
+        // Get global leaderboard
+        $globalLeaderboard = User::query()
+            ->orderByDesc('total_xp')
+            ->limit(10)
+            ->get()
+            ->map(function ($u, $index) use ($user) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'avatar' => $u->avatar,
+                    'xp' => $u->total_xp,
+                    'level' => $u->level ?? 1,
+                    'rank' => $index + 1,
+                    'isCurrentUser' => $u->id === $user->id,
+                ];
+            });
 
-        if ($user->cohort_id) {
-            $cohortLeaderboard = User::where('cohort_id', $user->cohort_id)
-                ->orderByDesc('total_xp')
-                ->limit(10)
-                ->get()
-                ->map(function ($u, $index) use ($user) {
-                    return [
-                        'id' => $u->id,
-                        'name' => $u->name,
-                        'avatar' => $u->avatar,
-                        'xp' => $u->total_xp,
-                        'level' => $u->level ?? 1,
-                        'rank' => $index + 1,
-                        'isCurrentUser' => $u->id === $user->id,
-                    ];
-                });
-
-            $currentUserRank = $user->cohortRank();
-        }
+        $userTotalXp = $user->total_xp ?? 0;
+        $currentUserRank = User::where('total_xp', '>', $userTotalXp)->count() + 1;
 
         $tutorData = null;
 
@@ -346,7 +337,7 @@ class DashboardController extends Controller
             'recent_activity' => $recentActivity,
             'tutor_messages' => $tutorMessages,
             'unread_message_count' => $user->tutorMessages()->where('is_read', false)->count(),
-            'cohort_leaderboard' => $cohortLeaderboard,
+            'global_leaderboard' => $globalLeaderboard,
             'current_user_rank' => $currentUserRank,
             'weekly_activity_data' => collect($user->weeklyActivityChartData())->map(fn ($item) => [
                 'name' => $item['day'],

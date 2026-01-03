@@ -28,7 +28,7 @@ class StudentController extends Controller
             ->unique()
             ->values();
 
-        $query = User::query()->with('cohort');
+        $query = User::query();
 
         if ($studentIds->isNotEmpty()) {
             $query->whereIn('id', $studentIds);
@@ -40,10 +40,6 @@ class StudentController extends Controller
             $query->where('name', 'like', "%{$filters['search']}%");
         }
 
-        if (! empty($filters['cohort_id'])) {
-            $query->where('cohort_id', $filters['cohort_id']);
-        }
-
         $students = $query->paginate(12)->withQueryString();
 
         $students = $students->through(function ($student) {
@@ -52,10 +48,6 @@ class StudentController extends Controller
                 'name' => $student->name,
                 'email' => $student->email,
                 'avatar' => $student->avatar,
-                'cohort' => $student->cohort ? [
-                    'id' => $student->cohort->id,
-                    'name' => $student->cohort->name,
-                ] : null,
             ];
         });
 

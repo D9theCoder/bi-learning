@@ -15,7 +15,6 @@ class FilterStudentsRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:100'],
-            'cohort_id' => ['nullable', 'exists:cohorts,id'],
         ];
     }
 }

@@ -34,7 +34,7 @@ interface StudentDashboardViewProps {
   weeklyActivityData: { name: string; value: number }[];
   recentAchievements: Achievement[];
   nextMilestone: Achievement | null;
-  cohortLeaderboard: LeaderboardEntry[];
+  globalLeaderboard: LeaderboardEntry[];
   tutorMessages: TutorMessage[];
   unreadMessageCount: number;
   recentActivity: Activity[];
@@ -50,7 +50,7 @@ export function StudentDashboardView({
   weeklyActivityData,
   recentAchievements,
   nextMilestone,
-  cohortLeaderboard,
+  globalLeaderboard,
   tutorMessages,
   unreadMessageCount,
   recentActivity,
@@ -118,7 +118,7 @@ export function StudentDashboardView({
             stats={stats}
             recentAchievements={recentAchievements}
             nextMilestone={nextMilestone}
-            cohortLeaderboard={cohortLeaderboard}
+            globalLeaderboard={globalLeaderboard}
             tutorMessages={tutorMessages}
             unreadMessageCount={unreadMessageCount}
             recentActivity={recentActivity}

@@ -18,10 +18,6 @@ interface TutorCardProps {
     id: number;
     name: string;
     avatar?: string;
-    cohort?: {
-      id: number;
-      name: string;
-    };
     expertise?: string[];
     rating?: number;
   };
@@ -38,9 +34,6 @@ export function TutorCard({ tutor }: TutorCardProps) {
           </Avatar>
           <div className="flex-1">
             <CardTitle className="text-base">{tutor.name}</CardTitle>
-            {tutor.cohort && (
-              <CardDescription>{tutor.cohort.name}</CardDescription>
-            )}
           </div>
         </div>
       </CardHeader>

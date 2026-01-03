@@ -36,7 +36,7 @@ interface DashboardPageProps {
   recent_activity: Activity[];
   tutor_messages: TutorMessage[];
   unread_message_count: number;
-  cohort_leaderboard: LeaderboardEntry[];
+  global_leaderboard: LeaderboardEntry[];
   weekly_activity_data: { name: string; value: number }[];
   available_rewards?: Reward[];
   current_user_rank?: number | null;
@@ -53,7 +53,7 @@ export default function Dashboard({
   recent_activity,
   tutor_messages,
   unread_message_count,
-  cohort_leaderboard,
+  global_leaderboard,
   weekly_activity_data,
   tutor_dashboard,
 }: DashboardPageProps) {
@@ -81,7 +81,7 @@ export default function Dashboard({
   const enrolledCourses = enrolled_courses ?? [];
   const studentCalendar = student_calendar ?? [];
   const recentAchievements = recent_achievements ?? [];
-  const cohortLeaderboard = cohort_leaderboard ?? [];
+  const globalLeaderboard = global_leaderboard ?? [];
   const tutorMessages = tutor_messages ?? [];
   const recentActivity = recent_activity ?? [];
   const weeklyActivityData = weekly_activity_data ?? [];
@@ -134,7 +134,7 @@ export default function Dashboard({
           weeklyActivityData={weeklyActivityData}
           recentAchievements={recentAchievements}
           nextMilestone={nextMilestone}
-          cohortLeaderboard={cohortLeaderboard}
+          globalLeaderboard={globalLeaderboard}
           tutorMessages={tutorMessages}
           unreadMessageCount={unreadMessageCount}
           recentActivity={recentActivity}

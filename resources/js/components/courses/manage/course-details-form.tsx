@@ -24,12 +24,14 @@ type CourseFormData = {
 
 interface CourseDetailsFormProps {
   form: InertiaFormProps<CourseFormData>;
+  categories: Array<{ value: string; label: string }>;
   isEdit: boolean;
   onSubmit: () => void;
 }
 
 export function CourseDetailsForm({
   form,
+  categories,
   isEdit,
   onSubmit,
 }: CourseDetailsFormProps) {
@@ -71,13 +73,20 @@ export function CourseDetailsForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Input
+            <select
               id="category"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
               value={form.data.category}
               onChange={(e) => form.setData('category', e.target.value)}
-              placeholder="e.g. Programming"
               aria-invalid={Boolean(form.errors.category)}
-            />
+            >
+              <option value="">Select category</option>
+              {categories.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             {form.errors.category ? (
               <p className="text-xs text-destructive">{form.errors.category}</p>
             ) : null}

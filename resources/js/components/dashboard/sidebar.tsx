@@ -1,5 +1,5 @@
 import { AchievementBadge } from '@/components/dashboard/achievement-badge';
-import { CohortLeaderboard } from '@/components/dashboard/cohort-leaderboard';
+import { Leaderboard } from '@/components/dashboard/leaderboard';
 import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
 import { LevelProgressBar } from '@/components/dashboard/level-progress-bar';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed';
@@ -25,7 +25,7 @@ interface DashboardSidebarProps {
   stats: LearningStats;
   recentAchievements: Achievement[];
   nextMilestone: Achievement | null;
-  cohortLeaderboard: LeaderboardEntry[];
+  globalLeaderboard: LeaderboardEntry[];
   tutorMessages: TutorMessage[];
   unreadMessageCount: number;
   recentActivity: Activity[];
@@ -36,7 +36,7 @@ export const DashboardSidebar = memo(
     stats,
     recentAchievements,
     nextMilestone,
-    cohortLeaderboard,
+    globalLeaderboard,
     tutorMessages,
     unreadMessageCount,
     recentActivity,
@@ -191,10 +191,10 @@ export const DashboardSidebar = memo(
         </section>
       </DashboardErrorBoundary>
 
-      {/* Cohort Leaderboard */}
-      {cohortLeaderboard.length > 0 && (
+      {/* Global Leaderboard */}
+      {globalLeaderboard.length > 0 && (
         <DashboardErrorBoundary>
-          <CohortLeaderboard entries={cohortLeaderboard} />
+          <Leaderboard entries={globalLeaderboard} />
         </DashboardErrorBoundary>
       )}
 

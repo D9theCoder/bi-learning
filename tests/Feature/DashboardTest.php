@@ -2,12 +2,12 @@
 
 use App\Models\Achievement;
 use App\Models\Assessment;
-use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\User;
+use App\Services\DailyTaskGeneratorService;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -53,9 +53,7 @@ test('tutors can visit the dashboard', function () {
 });
 
 test('dashboard displays user statistics', function () {
-    $cohort = Cohort::factory()->create();
     $user = User::factory()->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => 2500,
         'level' => 8,
         'points_balance' => 850,
@@ -96,8 +94,7 @@ test('dashboard displays today tasks', function () {
     $user->assignRole('student');
 
     // Use the same timezone as the dashboard controller
-    $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
-    $taskToday = now($taskTimezone)->toDateString();
+    $taskToday = app(DailyTaskGeneratorService::class)->getTaskDate()->toDateString();
 
     DailyTask::factory()->create([
         'user_id' => $user->id,
@@ -112,24 +109,20 @@ test('dashboard displays today tasks', function () {
         );
 });
 
-test('dashboard shows cohort leaderboard when user is in cohort', function () {
-    $cohort = Cohort::factory()->create();
+test('dashboard shows global leaderboard', function () {
     $user = User::factory()->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => 1000,
     ]);
     $user->assignRole('student');
 
-    // Create other users in cohort
     User::factory(5)->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => fake()->numberBetween(500, 2000),
     ]);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('cohort_leaderboard')
+            ->has('global_leaderboard')
             ->has('current_user_rank')
         );
 });
@@ -197,63 +190,55 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
 });
 
 test('leaderboard is sorted by XP descending', function () {
-    $cohort = Cohort::factory()->create();
-
     // Create users with known XP values
-    $user1 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 500]);
+    $user1 = User::factory()->create(['total_xp' => 7_000_000]);
     $user1->assignRole('student');
 
-    $user2 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1500]);
+    $user2 = User::factory()->create(['total_xp' => 9_000_000]);
     $user2->assignRole('student');
 
-    $user3 = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1000]);
+    $user3 = User::factory()->create(['total_xp' => 8_000_000]);
     $user3->assignRole('student');
 
     $this->actingAs($user1)
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('cohort_leaderboard', 3)
-            ->where('cohort_leaderboard.0.xp', 1500) // user2 is first
-            ->where('cohort_leaderboard.0.rank', 1)
-            ->where('cohort_leaderboard.1.xp', 1000) // user3 is second
-            ->where('cohort_leaderboard.1.rank', 2)
-            ->where('cohort_leaderboard.2.xp', 500)  // user1 is third
-            ->where('cohort_leaderboard.2.rank', 3)
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.xp', 9_000_000) // user2 is first
+            ->where('global_leaderboard.0.rank', 1)
+            ->where('global_leaderboard.1.xp', 8_000_000) // user3 is second
+            ->where('global_leaderboard.1.rank', 2)
+            ->where('global_leaderboard.2.xp', 7_000_000)  // user1 is third
+            ->where('global_leaderboard.2.rank', 3)
         );
 });
 
 test('leaderboard shows correct current user indicator', function () {
-    $cohort = Cohort::factory()->create();
-
-    $currentUser = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 800]);
+    $currentUser = User::factory()->create(['total_xp' => 8_000_000]);
     $currentUser->assignRole('student');
 
-    $otherUser = User::factory()->create(['cohort_id' => $cohort->id, 'total_xp' => 1200]);
+    $otherUser = User::factory()->create(['total_xp' => 9_000_000]);
     $otherUser->assignRole('student');
 
     $this->actingAs($currentUser)
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('cohort_leaderboard', 2)
-            ->where('cohort_leaderboard.0.isCurrentUser', false) // otherUser is first
-            ->where('cohort_leaderboard.1.isCurrentUser', true)  // currentUser is second
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.isCurrentUser', false) // otherUser is first
+            ->where('global_leaderboard.1.isCurrentUser', true)  // currentUser is second
         );
 });
 
 test('completing daily task awards XP and updates leaderboard position', function () {
-    $cohort = Cohort::factory()->create();
-
     // Create user initially with lower XP
     $user = User::factory()->create([
-        'cohort_id' => $cohort->id,
-        'total_xp' => 500,
+        'total_xp' => 9_000_000,
     ]);
     $user->assignRole('student');
 
     // Create competitor with slightly higher XP
     $competitor = User::factory()->create([
-        'cohort_id' => $cohort->id,
-        'total_xp' => 520,
+        'total_xp' => 9_000_100,
     ]);
     $competitor->assignRole('student');
 
@@ -264,12 +249,12 @@ test('completing daily task awards XP and updates leaderboard position', functio
     // Create a task worth enough XP to overtake competitor
     $task = DailyTask::factory()->for($user)->create([
         'is_completed' => false,
-        'xp_reward' => 50,
+        'xp_reward' => 200,
         'due_date' => $taskToday,
     ]);
 
-    // Verify initial rank - user should be rank 2 (competitor has more XP)
-    expect($user->cohortRank())->toBe(2);
+    $initialRank = User::where('total_xp', '>', $user->total_xp)->count() + 1;
+    expect($initialRank)->toBe(2);
 
     // Complete the task
     $this->actingAs($user)
@@ -278,18 +263,18 @@ test('completing daily task awards XP and updates leaderboard position', functio
 
     // Refresh user and verify XP was awarded (at least task XP, may include achievement bonuses)
     $user->refresh();
-    expect($user->total_xp)->toBeGreaterThanOrEqual(550);
+    expect($user->total_xp)->toBeGreaterThanOrEqual(9_000_200);
 
-    // User should now be rank 1 (at least 550 > 520)
-    expect($user->cohortRank())->toBe(1);
+    $updatedRank = User::where('total_xp', '>', $user->total_xp)->count() + 1;
+    expect($updatedRank)->toBe(1);
 
     // Verify dashboard shows updated leaderboard with user at rank 1
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('cohort_leaderboard', 2)
-            ->where('cohort_leaderboard.0.id', $user->id)
-            ->where('cohort_leaderboard.0.isCurrentUser', true)
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.id', $user->id)
+            ->where('global_leaderboard.0.isCurrentUser', true)
             ->where('current_user_rank', 1)
         );
 });

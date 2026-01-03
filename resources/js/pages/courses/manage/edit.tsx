@@ -6,7 +6,11 @@ import type { EditCoursePageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
-export default function EditCourse({ course, mode }: EditCoursePageProps) {
+export default function EditCourse({
+  course,
+  mode,
+  categories,
+}: EditCoursePageProps) {
   const isEdit = mode === 'edit';
   const form = useForm({
     title: course?.title ?? '',
@@ -55,6 +59,7 @@ export default function EditCourse({ course, mode }: EditCoursePageProps) {
 
         <CourseDetailsForm
           form={form}
+          categories={categories}
           isEdit={isEdit}
           onSubmit={submitCourse}
         />

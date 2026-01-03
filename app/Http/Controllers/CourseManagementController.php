@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CourseCategory;
 use App\Http\Requests\StoreCourseContentRequest;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\StoreLessonRequest;
@@ -73,6 +74,7 @@ class CourseManagementController extends Controller
         return Inertia::render('courses/manage/edit', [
             'course' => null,
             'mode' => 'create',
+            'categories' => CourseCategory::options(),
         ]);
     }
 
@@ -152,6 +154,7 @@ class CourseManagementController extends Controller
                 })->values(),
             ],
             'mode' => 'edit',
+            'categories' => CourseCategory::options(),
         ]);
     }
 

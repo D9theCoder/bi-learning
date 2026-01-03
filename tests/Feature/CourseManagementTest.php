@@ -105,6 +105,7 @@ it('includes lessons and contents in manage edit payload', function () {
         ->component('courses/manage/edit')
         ->where('course.lessons.0.title', 'Session 1')
         ->where('course.lessons.0.contents.0.title', 'Slides')
+        ->has('categories', 5)
     );
 });
 
@@ -121,7 +122,7 @@ it('allows admins to view management and create courses', function () {
         'title' => 'Admin Course',
         'description' => 'Admin created course',
         'difficulty' => 'beginner',
-        'category' => 'Testing',
+        'category' => 'Physics',
         'is_published' => true,
     ]);
 
@@ -130,6 +131,22 @@ it('allows admins to view management and create courses', function () {
         'title' => 'Admin Course',
         'instructor_id' => $admin->id,
     ]);
+});
+
+it('rejects invalid course categories', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post('/courses/manage', [
+        '_token' => csrf_token(),
+        'title' => 'Invalid Category',
+        'description' => 'Invalid category course',
+        'difficulty' => 'beginner',
+        'category' => 'History',
+        'is_published' => true,
+    ]);
+
+    $response->assertInvalid(['category']);
 });
 
 it('restricts students from course management', function () {
@@ -168,6 +185,7 @@ it('allows tutors to manage only their courses', function () {
         'title' => 'Updated Title',
         'description' => $ownCourse->description,
         'difficulty' => 'intermediate',
+        'category' => 'Chemistry',
         'is_published' => true,
     ])->assertRedirect();
 

@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Achievement;
 use App\Models\DailyTask;
-use App\Models\Cohort;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -15,18 +14,16 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        $cohorts = Cohort::all();
         $achievements = Achievement::all();
 
         // Create some random students for leaderboard
-        User::factory(20)->withoutTwoFactor()->create()->each(function ($user) use ($cohorts, $achievements) {
+        User::factory(20)->withoutTwoFactor()->create()->each(function ($user) use ($achievements) {
             $user->update([
-                'cohort_id' => $cohorts->random()->id,
                 'total_xp' => fake()->numberBetween(500, 8000),
                 'level' => fake()->numberBetween(1, 15),
                 'points_balance' => fake()->numberBetween(0, 3000),
             ]);
-            
+
             $user->assignRole('student');
 
             // Seed a couple of daily quests for the dashboard (today-focused)

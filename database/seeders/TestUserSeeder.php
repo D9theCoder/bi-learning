@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Achievement;
 use App\Models\Activity;
-use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
@@ -19,7 +18,6 @@ class TestUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $cohorts = Cohort::all();
         $achievements = Achievement::all();
         $courses = Course::all();
         $instructors = User::all();
@@ -29,7 +27,6 @@ class TestUserSeeder extends Seeder
             'name' => 'Super Admin',
             'email' => 'superadmin@gmail.com',
             'password' => 'password',
-            'cohort_id' => $cohorts->first()->id,
             'total_xp' => 10000,
             'level' => 20,
             'points_balance' => 5000,

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Assessment;
-use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Enrollment;
@@ -18,14 +17,11 @@ class FixedScenarioSeeder extends Seeder
     public function run(): void
     {
         // 1. Create fixed users
-        $cohort = Cohort::first() ?? Cohort::factory()->create();
-
         $student = User::firstOrCreate(
             ['email' => 'student@gmail.com'],
             [
                 'name' => 'Fixed Student',
                 'password' => 'password', // Mutator usually hashes this, or UserFactory does
-                'cohort_id' => $cohort->id,
                 'email_verified_at' => now(),
             ]
         );
@@ -36,7 +32,6 @@ class FixedScenarioSeeder extends Seeder
             [
                 'name' => 'Fixed Tutor',
                 'password' => 'password',
-                'cohort_id' => $cohort->id,
                 'email_verified_at' => now(),
             ]
         );

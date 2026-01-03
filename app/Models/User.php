@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -27,7 +26,6 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar',
-        'cohort_id',
         'total_xp',
         'level',
         'points_balance',
@@ -59,7 +57,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'cohort_id' => 'integer',
             'total_xp' => 'integer',
             'level' => 'integer',
             'points_balance' => 'integer',
@@ -67,11 +64,6 @@ class User extends Authenticatable
             'longest_streak' => 'integer',
             'last_activity_date' => 'date',
         ];
-    }
-
-    public function cohort(): BelongsTo
-    {
-        return $this->belongsTo(Cohort::class);
     }
 
     public function enrollments(): HasMany
@@ -190,19 +182,6 @@ class User extends Authenticatable
         }
 
         return $data;
-    }
-
-    public function cohortRank(): ?int
-    {
-        if (! $this->cohort_id) {
-            return null;
-        }
-
-        $rank = User::where('cohort_id', $this->cohort_id)
-            ->where('total_xp', '>', $this->total_xp)
-            ->count() + 1;
-
-        return $rank;
     }
 
     public function nextLessonForEnrollment(Enrollment $enrollment): ?Lesson
