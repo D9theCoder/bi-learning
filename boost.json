@@ -2,12 +2,14 @@
     "agents": [
         "copilot",
         "cursor",
-        "gemini"
+        "gemini",
+        "codex"
     ],
     "editors": [
         "copilot",
         "cursor",
-        "gemini"
+        "gemini",
+        "codex"
     ],
     "guidelines": [
         "laravel/fortify"
