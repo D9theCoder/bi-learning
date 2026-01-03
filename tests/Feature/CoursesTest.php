@@ -73,7 +73,7 @@ it('shows enrolled courses separately from available courses', function () {
         ->has('enrolled_courses', 1)
         ->where('enrolled_courses.0.id', $enrolledCourse->id)
         ->where('enrolled_courses.0.user_progress.progress_percentage', 50)
-        ->where('courses.data', function (array $data) use ($enrolledCourse, $otherCourse) {
+        ->where('courses.data', function ($data) use ($enrolledCourse, $otherCourse) {
             $ids = collect($data)->pluck('id');
 
             return $ids->contains($otherCourse->id) && ! $ids->contains($enrolledCourse->id);

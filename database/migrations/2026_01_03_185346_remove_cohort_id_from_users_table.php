@@ -14,6 +14,7 @@ return new class extends Migration
         if (Schema::hasColumn('users', 'cohort_id')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->dropForeign(['cohort_id']);
+                $table->dropIndex(['cohort_id']);
                 $table->dropColumn('cohort_id');
             });
         }

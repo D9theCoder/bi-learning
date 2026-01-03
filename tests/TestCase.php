@@ -11,14 +11,7 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        static $migrated = false;
-
-        if (! $migrated) {
-            Artisan::call('migrate', ['--no-interaction' => true]);
-            $migrated = true;
-        }
-
+        Artisan::call('migrate', ['--no-interaction' => true]);
         DB::beginTransaction();
     }
 
