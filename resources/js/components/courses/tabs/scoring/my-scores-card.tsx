@@ -10,7 +10,7 @@ interface MyScoresCardProps {
 
 export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <Card className="overflow-hidden py-4">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           My Scores

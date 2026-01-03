@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRoles } from '@/hooks/use-roles';
 import { router } from '@inertiajs/react';
 import {
   BookOpen,
@@ -40,6 +41,9 @@ export function CourseTabs({
   scoringContent,
   attendanceContent,
 }: CourseTabsProps) {
+  const { isAdmin, isTutor } = useRoles();
+  const canAccessGradebook = isAdmin || isTutor;
+
   // Read initial tab from URL query parameter
   const getInitialTab = (): TabValue => {
     if (typeof window === 'undefined') return 'session';
@@ -49,6 +53,9 @@ export function CourseTabs({
 
     // Validate tab parameter
     if (tabParam && validTabs.includes(tabParam)) {
+      if (tabParam === 'gradebook' && !canAccessGradebook) {
+        return 'session';
+      }
       return tabParam;
     }
 
@@ -106,13 +113,15 @@ export function CourseTabs({
             <ClipboardList className="mr-1.5 h-4 w-4" />
             Assessment
           </TabsTrigger>
-          <TabsTrigger
-            value="gradebook"
-            className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
-          >
-            <Star className="mr-1.5 h-4 w-4" />
-            Gradebook
-          </TabsTrigger>
+          {canAccessGradebook && (
+            <TabsTrigger
+              value="gradebook"
+              className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+            >
+              <Star className="mr-1.5 h-4 w-4" />
+              Gradebook
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="scoring"
             className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
@@ -138,9 +147,11 @@ export function CourseTabs({
         {assessmentContent}
       </TabsContent>
 
-      <TabsContent value="gradebook" className="mt-4">
-        {gradebookContent}
-      </TabsContent>
+      {canAccessGradebook && (
+        <TabsContent value="gradebook" className="mt-4">
+          {gradebookContent}
+        </TabsContent>
+      )}
 
       <TabsContent value="scoring" className="mt-4">
         {scoringContent}

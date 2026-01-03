@@ -33,7 +33,7 @@ export function QuizActionPanel({
     <>
       {bestAttempt && (
         <Card className="mb-4 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/10">
-          <CardContent className="pt-6">
+          <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-white">
                 <Trophy className="h-6 w-6" />
@@ -62,7 +62,7 @@ export function QuizActionPanel({
       )}
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           {isTutor ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">

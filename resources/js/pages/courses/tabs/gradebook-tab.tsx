@@ -44,13 +44,10 @@ export function GradebookTab({
     );
   }
 
+  // tutor view
   if (isTutor) {
     return (
       <GradebookTutorMatrix students={students} assessments={assessments} />
     );
   }
-
-  return (
-    <GradebookStudentGrid assessments={assessments} submissions={submissions} />
-  );
 }
