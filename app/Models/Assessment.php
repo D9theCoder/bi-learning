@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Assessment extends Model
@@ -60,6 +61,12 @@ class Assessment extends Model
     public function attempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);
+    }
+
+    public function powerups(): BelongsToMany
+    {
+        return $this->belongsToMany(Powerup::class)
+            ->withPivot('limit');
     }
 
     public function getBestAttemptForUser(int $userId): ?QuizAttempt

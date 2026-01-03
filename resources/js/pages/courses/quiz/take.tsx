@@ -1,13 +1,15 @@
 import {
+  QuizPowerupBar,
   QuizQuestionPanel,
   QuizSubmitDialog,
   QuizTakeSidebar,
 } from '@/components/courses/quiz';
+import { useQuizPowerups } from '@/hooks/use-quiz-powerups';
 import { useQuizTimer } from '@/hooks/use-quiz-timer';
 import AppLayout from '@/layouts/app-layout';
-import type { Course } from '@/types';
+import type { Course, Powerup, PowerupUsage } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface QuizQuestion {
   id: number;
@@ -26,6 +28,7 @@ interface QuizTakeProps {
     description?: string | null;
     time_limit_minutes?: number | null;
     max_score: number;
+    powerups?: Powerup[];
   };
   questions: QuizQuestion[];
   attempt: {
@@ -34,6 +37,7 @@ interface QuizTakeProps {
     started_at: string;
     remaining_time?: number | null;
   };
+  usedPowerups: PowerupUsage[];
 }
 
 export default function QuizTake({
@@ -41,6 +45,7 @@ export default function QuizTake({
   assessment,
   questions,
   attempt,
+  usedPowerups: initialUsedPowerups,
 }: QuizTakeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>(
@@ -60,13 +65,73 @@ export default function QuizTake({
     });
   }, [answers, course.id, assessment.id]);
 
-  const { remainingTime, isSaving } = useQuizTimer({
+  const { remainingTime, isSaving, setRemainingTime } = useQuizTimer({
     initialRemainingTime: attempt.remaining_time ?? null,
     courseId: course.id,
     assessmentId: assessment.id,
     answers,
     onAutoSubmit: handleSubmit,
   });
+
+  const {
+    usedPowerups,
+    applyPowerup,
+    isUsing: isUsingPowerup,
+    error: powerupError,
+    clearError: clearPowerupError,
+  } = useQuizPowerups({
+    courseId: course.id,
+    assessmentId: assessment.id,
+    initialUsedPowerups,
+  });
+
+  const hiddenOptionsByQuestion = useMemo(() => {
+    const map = new Map<number, number[]>();
+
+    usedPowerups.forEach((usage) => {
+      if (usage.slug !== '50-50') {
+        return;
+      }
+
+      const details = usage.details as {
+        question_id?: number | string;
+        removed_options?: Array<number | string>;
+      };
+
+      if (!details?.question_id || !details.removed_options) {
+        return;
+      }
+
+      const questionId = Number(details.question_id);
+      const removedOptions = details.removed_options
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value));
+
+      if (!Number.isFinite(questionId) || removedOptions.length === 0) {
+        return;
+      }
+
+      const existing = map.get(questionId) ?? [];
+      const merged = new Set([...existing, ...removedOptions]);
+      map.set(questionId, Array.from(merged));
+    });
+
+    return map;
+  }, [usedPowerups]);
+
+  const hiddenOptionsForCurrent =
+    hiddenOptionsByQuestion.get(currentQuestion.id) ?? [];
+
+  const handleUsePowerup = useCallback(
+    async (powerup: Powerup, questionId?: number) => {
+      const response = await applyPowerup(powerup.id, questionId);
+
+      if (response?.remaining_time !== undefined) {
+        setRemainingTime(response.remaining_time ?? null);
+      }
+    },
+    [applyPowerup, setRemainingTime],
+  );
 
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -99,11 +164,25 @@ export default function QuizTake({
         />
 
         <div className="flex-1 p-4 lg:p-6">
+          {assessment.powerups && assessment.powerups.length > 0 ? (
+            <QuizPowerupBar
+              powerups={assessment.powerups}
+              usedPowerups={usedPowerups}
+              currentQuestion={currentQuestion}
+              remainingTime={remainingTime}
+              isUsing={isUsingPowerup}
+              error={powerupError}
+              onClearError={clearPowerupError}
+              onUsePowerup={handleUsePowerup}
+            />
+          ) : null}
+
           <QuizQuestionPanel
             question={currentQuestion}
             questionIndex={currentIndex}
             totalQuestions={questions.length}
             answer={answers[currentQuestion.id]}
+            hiddenOptionIndexes={hiddenOptionsForCurrent}
             onAnswerChange={handleAnswerChange}
             onPrevious={() => goToQuestion(currentIndex - 1)}
             onNext={() => goToQuestion(currentIndex + 1)}

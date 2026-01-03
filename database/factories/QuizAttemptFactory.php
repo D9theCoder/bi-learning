@@ -28,6 +28,7 @@ class QuizAttemptFactory extends Factory
             'score' => 0,
             'total_points' => 100,
             'started_at' => now(),
+            'time_extension' => 0,
             'completed_at' => null,
             'is_graded' => false,
         ];

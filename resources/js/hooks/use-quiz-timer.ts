@@ -16,7 +16,7 @@ export function useQuizTimer({
   answers,
   onAutoSubmit,
 }: UseQuizTimerOptions) {
-  const [remainingTime, setRemainingTime] = useState<number | null>(
+  const [remainingTime, setRemainingTimeState] = useState<number | null>(
     initialRemainingTime,
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -41,7 +41,7 @@ export function useQuizTimer({
     }
 
     const timer = setInterval(() => {
-      setRemainingTime((prev) => {
+      setRemainingTimeState((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(timer);
           onAutoSubmit();
@@ -63,5 +63,19 @@ export function useQuizTimer({
     return () => clearInterval(interval);
   }, [saveProgress]);
 
-  return { remainingTime, isSaving, saveProgress };
+  const extendTime = useCallback((seconds: number) => {
+    if (seconds <= 0) {
+      return;
+    }
+
+    setRemainingTimeState((prev) =>
+      prev === null ? prev : Math.max(prev + seconds, 0),
+    );
+  }, []);
+
+  const setRemainingTime = useCallback((value: number | null) => {
+    setRemainingTimeState(value);
+  }, []);
+
+  return { remainingTime, isSaving, saveProgress, extendTime, setRemainingTime };
 }

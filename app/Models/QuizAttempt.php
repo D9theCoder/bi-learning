@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class QuizAttempt extends Model
 {
@@ -18,6 +19,7 @@ class QuizAttempt extends Model
         'score',
         'total_points',
         'started_at',
+        'time_extension',
         'completed_at',
         'is_graded',
     ];
@@ -32,6 +34,7 @@ class QuizAttempt extends Model
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'is_graded' => 'boolean',
+            'time_extension' => 'integer',
         ];
     }
 
@@ -45,15 +48,24 @@ class QuizAttempt extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function powerups(): BelongsToMany
+    {
+        return $this->belongsToMany(Powerup::class, 'quiz_attempt_powerups')
+            ->withPivot('used_at', 'details')
+            ->using(QuizAttemptPowerup::class);
+    }
+
     public function isExpired(): bool
     {
         if (! $this->assessment->time_limit_minutes || ! $this->started_at) {
             return false;
         }
 
-        return now()->greaterThan(
-            $this->started_at->addMinutes($this->assessment->time_limit_minutes)
-        );
+        $endTime = $this->started_at->copy()
+            ->addMinutes($this->assessment->time_limit_minutes)
+            ->addSeconds(max(0, $this->time_extension ?? 0));
+
+        return now()->greaterThan($endTime);
     }
 
     public function getRemainingTimeAttribute(): ?int
@@ -62,7 +74,9 @@ class QuizAttempt extends Model
             return null;
         }
 
-        $endTime = $this->started_at->addMinutes($this->assessment->time_limit_minutes);
+        $endTime = $this->started_at->copy()
+            ->addMinutes($this->assessment->time_limit_minutes)
+            ->addSeconds(max(0, $this->time_extension ?? 0));
         $remaining = now()->diffInSeconds($endTime, false);
 
         return max(0, $remaining);

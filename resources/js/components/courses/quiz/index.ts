@@ -1,10 +1,12 @@
 export { NewQuestionForm } from './new-question-form';
 export { QuestionCard } from './question-card';
 export { QuestionsSection } from './questions-section';
+export { PowerupSelector } from './powerup-selector';
 export { QuizActionPanel } from './quiz-action-panel';
 export { QuizBuilderHeader } from './quiz-builder-header';
 export { QuizInfoCard } from './quiz-info-card';
 export { QuizInstructionsCard } from './quiz-instructions-card';
+export { QuizPowerupBar } from './quiz-powerup-bar';
 export { QuizQuestionPanel } from './quiz-question-panel';
 export { QuizSettingsCard } from './quiz-settings-card';
 export { QuizSubmitDialog } from './quiz-submit-dialog';

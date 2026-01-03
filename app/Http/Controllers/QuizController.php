@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreQuizRequest;
+use App\Http\Requests\UpdateQuizRequest;
+use App\Http\Requests\UseQuizPowerupRequest;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\Powerup;
 use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -76,6 +81,23 @@ class QuizController extends Controller
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    protected function formatPowerup(Powerup $powerup, ?int $limit = null): array
+    {
+        return [
+            'id' => $powerup->id,
+            'name' => $powerup->name,
+            'slug' => $powerup->slug,
+            'description' => $powerup->description,
+            'icon' => $powerup->icon,
+            'default_limit' => $powerup->default_limit,
+            'config' => $powerup->config,
+            'limit' => $limit,
+        ];
+    }
+
+    /**
      * Show quiz builder for tutors.
      */
     public function edit(Course $course, Assessment $assessment): Response
@@ -86,35 +108,34 @@ class QuizController extends Controller
             abort(403);
         }
 
-        $assessment->load('questions');
+        $assessment->load(['questions', 'powerups']);
+        $availablePowerups = Powerup::query()
+            ->orderBy('name')
+            ->get();
+
+        $assessmentPowerups = $assessment->powerups->map(function (Powerup $powerup) {
+            return $this->formatPowerup($powerup, $powerup->pivot?->limit);
+        });
 
         return Inertia::render('courses/quiz/edit', [
             'course' => $course,
-            'assessment' => $assessment,
+            'assessment' => [
+                ...$assessment->toArray(),
+                'powerups' => $assessmentPowerups,
+            ],
+            'availablePowerups' => $availablePowerups->map(function (Powerup $powerup) {
+                return $this->formatPowerup($powerup);
+            }),
         ]);
     }
 
     /**
      * Store a new assessment/quiz.
      */
-    public function store(Request $request, Course $course): RedirectResponse
+    public function store(StoreQuizRequest $request, Course $course): RedirectResponse
     {
-        $user = auth()->user();
-
-        if (! $user?->hasRole('admin') && $course->instructor_id !== $user?->id) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'lesson_id' => 'nullable|exists:lessons,id',
-            'due_date' => 'nullable|date',
-            'max_score' => 'required|integer|min:1',
-            'allow_retakes' => 'boolean',
-            'time_limit_minutes' => 'nullable|integer|min:1|max:480',
-            'is_published' => 'boolean',
-        ]);
+        $validated = $request->validated();
+        $powerups = collect($validated['powerups'] ?? []);
 
         $assessment = $course->assessments()->create([
             ...$validated,
@@ -123,6 +144,14 @@ class QuizController extends Controller
             'is_published' => $validated['is_published'] ?? false,
         ]);
 
+        if ($powerups->isNotEmpty()) {
+            $assessment->powerups()->sync(
+                $powerups->mapWithKeys(fn (array $powerup) => [
+                    $powerup['id'] => ['limit' => $powerup['limit']],
+                ])->all()
+            );
+        }
+
         return redirect()->route('quiz.edit', [$course, $assessment])
             ->with('message', 'Quiz created successfully.');
     }
@@ -130,30 +159,24 @@ class QuizController extends Controller
     /**
      * Update assessment/quiz settings.
      */
-    public function update(Request $request, Course $course, Assessment $assessment): RedirectResponse
+    public function update(UpdateQuizRequest $request, Course $course, Assessment $assessment): RedirectResponse
     {
-        $user = auth()->user();
-
-        if (! $user?->hasRole('admin') && $course->instructor_id !== $user?->id) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'lesson_id' => 'nullable|exists:lessons,id',
-            'due_date' => 'nullable|date',
-            'max_score' => 'required|integer|min:1',
-            'allow_retakes' => 'boolean',
-            'time_limit_minutes' => 'nullable|integer|min:1|max:480',
-            'is_published' => 'boolean',
-        ]);
+        $validated = $request->validated();
+        $powerups = collect($validated['powerups'] ?? []);
 
         $assessment->update([
             ...$validated,
             'allow_retakes' => $validated['allow_retakes'] ?? false,
             'is_published' => $validated['is_published'] ?? false,
         ]);
+
+        if (array_key_exists('powerups', $validated)) {
+            $assessment->powerups()->sync(
+                $powerups->mapWithKeys(fn (array $powerup) => [
+                    $powerup['id'] => ['limit' => $powerup['limit']],
+                ])->all()
+            );
+        }
 
         return back()->with('message', 'Quiz updated successfully.');
     }
@@ -369,7 +392,7 @@ class QuizController extends Controller
                 ->with('message', 'Time expired. Your quiz has been automatically submitted.');
         }
 
-        $assessment->load('questions');
+        $assessment->load(['questions', 'powerups']);
 
         $questions = $assessment->questions->map(function ($question) {
             return [
@@ -382,6 +405,22 @@ class QuizController extends Controller
             ];
         });
 
+        $assessmentPowerups = $assessment->powerups->map(function (Powerup $powerup) {
+            return $this->formatPowerup($powerup, $powerup->pivot?->limit);
+        });
+
+        $usedPowerups = $attempt->powerups()
+            ->get()
+            ->map(function (Powerup $powerup) {
+                return [
+                    'id' => $powerup->id,
+                    'slug' => $powerup->slug,
+                    'used_at' => $powerup->pivot?->used_at?->toISOString(),
+                    'details' => $powerup->pivot?->details,
+                ];
+            })
+            ->values();
+
         return Inertia::render('courses/quiz/take', [
             'course' => $course,
             'assessment' => [
@@ -390,6 +429,7 @@ class QuizController extends Controller
                 'description' => $assessment->description,
                 'time_limit_minutes' => $assessment->time_limit_minutes,
                 'max_score' => $assessment->max_score,
+                'powerups' => $assessmentPowerups,
             ],
             'questions' => $questions,
             'attempt' => [
@@ -398,6 +438,7 @@ class QuizController extends Controller
                 'started_at' => $attempt->started_at,
                 'remaining_time' => $attempt->remaining_time,
             ],
+            'usedPowerups' => $usedPowerups,
         ]);
     }
 
@@ -461,6 +502,127 @@ class QuizController extends Controller
 
         return redirect()->route('quiz.show', [$course, $assessment])
             ->with('message', 'Quiz submitted successfully!');
+    }
+
+    /**
+     * Use a powerup during a quiz attempt.
+     */
+    public function usePowerup(UseQuizPowerupRequest $request, Course $course, Assessment $assessment): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            abort(401);
+        }
+
+        $attempt = $assessment->getLatestAttemptForUser($user->id);
+
+        if (! $attempt || $attempt->completed_at) {
+            return response()->json(['message' => 'No active attempt found.'], 422);
+        }
+
+        if ($attempt->isExpired()) {
+            $this->autoSubmitAttempt($attempt);
+
+            return response()->json(['message' => 'Time expired.'], 422);
+        }
+
+        $powerupId = (int) $request->input('powerup_id');
+        $powerup = Powerup::query()->findOrFail($powerupId);
+
+        $allowedPowerup = $assessment->powerups()
+            ->where('powerup_id', $powerupId)
+            ->first();
+
+        if (! $allowedPowerup) {
+            return response()->json(['message' => 'This powerup is not available for this quiz.'], 403);
+        }
+
+        $limit = (int) ($allowedPowerup->pivot?->limit ?? $powerup->default_limit ?? 1);
+        $usedCount = $attempt->powerups()
+            ->where('powerup_id', $powerupId)
+            ->count();
+
+        if ($usedCount >= $limit) {
+            return response()->json(['message' => 'Powerup limit reached.'], 422);
+        }
+
+        $details = [];
+
+        if ($powerup->slug === '50-50') {
+            if (! $request->filled('question_id')) {
+                return response()->json(['message' => 'Select a question to use this powerup.'], 422);
+            }
+
+            $questionId = (int) $request->input('question_id');
+            $question = $assessment->questions()
+                ->whereKey($questionId)
+                ->first();
+
+            if (! $question || $question->type !== 'multiple_choice' || ! $question->options) {
+                return response()->json(['message' => 'This powerup can only be used on multiple choice questions.'], 422);
+            }
+
+            $correctAnswer = (string) ($question->correct_answer ?? '');
+            $optionIndexes = array_keys($question->options);
+            $wrongIndexes = array_values(array_filter($optionIndexes, function ($index) use ($correctAnswer) {
+                return (string) $index !== $correctAnswer;
+            }));
+
+            if ($correctAnswer === '' || count($wrongIndexes) === 0) {
+                return response()->json(['message' => 'No incorrect options available to remove.'], 422);
+            }
+
+            $removeCount = (int) (data_get($powerup->config, 'remove_count', 2));
+            $removeCount = max(1, min($removeCount, count($wrongIndexes)));
+
+            $removedOptions = array_slice($wrongIndexes, 0, $removeCount);
+
+            $details = [
+                'question_id' => $question->id,
+                'removed_options' => $removedOptions,
+            ];
+        }
+
+        if ($powerup->slug === 'extra-time') {
+            if (! $assessment->time_limit_minutes) {
+                return response()->json(['message' => 'This quiz does not have a timer.'], 422);
+            }
+
+            $extraSeconds = (int) (data_get($powerup->config, 'extra_time_seconds', 0));
+
+            if ($extraSeconds <= 0) {
+                return response()->json(['message' => 'This powerup is not configured.'], 422);
+            }
+
+            $attempt->increment('time_extension', $extraSeconds);
+            $details = [
+                'added_seconds' => $extraSeconds,
+            ];
+        }
+
+        if ($details === []) {
+            return response()->json(['message' => 'Unsupported powerup.'], 422);
+        }
+
+        $attempt->powerups()->attach($powerupId, [
+            'used_at' => now(),
+            'details' => $details,
+        ]);
+
+        $attempt->refresh();
+
+        return response()->json([
+            'usage' => [
+                'id' => $powerup->id,
+                'slug' => $powerup->slug,
+                'used_at' => now()->toISOString(),
+                'details' => $details,
+            ],
+            'remaining_time' => $attempt->remaining_time,
+            'used_count' => $usedCount + 1,
+            'limit' => $limit,
+        ]);
     }
 
     /**

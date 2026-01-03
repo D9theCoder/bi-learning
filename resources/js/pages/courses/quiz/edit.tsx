@@ -4,15 +4,26 @@ import {
   QuizSettingsCard,
 } from '@/components/courses/quiz';
 import AppLayout from '@/layouts/app-layout';
-import type { Assessment, Course, QuizQuestion } from '@/types';
+import type { Assessment, Course, Powerup, QuizQuestion } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 
 interface QuizEditProps {
   course: Course;
   assessment: Assessment & { questions: QuizQuestion[] };
+  availablePowerups: Powerup[];
 }
 
-export default function QuizEdit({ course, assessment }: QuizEditProps) {
+export default function QuizEdit({
+  course,
+  assessment,
+  availablePowerups,
+}: QuizEditProps) {
+  const initialPowerups =
+    assessment.powerups?.map((powerup) => ({
+      id: powerup.id,
+      limit: powerup.limit ?? powerup.default_limit ?? 1,
+    })) ?? [];
+
   const settingsForm = useForm({
     title: assessment.title ?? '',
     description: assessment.description ?? '',
@@ -24,6 +35,7 @@ export default function QuizEdit({ course, assessment }: QuizEditProps) {
     allow_retakes: assessment.allow_retakes ?? false,
     time_limit_minutes: assessment.time_limit_minutes ?? '',
     is_published: assessment.is_published ?? false,
+    powerups: initialPowerups,
   });
 
   const saveSettings = () => {
@@ -55,6 +67,7 @@ export default function QuizEdit({ course, assessment }: QuizEditProps) {
             <QuizSettingsCard
               form={settingsForm}
               assessment={assessment}
+              availablePowerups={availablePowerups}
               onSave={saveSettings}
             />
           </div>

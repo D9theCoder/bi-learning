@@ -3,6 +3,7 @@
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Powerup;
 use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
 use App\Models\User;
@@ -438,4 +439,72 @@ it('keeps highest score when retakes are allowed', function () {
 
     $bestAttempt = $assessment->getBestAttemptForUser($student->id);
     expect($bestAttempt->score)->toBe(10);
+});
+
+it('adds time extension when using an extra time powerup', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'is_published' => true,
+        'time_limit_minutes' => 10,
+    ]);
+    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'time_extension' => 0,
+    ]);
+
+    $powerup = Powerup::factory()->create([
+        'slug' => 'extra-time',
+        'config' => ['extra_time_seconds' => 120],
+        'default_limit' => 1,
+    ]);
+    $assessment->powerups()->attach($powerup->id, ['limit' => 2]);
+
+    $response = $this->actingAs($student)->postJson(
+        "/courses/{$course->id}/quiz/{$assessment->id}/powerups/use",
+        ['powerup_id' => $powerup->id]
+    );
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('usage.slug', 'extra-time');
+
+    $attempt->refresh();
+    expect($attempt->time_extension)->toBe(120);
+});
+
+it('enforces powerup usage limits', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'is_published' => true,
+        'time_limit_minutes' => 10,
+    ]);
+    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'time_extension' => 0,
+    ]);
+
+    $powerup = Powerup::factory()->create([
+        'slug' => 'extra-time',
+        'config' => ['extra_time_seconds' => 60],
+        'default_limit' => 1,
+    ]);
+    $assessment->powerups()->attach($powerup->id, ['limit' => 1]);
+
+    $this->actingAs($student)->postJson(
+        "/courses/{$course->id}/quiz/{$assessment->id}/powerups/use",
+        ['powerup_id' => $powerup->id]
+    )->assertSuccessful();
+
+    $this->actingAs($student)->postJson(
+        "/courses/{$course->id}/quiz/{$assessment->id}/powerups/use",
+        ['powerup_id' => $powerup->id]
+    )->assertUnprocessable();
+
+    $attempt->refresh();
+    expect($attempt->time_extension)->toBe(60);
 });

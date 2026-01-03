@@ -25,6 +25,7 @@ interface QuizQuestionPanelProps {
   questionIndex: number;
   totalQuestions: number;
   answer: string | undefined;
+  hiddenOptionIndexes?: number[];
   onAnswerChange: (questionId: number, value: string) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -62,6 +63,7 @@ export function QuizQuestionPanel({
   questionIndex,
   totalQuestions,
   answer,
+  hiddenOptionIndexes,
   onAnswerChange,
   onPrevious,
   onNext,
@@ -69,6 +71,7 @@ export function QuizQuestionPanel({
 }: QuizQuestionPanelProps) {
   const isFirstQuestion = questionIndex === 0;
   const isLastQuestion = questionIndex === totalQuestions - 1;
+  const hiddenOptions = new Set(hiddenOptionIndexes ?? []);
 
   return (
     <Card className="mx-auto max-w-3xl">
@@ -98,25 +101,31 @@ export function QuizQuestionPanel({
         <div className="mb-6">
           {question.type === 'multiple_choice' && question.options && (
             <div className="space-y-2">
-              {question.options.map((option, idx) => (
-                <label
-                  key={idx}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
-                    answer === String(idx)
-                      ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
-                      : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    checked={answer === String(idx)}
-                    onChange={() => onAnswerChange(question.id, String(idx))}
-                    className="h-4 w-4 accent-yellow-500"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
+              {question.options.map((option, idx) => {
+                if (hiddenOptions.has(idx)) {
+                  return null;
+                }
+
+                return (
+                  <label
+                    key={idx}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
+                      answer === String(idx)
+                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
+                        : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`question-${question.id}`}
+                      checked={answer === String(idx)}
+                      onChange={() => onAnswerChange(question.id, String(idx))}
+                      className="h-4 w-4 accent-yellow-500"
+                    />
+                    <span>{option}</span>
+                  </label>
+                );
+              })}
             </div>
           )}
 

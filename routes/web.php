@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/start', [QuizController::class, 'startAttempt'])->name('start');
         Route::get('/take', [QuizController::class, 'take'])->name('take');
         Route::post('/save', [QuizController::class, 'saveProgress'])->name('save');
+        Route::post('/powerups/use', [QuizController::class, 'usePowerup'])->name('powerups.use');
         Route::post('/submit', [QuizController::class, 'submit'])->name('submit');
     });
 

@@ -4,9 +4,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Assessment } from '@/types';
+import type { Assessment, Powerup } from '@/types';
 import type { InertiaFormProps } from '@inertiajs/react';
 import { Save } from 'lucide-react';
+import { PowerupSelector } from './powerup-selector';
 
 type SettingsFormData = {
   title: string;
@@ -17,17 +18,20 @@ type SettingsFormData = {
   allow_retakes: boolean;
   time_limit_minutes: number | '' | string;
   is_published: boolean;
+  powerups: Array<{ id: number; limit: number }>;
 };
 
 interface QuizSettingsCardProps {
   form: InertiaFormProps<SettingsFormData>;
   assessment: Assessment;
+  availablePowerups: Powerup[];
   onSave: () => void;
 }
 
 export function QuizSettingsCard({
   form,
   assessment,
+  availablePowerups,
   onSave,
 }: QuizSettingsCardProps) {
   const handledErrors = [
@@ -37,12 +41,20 @@ export function QuizSettingsCard({
     'time_limit_minutes',
     'allow_retakes',
     'is_published',
+    'powerups',
   ];
 
   const generalErrors = Object.entries(form.errors ?? {})
     .filter(
-      ([field, message]) => Boolean(message) && !handledErrors.includes(field),
+      ([field, message]) =>
+        Boolean(message) &&
+        !handledErrors.includes(field) &&
+        !field.startsWith('powerups'),
     )
+    .map(([, message]) => message as string);
+
+  const powerupErrors = Object.entries(form.errors ?? {})
+    .filter(([field, message]) => Boolean(message) && field.startsWith('powerups'))
     .map(([, message]) => message as string);
 
   return (
@@ -156,6 +168,22 @@ export function QuizSettingsCard({
             <p className="text-xs text-destructive">
               {form.errors.is_published}
             </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Allowed Powerups</Label>
+          <PowerupSelector
+            availablePowerups={availablePowerups}
+            selectedPowerups={form.data.powerups}
+            onChange={(powerups) => form.setData('powerups', powerups)}
+          />
+          {powerupErrors.length > 0 ? (
+            <div className="space-y-1 text-xs text-destructive">
+              {powerupErrors.map((message, idx) => (
+                <div key={`${message}-${idx}`}>{message}</div>
+              ))}
+            </div>
           ) : null}
         </div>
 

@@ -224,6 +224,24 @@ export interface Activity {
   created_at: string;
 }
 
+export interface Powerup {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  icon?: string | null;
+  default_limit?: number | null;
+  config?: Record<string, unknown> | null;
+  limit?: number | null;
+}
+
+export interface PowerupUsage {
+  id: number;
+  slug: string;
+  used_at?: string | null;
+  details?: Record<string, unknown> | null;
+}
+
 export interface Cohort {
   id: number;
   name: string;
@@ -298,6 +316,7 @@ export interface Assessment {
   updated_at: string;
   submissions?: AssessmentSubmission[];
   questions?: QuizQuestion[];
+  powerups?: Powerup[];
 }
 
 export interface AssessmentSubmission {
@@ -338,12 +357,14 @@ export interface QuizAttempt {
   score?: number | null;
   total_points: number;
   started_at?: string | null;
+  time_extension?: number | null;
   completed_at?: string | null;
   is_graded: boolean;
   remaining_time?: number | null;
   created_at: string;
   updated_at: string;
   user?: User;
+  powerups?: PowerupUsage[];
 }
 
 // Page Props Interfaces
