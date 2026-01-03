@@ -1,5 +1,6 @@
 <?php
 
+use App\CourseCategory;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -122,7 +123,7 @@ it('allows admins to view management and create courses', function () {
         'title' => 'Admin Course',
         'description' => 'Admin created course',
         'difficulty' => 'beginner',
-        'category' => 'Physics',
+        'category' => CourseCategory::Physics->value,
         'is_published' => true,
     ]);
 
@@ -185,7 +186,7 @@ it('allows tutors to manage only their courses', function () {
         'title' => 'Updated Title',
         'description' => $ownCourse->description,
         'difficulty' => 'intermediate',
-        'category' => 'Chemistry',
+        'category' => CourseCategory::Chemistry->value,
         'is_published' => true,
     ])->assertRedirect();
 

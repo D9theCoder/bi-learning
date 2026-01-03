@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\CourseCategory;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
@@ -44,7 +45,7 @@ class FixedScenarioSeeder extends Seeder
                 'description' => 'A course for testing fixed scenarios.',
                 'thumbnail' => 'https://placehold.co/600x400',
                 'difficulty' => 'intermediate',
-                'category' => 'General',
+                'category' => CourseCategory::BasicMathematics->value,
                 'is_published' => true,
             ]
         );

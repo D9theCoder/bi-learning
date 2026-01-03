@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\CourseCategory;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -28,17 +29,17 @@ class CourseContentSeeder extends Seeder
         }
 
         $courseDefinition = [
-            'title' => 'IT Research Methodology',
-            'description' => 'Learn the fundamentals of research methodology in Information Technology, from defining topics to preparing for defense.',
+            'title' => 'Advanced Physics Research',
+            'description' => 'Learn the fundamentals of physics research methodology, from defining topics to preparing for defense.',
             'thumbnail' => 'https://placehold.co/800x480/png?text=IT+Research',
             'duration_minutes' => 720,
             'difficulty' => 'intermediate',
-            'category' => 'Research',
+            'category' => CourseCategory::Physics->value,
             'is_published' => true,
             'lessons' => [
                 [
-                    'title' => 'Session 1: Research Foundations',
-                    'description' => 'Overview of the research lifecycle, expectations, and milestone planning.',
+                    'title' => 'Session 1: Physics Research Foundations',
+                    'description' => 'Overview of the physics research lifecycle, expectations, and milestone planning.',
                     'duration_minutes' => 90,
                     'contents' => [
                         ['title' => 'Wifi Attendance', 'type' => 'attendance', 'duration_minutes' => 10, 'is_required' => true],
