@@ -21,7 +21,7 @@ export function QuizBuilderHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.visit(`/courses/manage/${courseId}/edit`)}
+          onClick={() => router.visit(`/courses/${courseId}`)}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
