@@ -1,185 +1,94 @@
-# Expand Assessment System: Practice, Final Exam, Remedial & Points
+# Add Lesson Session Selector and Display Assessment Types
 
-This plan adds two new assessment types (Practice and Final Exam) to the existing Quiz type, implements a remedial system, adds point rewards for completing assessments, and evaluates database structure improvements.
+Plan to enhance the assessment form by adding a lesson session selector and ensuring all assessment types (Practice, Quiz, Final Exam) are visible in the manage courses interface.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Database Redundancy Decision**: The current structure has dedicated tables for quizzes (`quiz_questions`, `quiz_attempts`, `quiz_attempt_answers`, `quiz_attempt_powerups`). These could potentially be generalized for all assessment types. However, this would require migrating existing data and updating all relationships. **Do you want to proceed with database refactoring, or keep the existing structure and extend it?**
+> [!IMPORTANT]
+> Frontend changes will add a lesson selector dropdown to the assessment settings form. This will allow tutors to associate an assessment with a specific lesson session.
 
-> [!WARNING] > **Breaking Change - Remedial Score Cap**: The remedial system caps the maximum final score at 65, even if students score 100% on the remedial exam. This cannot be reversed once implemented. Confirm this is acceptable.
-
-> [!WARNING] > **Final Exam Minimum Weight**: The plan requires final exams to make up at least 50% of the student's final score. This means quiz scores will be weighted accordingly. **How should this calculation work?** Should it be:
+> [!IMPORTANT]
+> The lesson-card component currently shows "contents" but assessments are stored separately. We need to clarify how to display assessments in the manage courses form. Should they be:
 >
-> - Option A: Final exam score × 0.5 + quiz scores × 0.5
-> - Option B: Final exam score counts as 50% minimum, with quizzes making up the remainder
-> - Option C: Another weighting formula?
-
-> [!IMPORTANT] > **Score Visibility for Final Exams**: Final exam scores are hidden until teacher manually grades if there are essay/fill-in-blank questions. For multiple-choice-only exams, scores show immediately. **Should students see their submitted answers before grading, or hide everything until the teacher reviews?**
-
----
+> 1. Displayed as part of the lesson's contents section (even though they're separate entities)?
+> 2. Displayed in a separate "Assessments" section within each lesson card?
+> 3. Displayed in a separate card/section outside of the lesson card?
 
 ## Proposed Changes
 
-### Backend - Models
+### Frontend Components
 
-#### [MODIFY] [Assessment.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Models/Assessment.php)
+#### [MODIFY] [quiz-settings-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/quiz/quiz-settings-card.tsx)
 
-- Update `type` field to support `'practice'`, `'quiz'`, and `'final_exam'` (currently only `'quiz'`)
-- Add `is_remedial` boolean field to track remedial attempts
-- Add helper methods:
-  - `allowsPowerups()`: Returns true for practice and quiz, false for final exam
-  - `shouldHideScores()`: Returns true for final exams with essay/fill-in-blank questions until graded
-  - `isFinalExam()`: Check if assessment is final exam type
-  - `isPractice()`: Check if assessment is practice type
+- Add a new `lessons` prop to receive available lessons from the parent component
+- Add a Select component for lesson selection (after the Assessment Type field)
+- Wire up the `lesson_id` field to the form data (already exists in form)
+- Display the selected lesson's title or "None selected" placeholder
+- Handle validation errors for `lesson_id` field (validation already exists in backend)
+- Make the field optional with clear labeling
 
-#### [MODIFY] [QuizAttempt.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Models/QuizAttempt.php)
+#### [MODIFY] [edit.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/quiz/edit.tsx)
 
-- Add `is_remedial` boolean field
-- Add `points_awarded` field to track gamification points earned
-- Update relationships and logic to handle remedial attempts
+- Add `lessons` to the `QuizEditProps` interface
+- Pass `lessons` prop to `QuizSettingsCard` component
+- The lessons data will be provided by the backend
 
----
+#### [MODIFY] [lesson-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/manage/lesson-card.tsx)
 
-### Backend - Database Migrations
+**Option 1: Display as part of contents (recommended)**
 
-#### [NEW] Migration: `add_assessment_types_and_remedial.php`
+- Add a new "Assessments" subsection after the "Contents" section
+- Query and display assessments linked to this lesson
+- Show assessment type badges (Practice, Quiz, Final Exam) with distinct colors
+- Add "Edit Assessment" button for each assessment
+- Show assessment status (published/draft)
 
-```php
-// Add columns to assessments table
-$table->enum('type', ['practice', 'quiz', 'final_exam'])->default('quiz')->change();
-$table->boolean('is_remedial')->default(false)->after('is_published');
+**Option 2: Separate assessments section**
 
-// Add columns to quiz_attempts table
-$table->boolean('is_remedial')->default(false)->after('is_graded');
-$table->integer('points_awarded')->default(0)->after('is_remedial');
-```
-
-#### [NEW] Migration: `create_final_scores_table.php`
-
-Create a new `final_scores` table to track calculated final scores with quiz and exam weighting:
-
-```php
-Schema::create('final_scores', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->foreignId('course_id')->constrained()->onDelete('cascade');
-    $table->integer('quiz_score')->default(0);
-    $table->integer('final_exam_score')->default(0);
-    $table->integer('total_score')->default(0);
-    $table->boolean('is_remedial')->default(false);
-    $table->timestamps();
-
-    $table->unique(['user_id', 'course_id']);
-});
-```
+- Display in a completely separate section outside of lesson card
+- Would require changes to the parent component structure
 
 ---
 
-### Backend - Controllers
+### Backend Controller
 
 #### [MODIFY] [QuizController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/QuizController.php)
 
-**Assessment Type Logic:**
+**Method: `edit()`**
 
-- Update `store()` to accept assessment type (`practice`, `quiz`, `final_exam`)
-- Update `take()` to disable powerups for final exams
-- Update `show()` to hide scores for ungraded final exams with subjective questions
-- Add logic to prevent showing correct answers for final exams until graded
+- Load the course's lessons along with the assessment
+- Pass lessons data to the Inertia view
+- Order lessons by `order` column for consistent display
 
-**Remedial System:**
+```diff
+ $assessment->load(['questions', 'powerups']);
++$lessons = $course->lessons()->orderBy('order')->get();
+ $availablePowerups = Powerup::query()
+     ->orderBy('name')
+     ->get();
 
-- Add `startRemedialAttempt()` method - Creates remedial attempt for failed students (score < 65)
-- Add validation: Only allow remedial if final score is below 65
-- Add score cap logic: Remedial attempts cap total final score at 65
+ // ... existing powerups code ...
 
-**Point Rewards:**
-
-- Update `submit()` to call `GamificationService` and award points:
-  - Practice: 150 points (flat)
-  - Quiz: 200-300 points (scaled by percentage: 0% = 200, 100% = 300)
-  - Final Exam: 400-1000 points (scaled: 0% = 400, 100% = 1000)
-  - Remedial: 0 points
-- Store awarded points in `quiz_attempts.points_awarded`
-
-**Score Calculation:**
-
-- Update `syncSubmission()` to calculate weighted final scores using `final_scores` table
-- Implement final exam 50% minimum weighting (pending user decision on formula)
-
----
-
-### Backend - Services
-
-#### [MODIFY] [GamificationService.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Services/GamificationService.php)
-
-Add new method:
-
-```php
-public function awardAssessmentPoints(User $user, string $assessmentType, int $score, int $maxScore, bool $isRemedial): int
-{
-    if ($isRemedial) {
-        return 0;
-    }
-
-    $percentage = $maxScore > 0 ? ($score / $maxScore) : 0;
-
-    $points = match($assessmentType) {
-        'practice' => 150,
-        'quiz' => (int) round(200 + (100 * $percentage)),
-        'final_exam' => (int) round(400 + (600 * $percentage)),
-        default => 0,
-    };
-
-    $user->points_balance = ($user->points_balance ?? 0) + $points;
-    $user->save();
-
-    return $points;
-}
+ return Inertia::render('courses/quiz/edit', [
+     'course' => $course,
++    'lessons' => $lessons,
+     'assessment' => [
+         ...$assessment->toArray(),
+         'powerups' => $assessmentPowerups,
+     ],
+     'availablePowerups' => $availablePowerups->map(function (Powerup $powerup) {
+         return $this->formatPowerup($powerup);
+     }),
+ ]);
 ```
 
----
+#### [MODIFY] [CourseManagementController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/CourseManagementController.php)
 
-### Backend - Form Requests
+**Method: `edit()`**
 
-#### [MODIFY] [StoreQuizRequest.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Requests/StoreQuizRequest.php)
-
-Update validation rules to include assessment type:
-
-```php
-'type' => 'required|in:practice,quiz,final_exam',
-```
-
----
-
-### Frontend - Components
-
-#### [MODIFY] Quiz Edit Page (`resources/js/Pages/courses/quiz/edit.tsx`)
-
-- Add assessment type selector (Practice, Quiz, Final Exam)
-- Show/hide powerup settings based on type (disable for Final Exam)
-- Add UI indicators for assessment type
-
-#### [MODIFY] Quiz Show Page (`resources/js/Pages/courses/quiz/show.tsx`)
-
-- Display assessment type badge
-- Show remedial button for students with final score < 65
-- Hide scores for ungraded final exams with subjective questions
-- Show "Pending Teacher Review" message for final exams awaiting grading
-
-#### [MODIFY] Quiz Take Page (`resources/js/Pages/courses/quiz/take.tsx`)
-
-- Disable powerup UI for final exams
-- Show assessment type indicator
-- Display remedial attempt badge if applicable
-
-#### [NEW] Gradebook Integration
-
-Update gradebook to show:
-
-- Quiz average scores
-- Final exam scores
-- Calculated final scores with weighting
-- Remedial attempt indicators
+- Ensure assessments are loaded with lessons when editing a course
+- Pass assessment data grouped by lesson_id to the frontend
+- Include assessment type and status information
 
 ---
 
@@ -187,92 +96,59 @@ Update gradebook to show:
 
 ### Automated Tests
 
-**Update Existing Tests:**
+#### Update Existing Tests
 
-- Modify `tests/Feature/QuizTest.php` to test all three assessment types
-- Run: `php artisan test tests/Feature/QuizTest.php`
+Since the form request validation is already in place and we're only adding UI elements, we should verify the existing validation tests still pass:
 
-**New Tests to Add:**
+```bash
+# Run existing quiz tests
+php artisan test --filter=QuizTest
+```
 
-1. **Practice Assessment Tests:**
+#### Add New Browser Test
 
-   ```php
-   it('awards 150 points for completing practice assessment')
-   it('does not count practice scores toward final grade')
-   it('allows powerups in practice assessments')
-   ```
+Create a new browser test to verify the lesson selector UI:
 
-2. **Final Exam Tests:**
+**File:** `tests/Browser/AssessmentLessonSelectorTest.php`
 
-   ```php
-   it('disallows powerups in final exams')
-   it('hides scores for ungraded final exams with essays')
-   it('shows scores immediately for multiple-choice-only final exams')
-   it('weights final exam as 50% of total score')
-   ```
+```bash
+# After creating the test, run it with:
+php artisan test tests/Browser/AssessmentLessonSelectorTest.php
+```
 
-3. **Remedial System Tests:**
+**Test should verify:**
 
-   ```php
-   it('allows remedial attempt when final score is below 65')
-   it('prevents remedial when score is 65 or above')
-   it('caps total score at 65 after remedial attempt')
-   it('does not award points for remedial attempts')
-   ```
-
-4. **Point Reward Tests:**
-   ```php
-   it('awards 150 points for completing practice')
-   it('awards 200-300 points for quiz based on score')
-   it('awards 400-1000 points for final exam based on score')
-   it('does not award points for remedial attempts')
-   ```
-
-**Run all tests:** `php artisan test`
+1. Tutor can see lesson selector dropdown in assessment edit page
+2. Dropdown shows all lessons for the course
+3. Selecting a lesson updates the form data
+4. Saving the assessment with a lesson_id persists correctly
+5. Assessment displays the selected lesson in the manage courses page
 
 ### Manual Verification
 
-1. **Create Each Assessment Type**
+1. **Navigate to a course management page** as a tutor:
 
-   - Login as tutor/admin
-   - Create a Practice assessment, verify powerups are available
-   - Create a Quiz assessment, verify no changes from current behavior
-   - Create a Final Exam assessment, verify powerups are disabled
+   - Use the absolute URL tool to get: `/courses/manage`
+   - Click "Edit" on an existing course
 
-2. **Test Student Flow**
+2. **Create or edit an assessment**:
 
-   - Login as student
-   - Complete a practice assessment → verify 150 points awarded
-   - Complete a quiz with 80% score → verify ~280 points awarded
-   - Complete a final exam with essay questions → verify score is hidden
-   - Complete a final exam with only multiple choice → verify score shows immediately
+   - Click "New Assessment" or edit an existing one
+   - Verify the "Lesson Session" dropdown appears below "Assessment Type"
+   - Verify all lessons for the course are listed in the dropdown
+   - Select a lesson and save the assessment
+   - Verify no errors occur
 
-3. **Test Remedial System**
+3. **Verify lesson-card displays assessments**:
 
-   - Complete course with final score of 60 → verify remedial button appears
-   - Take remedial exam and score 100% → verify final score caps at 65
-   - Complete course with score of 70 → verify no remedial option available
+   - Return to the course edit page
+   - Scroll to the lessons section
+   - Verify assessments linked to each lesson are displayed
+   - Verify Practice, Quiz, and Final Exam assessments all show correctly
+   - Verify each assessment has an "Edit" button that navigates to the quiz editor
 
-4. **Run Pint:** `vendor/bin/pint --dirty`
-
----
-
-## Database Refactoring Consideration
-
-**Current Structure:** Dedicated tables for quizzes (`quiz_questions`, `quiz_attempts`, `quiz_attempt_answers`, `quiz_attempt_powerups`)
-
-**Option 1 - Keep Current (Recommended):**
-
-- Extend existing quiz tables to handle all assessment types
-- Rename tables conceptually but keep structure
-- **Pros:** No data migration, less risk, faster implementation
-- **Cons:** Table names remain "quiz\_\*" which is slightly misleading
-
-**Option 2 - Refactor to Generic:**
-
-- Rename to `assessment_questions`, `assessment_attempts`, etc.
-- Migrate all existing data
-- **Pros:** Cleaner naming, better long-term maintainability
-- **Cons:** Risky migration, requires updating all foreign keys and relationships
-
-**Recommendation:** Keep the current structure (Option 1) and extend it. The naming is less important than stability and speed of implementation.
+4. **Test assessment types**:
+   - Create one assessment of each type (Practice, Quiz, Final Exam)
+   - Assign each to a different lesson
+   - Verify they all display correctly in the manage courses interface
+   - Verify the assessment type badges have distinct visual styling

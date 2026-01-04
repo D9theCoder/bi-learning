@@ -17,6 +17,9 @@ class UpdateCourseContentRequest extends FormRequest
             'description' => $this->input('description') === '' ? null : $this->input('description'),
             'due_date' => $this->input('due_date') === '' ? null : $this->input('due_date'),
             'is_required' => $this->boolean('is_required'),
+            // Assessment specific fields
+            'max_score' => $this->input('max_score') === '' ? null : $this->input('max_score'),
+            'allow_powerups' => $this->boolean('allow_powerups', true),
         ]);
     }
 
@@ -49,13 +52,20 @@ class UpdateCourseContentRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:file,video,link,quiz'],
+            'type' => ['required', 'in:file,video,link,assessment'],
             'file_path' => ['nullable', 'file', 'max:102400'], // 100MB max
             'url' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'due_date' => ['nullable', 'date'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'is_required' => ['sometimes', 'boolean'],
+            // Assessment-specific fields
+            'assessment_type' => ['nullable', 'required_if:type,assessment', 'in:practice,quiz,final_exam'],
+            'max_score' => ['nullable', 'required_if:type,assessment', 'integer', 'min:1'],
+            'allow_powerups' => ['sometimes', 'boolean'],
+            'allowed_powerups' => ['nullable', 'array'],
+            'allowed_powerups.*.id' => ['required', 'integer', 'exists:powerups,id'],
+            'allowed_powerups.*.limit' => ['required', 'integer', 'min:1'],
         ];
     }
 }

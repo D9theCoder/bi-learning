@@ -193,7 +193,7 @@ export interface CourseContent {
   id: number;
   lesson_id: number;
   title: string;
-  type: 'file' | 'video' | 'link' | 'quiz' | 'attendance';
+  type: 'file' | 'video' | 'link' | 'assessment' | 'attendance';
   file_path?: string | null;
   url?: string | null;
   description?: string | null;
@@ -203,6 +203,12 @@ export interface CourseContent {
   order: number | null;
   created_at: string;
   updated_at: string;
+  // Assessment-specific fields
+  assessment_id?: number | null;
+  assessment_type?: 'practice' | 'quiz' | 'final_exam' | null;
+  max_score?: number | null;
+  allow_powerups?: boolean | null;
+  allowed_powerups?: Array<{ id: number; limit: number }> | null;
 }
 
 export interface Activity {
@@ -490,6 +496,7 @@ export interface EditCoursePageProps {
     | null;
   mode: 'create' | 'edit';
   categories: Array<{ value: string; label: string }>;
+  availablePowerups?: Powerup[];
 }
 
 export interface MessagesPageProps {

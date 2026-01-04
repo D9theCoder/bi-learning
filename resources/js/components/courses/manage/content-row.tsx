@@ -1,24 +1,39 @@
+import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { CourseContent } from '@/types';
+import type { CourseContent, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 const contentTypes = [
   { value: 'file', label: 'File' },
   { value: 'video', label: 'Video' },
   { value: 'link', label: 'Link' },
-  { value: 'quiz', label: 'Quiz' },
+  { value: 'assessment', label: 'Assessment' },
 ];
 
 interface ContentRowProps {
   courseId: number;
   lessonId: number;
   content: CourseContent;
+  availablePowerups?: Powerup[];
 }
 
-export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
+export function ContentRow({
+  courseId,
+  lessonId,
+  content,
+  availablePowerups = [],
+}: ContentRowProps) {
   const contentForm = useForm<{
     title: string;
     type: CourseContent['type'];
@@ -28,6 +43,11 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
     due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
+    // Assessment-specific fields
+    assessment_type: 'practice' | 'quiz' | 'final_exam';
+    max_score: number | '';
+    allow_powerups: boolean;
+    allowed_powerups: Array<{ id: number; limit: number }>;
   }>({
     title: content.title ?? '',
     type: content.type ?? 'file',
@@ -37,7 +57,29 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
     due_date: content.due_date ?? '',
     duration_minutes: content.duration_minutes ?? '',
     is_required: content.is_required ?? false,
+    assessment_type: content.assessment_type ?? 'quiz',
+    max_score: content.max_score ?? 100,
+    allow_powerups: content.allow_powerups ?? true,
+    allowed_powerups: content.allowed_powerups ?? [],
   });
+
+  const [isAssessment, setIsAssessment] = useState(
+    content.type === 'assessment',
+  );
+
+  useEffect(() => {
+    const isAssessmentType = contentForm.data.type === 'assessment';
+    setIsAssessment(isAssessmentType);
+
+    // Reset powerups when switching to final exam or away from assessment
+    if (isAssessmentType && contentForm.data.assessment_type === 'final_exam') {
+      contentForm.setData('allowed_powerups', []);
+      contentForm.setData('allow_powerups', false);
+    } else if (!isAssessmentType) {
+      contentForm.setData('allowed_powerups', []);
+      contentForm.setData('allow_powerups', true);
+    }
+  }, [contentForm.data.type, contentForm.data.assessment_type]);
 
   const saveContent = () => {
     contentForm.put(
@@ -56,6 +98,9 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
       },
     );
   };
+
+  const allowsPowerups =
+    isAssessment && contentForm.data.assessment_type !== 'final_exam';
 
   return (
     <div className="rounded-lg border border-border/60 bg-muted/40 p-4">
@@ -134,12 +179,37 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
               )}
           </div>
         )}
-        {contentForm.data.type === 'quiz' && (
+        {isAssessment && (
+          <div className="space-y-2">
+            <Label htmlFor={`content-assessment-type-${content.id}`}>
+              Assessment Type
+            </Label>
+            <Select
+              value={contentForm.data.assessment_type}
+              onValueChange={(value) =>
+                contentForm.setData(
+                  'assessment_type',
+                  value as 'practice' | 'quiz' | 'final_exam',
+                )
+              }
+            >
+              <SelectTrigger id={`content-assessment-type-${content.id}`}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="practice">Practice</SelectItem>
+                <SelectItem value="quiz">Quiz</SelectItem>
+                <SelectItem value="final_exam">Final Exam</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`content-due-${content.id}`}>Due date</Label>
             <Input
               id={`content-due-${content.id}`}
-              type="date"
+              type="datetime-local"
               value={contentForm.data.due_date ?? ''}
               onChange={(e) => contentForm.setData('due_date', e.target.value)}
             />
@@ -151,6 +221,49 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
           </div>
         )}
       </div>
+
+      {isAssessment && (
+        <div className="grid gap-3 pt-3 lg:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`content-max-score-${content.id}`}>Max Score</Label>
+            <Input
+              id={`content-max-score-${content.id}`}
+              type="number"
+              min={1}
+              value={contentForm.data.max_score ?? ''}
+              onChange={(e) =>
+                contentForm.setData(
+                  'max_score',
+                  e.target.value === '' ? '' : Number(e.target.value),
+                )
+              }
+              placeholder="100"
+            />
+          </div>
+        </div>
+      )}
+
+      {isAssessment && allowsPowerups && availablePowerups.length > 0 && (
+        <div className="space-y-2 pt-3">
+          <Label>Allowed Powerups</Label>
+          <PowerupSelector
+            availablePowerups={availablePowerups}
+            selectedPowerups={contentForm.data.allowed_powerups}
+            onChange={(powerups) =>
+              contentForm.setData('allowed_powerups', powerups)
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional: Select powerups students can use during this assessment
+          </p>
+        </div>
+      )}
+
+      {isAssessment && !allowsPowerups && (
+        <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+          Powerups are disabled for final exams.
+        </div>
+      )}
 
       <div className="grid gap-3 pt-3 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-2">
@@ -170,21 +283,25 @@ export function ContentRow({ courseId, lessonId, content }: ContentRowProps) {
           ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`content-duration-${content.id}`}>
-            Duration (minutes)
-          </Label>
-          <Input
-            id={`content-duration-${content.id}`}
-            type="number"
-            min={1}
-            value={contentForm.data.duration_minutes ?? ''}
-            onChange={(e) =>
-              contentForm.setData(
-                'duration_minutes',
-                e.target.value === '' ? '' : Number(e.target.value),
-              )
-            }
-          />
+          {!isAssessment && (
+            <>
+              <Label htmlFor={`content-duration-${content.id}`}>
+                Duration (minutes)
+              </Label>
+              <Input
+                id={`content-duration-${content.id}`}
+                type="number"
+                min={1}
+                value={contentForm.data.duration_minutes ?? ''}
+                onChange={(e) =>
+                  contentForm.setData(
+                    'duration_minutes',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+              />
+            </>
+          )}
           <label className="flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"

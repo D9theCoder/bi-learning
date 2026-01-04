@@ -13,6 +13,7 @@ use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
+use App\Models\Powerup;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -109,6 +110,8 @@ class CourseManagementController extends Controller
 
         $course->load(['lessons.contents']);
 
+        $availablePowerups = Powerup::query()->orderBy('name')->get();
+
         return Inertia::render('courses/manage/edit', [
             'course' => [
                 'id' => $course->id,
@@ -155,6 +158,7 @@ class CourseManagementController extends Controller
             ],
             'mode' => 'edit',
             'categories' => CourseCategory::options(),
+            'availablePowerups' => $availablePowerups,
         ]);
     }
 
@@ -230,16 +234,30 @@ class CourseManagementController extends Controller
 
         $content = $lesson->contents()->create($data);
 
-        // Sync Assessment if type is quiz
-        if ($content->type === 'quiz') {
-            Assessment::create([
+        // Create Assessment if type is assessment
+        if ($content->type === 'assessment') {
+            $assessment = Assessment::create([
                 'course_id' => $course->id,
                 'lesson_id' => $lesson->id,
-                'type' => 'quiz',
+                'type' => $content->assessment_type ?? 'quiz',
                 'title' => $content->title,
                 'description' => $content->description,
                 'due_date' => $content->due_date,
+                'max_score' => $content->max_score ?? 100,
+                'is_published' => false,
             ]);
+
+            // Sync powerups if allowed
+            if ($content->allow_powerups && $content->assessment_type !== 'final_exam' && ! empty($content->allowed_powerups)) {
+                $powerupsToSync = collect($content->allowed_powerups)->mapWithKeys(function ($powerup) {
+                    return [$powerup['id'] => ['limit' => $powerup['limit']]];
+                })->all();
+
+                $assessment->powerups()->sync($powerupsToSync);
+            }
+
+            // Update content with assessment_id
+            $content->update(['assessment_id' => $assessment->id]);
         }
 
         return redirect()
@@ -273,27 +291,45 @@ class CourseManagementController extends Controller
         $originalTitle = $content->title;
         $content->update($data);
 
-        // Sync Assessment if type is quiz
-        if ($content->type === 'quiz') {
-            $assessment = Assessment::where('lesson_id', $lesson->id)
-                ->where('title', $originalTitle)
-                ->first();
+        // Sync Assessment if type is assessment
+        if ($content->type === 'assessment') {
+            $assessment = $content->assessment;
 
-            if ($assessment) {
-                $assessment->update([
-                    'title' => $content->title,
-                    'description' => $content->description,
-                    'due_date' => $content->due_date,
-                ]);
-            } else {
-                Assessment::create([
+            // If assessment doesn't exist, create it
+            if (! $assessment) {
+                $assessment = Assessment::create([
                     'course_id' => $course->id,
                     'lesson_id' => $lesson->id,
-                    'type' => 'quiz',
+                    'type' => $content->assessment_type ?? 'quiz',
                     'title' => $content->title,
                     'description' => $content->description,
                     'due_date' => $content->due_date,
+                    'max_score' => $content->max_score ?? 100,
+                    'is_published' => false,
                 ]);
+
+                $content->update(['assessment_id' => $assessment->id]);
+            } else {
+                // Update existing assessment
+                $assessment->update([
+                    'type' => $content->assessment_type ?? 'quiz',
+                    'title' => $content->title,
+                    'description' => $content->description,
+                    'due_date' => $content->due_date,
+                    'max_score' => $content->max_score ?? 100,
+                ]);
+            }
+
+            // Sync powerups
+            if ($content->allow_powerups && $content->assessment_type !== 'final_exam' && ! empty($content->allowed_powerups)) {
+                $powerupsToSync = collect($content->allowed_powerups)->mapWithKeys(function ($powerup) {
+                    return [$powerup['id'] => ['limit' => $powerup['limit']]];
+                })->all();
+
+                $assessment->powerups()->sync($powerupsToSync);
+            } else {
+                // Remove all powerups if not allowed
+                $assessment->powerups()->sync([]);
             }
         }
 

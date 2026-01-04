@@ -1,24 +1,38 @@
+import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { CourseContent } from '@/types';
+import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const contentTypes = [
   { value: 'file', label: 'File' },
   { value: 'video', label: 'Video' },
   { value: 'link', label: 'Link' },
-  { value: 'quiz', label: 'Quiz' },
+  { value: 'assessment', label: 'Assessment' },
 ];
 
 interface NewContentFormProps {
   courseId: number;
   lessonId: number;
+  availablePowerups?: Powerup[];
 }
 
-export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
+export function NewContentForm({
+  courseId,
+  lessonId,
+  availablePowerups = [],
+}: NewContentFormProps) {
   const newContentForm = useForm<{
     title: string;
     type: CourseContent['type'];
@@ -28,6 +42,11 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
     due_date: string;
     duration_minutes: number | '';
     is_required: boolean;
+    // Assessment-specific fields
+    assessment_type: 'practice' | 'quiz' | 'final_exam';
+    max_score: number | '';
+    allow_powerups: boolean;
+    allowed_powerups: Array<{ id: number; limit: number }>;
   }>({
     title: '',
     type: 'file',
@@ -37,7 +56,30 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
     due_date: '',
     duration_minutes: '',
     is_required: false,
+    assessment_type: 'quiz',
+    max_score: 100,
+    allow_powerups: true,
+    allowed_powerups: [],
   });
+
+  const [isAssessment, setIsAssessment] = useState(false);
+
+  useEffect(() => {
+    const isAssessmentType = newContentForm.data.type === 'assessment';
+    setIsAssessment(isAssessmentType);
+
+    // Reset powerups when switching to final exam or away from assessment
+    if (
+      isAssessmentType &&
+      newContentForm.data.assessment_type === 'final_exam'
+    ) {
+      newContentForm.setData('allowed_powerups', []);
+      newContentForm.setData('allow_powerups', false);
+    } else if (!isAssessmentType) {
+      newContentForm.setData('allowed_powerups', []);
+      newContentForm.setData('allow_powerups', true);
+    }
+  }, [newContentForm.data.type, newContentForm.data.assessment_type]);
 
   const submitNewContent = () => {
     newContentForm.post(
@@ -48,6 +90,9 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
       },
     );
   };
+
+  const allowsPowerups =
+    isAssessment && newContentForm.data.assessment_type !== 'final_exam';
 
   return (
     <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4">
@@ -122,12 +167,37 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
             />
           </div>
         )}
-        {newContentForm.data.type === 'quiz' && (
+        {isAssessment && (
+          <div className="space-y-2">
+            <Label htmlFor={`new-content-assessment-type-${lessonId}`}>
+              Assessment Type
+            </Label>
+            <Select
+              value={newContentForm.data.assessment_type}
+              onValueChange={(value) =>
+                newContentForm.setData(
+                  'assessment_type',
+                  value as 'practice' | 'quiz' | 'final_exam',
+                )
+              }
+            >
+              <SelectTrigger id={`new-content-assessment-type-${lessonId}`}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="practice">Practice</SelectItem>
+                <SelectItem value="quiz">Quiz</SelectItem>
+                <SelectItem value="final_exam">Final Exam</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`new-content-due-${lessonId}`}>Due date</Label>
             <Input
               id={`new-content-due-${lessonId}`}
-              type="date"
+              type="datetime-local"
               value={newContentForm.data.due_date ?? ''}
               onChange={(e) =>
                 newContentForm.setData('due_date', e.target.value)
@@ -141,6 +211,51 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
           </div>
         )}
       </div>
+
+      {isAssessment && (
+        <div className="grid gap-3 pt-3 lg:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`new-content-max-score-${lessonId}`}>
+              Max Score
+            </Label>
+            <Input
+              id={`new-content-max-score-${lessonId}`}
+              type="number"
+              min={1}
+              value={newContentForm.data.max_score ?? ''}
+              onChange={(e) =>
+                newContentForm.setData(
+                  'max_score',
+                  e.target.value === '' ? '' : Number(e.target.value),
+                )
+              }
+              placeholder="100"
+            />
+          </div>
+        </div>
+      )}
+
+      {isAssessment && allowsPowerups && availablePowerups.length > 0 && (
+        <div className="space-y-2 pt-3">
+          <Label>Allowed Powerups</Label>
+          <PowerupSelector
+            availablePowerups={availablePowerups}
+            selectedPowerups={newContentForm.data.allowed_powerups}
+            onChange={(powerups) =>
+              newContentForm.setData('allowed_powerups', powerups)
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional: Select powerups students can use during this assessment
+          </p>
+        </div>
+      )}
+
+      {isAssessment && !allowsPowerups && (
+        <div className="mt-3 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+          Powerups are disabled for final exams.
+        </div>
+      )}
 
       <div className="grid gap-3 pt-3 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-2">
@@ -162,21 +277,25 @@ export function NewContentForm({ courseId, lessonId }: NewContentFormProps) {
           ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`new-content-duration-${lessonId}`}>
-            Duration (minutes)
-          </Label>
-          <Input
-            id={`new-content-duration-${lessonId}`}
-            type="number"
-            min={1}
-            value={newContentForm.data.duration_minutes ?? ''}
-            onChange={(e) =>
-              newContentForm.setData(
-                'duration_minutes',
-                e.target.value === '' ? '' : Number(e.target.value),
-              )
-            }
-          />
+          {!isAssessment && (
+            <>
+              <Label htmlFor={`new-content-duration-${lessonId}`}>
+                Duration (minutes)
+              </Label>
+              <Input
+                id={`new-content-duration-${lessonId}`}
+                type="number"
+                min={1}
+                value={newContentForm.data.duration_minutes ?? ''}
+                onChange={(e) =>
+                  newContentForm.setData(
+                    'duration_minutes',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+              />
+            </>
+          )}
           <label className="flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"

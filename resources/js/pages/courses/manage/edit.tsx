@@ -10,6 +10,7 @@ export default function EditCourse({
   course,
   mode,
   categories,
+  availablePowerups = [],
 }: EditCoursePageProps) {
   const isEdit = mode === 'edit';
   const form = useForm({
@@ -64,7 +65,11 @@ export default function EditCourse({
         />
 
         {isEdit && course ? (
-          <LessonsSection courseId={course.id} lessons={course.lessons ?? []} />
+          <LessonsSection
+            courseId={course.id}
+            lessons={course.lessons ?? []}
+            availablePowerups={availablePowerups}
+          />
         ) : isEdit ? (
           <Card>
             <CardHeader>

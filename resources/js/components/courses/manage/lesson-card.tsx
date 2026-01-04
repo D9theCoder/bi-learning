@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CourseContent, Lesson } from '@/types';
+import type { CourseContent, Lesson, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import { ContentRow } from './content-row';
 import { NewContentForm } from './new-content-form';
@@ -12,9 +12,14 @@ type LessonWithContents = Lesson & { contents?: CourseContent[] };
 interface LessonCardProps {
   courseId: number;
   lesson: LessonWithContents;
+  availablePowerups?: Powerup[];
 }
 
-export function LessonCard({ courseId, lesson }: LessonCardProps) {
+export function LessonCard({
+  courseId,
+  lesson,
+  availablePowerups = [],
+}: LessonCardProps) {
   const lessonForm = useForm<{
     title: string;
     description: string;
@@ -225,6 +230,7 @@ export function LessonCard({ courseId, lesson }: LessonCardProps) {
                 courseId={courseId}
                 lessonId={lesson.id}
                 content={content}
+                availablePowerups={availablePowerups}
               />
             ))}
           </div>
@@ -232,7 +238,11 @@ export function LessonCard({ courseId, lesson }: LessonCardProps) {
           <p className="text-sm text-muted-foreground">No contents yet.</p>
         )}
 
-        <NewContentForm courseId={courseId} lessonId={lesson.id} />
+        <NewContentForm
+          courseId={courseId}
+          lessonId={lesson.id}
+          availablePowerups={availablePowerups}
+        />
       </div>
     </div>
   );

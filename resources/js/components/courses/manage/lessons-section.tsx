@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CourseContent, Lesson } from '@/types';
+import type { CourseContent, Lesson, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 import { LessonCard } from './lesson-card';
@@ -13,9 +13,14 @@ type LessonWithContents = Lesson & { contents?: CourseContent[] };
 interface LessonsSectionProps {
   courseId: number;
   lessons: LessonWithContents[];
+  availablePowerups?: Powerup[];
 }
 
-export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
+export function LessonsSection({
+  courseId,
+  lessons,
+  availablePowerups = [],
+}: LessonsSectionProps) {
   const lessonForm = useForm({
     title: '',
     description: '',
@@ -158,7 +163,12 @@ export function LessonsSection({ courseId, lessons }: LessonsSectionProps) {
         <div className="flex flex-col gap-4">
           {lessons && lessons.length > 0 ? (
             lessons.map((lesson) => (
-              <LessonCard key={lesson.id} courseId={courseId} lesson={lesson} />
+              <LessonCard
+                key={lesson.id}
+                courseId={courseId}
+                lesson={lesson}
+                availablePowerups={availablePowerups}
+              />
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No lessons yet.</p>
