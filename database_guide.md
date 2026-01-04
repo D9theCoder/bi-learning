@@ -344,7 +344,7 @@ erDiagram
 
 ```
 
-## Tables
+## Tables (Total table: 22)
 
 ### `users`
 
