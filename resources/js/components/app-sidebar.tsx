@@ -80,11 +80,6 @@ const tutorNavItems: NavItem[] = [
     icon: LayoutGrid,
   },
   {
-    title: 'My Courses',
-    href: courses().url,
-    icon: BookOpen,
-  },
-  {
     title: 'Students',
     href: '/students',
     icon: GraduationCap,
@@ -105,8 +100,8 @@ export function AppSidebar() {
   const { isAdmin, isStudent, isTutor } = useRoles();
   const { url } = usePage();
 
-  const isTutorOnly = isTutor && !isAdmin && !isStudent;
-  const baseNavItems = isTutorOnly ? tutorNavItems : studentNavItems;
+  const showStudentView = isStudent;
+  const baseNavItems = showStudentView ? studentNavItems : tutorNavItems;
   const navItems: NavItem[] = [...baseNavItems];
 
   if (isAdmin || isTutor) {
@@ -122,7 +117,14 @@ export function AppSidebar() {
     if (insertIndex >= 0) {
       navItems.splice(insertIndex + 1, 0, manageLink);
     } else {
-      navItems.unshift(manageLink);
+      const dashboardIndex = navItems.findIndex(
+        (item) => item.title === 'Dashboard',
+      );
+      if (dashboardIndex >= 0) {
+        navItems.splice(dashboardIndex + 1, 0, manageLink);
+      } else {
+        navItems.unshift(manageLink);
+      }
     }
   }
 
