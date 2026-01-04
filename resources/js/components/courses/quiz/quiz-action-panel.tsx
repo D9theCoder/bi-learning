@@ -1,17 +1,20 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { Assessment, QuizAttempt } from '@/types';
+import type { Assessment, AssessmentAttempt } from '@/types';
 import { CheckCircle, PenLine, Play, Trophy } from 'lucide-react';
 
 interface QuizActionPanelProps {
   assessment: Assessment;
-  existingAttempt?: QuizAttempt | null;
-  bestAttempt?: QuizAttempt | null;
+  existingAttempt?: AssessmentAttempt | null;
+  bestAttempt?: AssessmentAttempt | null;
   canAttempt: boolean;
   isTutor: boolean;
+  canStartRemedial?: boolean;
+  shouldHideScores?: boolean;
   onStartQuiz: () => void;
   onContinueQuiz: () => void;
   onEditQuiz: () => void;
+  onStartRemedial?: () => void;
 }
 
 export function QuizActionPanel({
@@ -20,14 +23,36 @@ export function QuizActionPanel({
   bestAttempt,
   canAttempt,
   isTutor,
+  canStartRemedial = false,
+  shouldHideScores = false,
   onStartQuiz,
   onContinueQuiz,
   onEditQuiz,
+  onStartRemedial,
 }: QuizActionPanelProps) {
   const hasInProgressAttempt =
     existingAttempt &&
     !existingAttempt.completed_at &&
     existingAttempt.remaining_time !== 0;
+
+  const startLabel =
+    assessment.type === 'practice'
+      ? 'Start Practice'
+      : assessment.type === 'final_exam'
+        ? 'Start Final Exam'
+        : 'Start Quiz';
+  const retakeLabel =
+    assessment.type === 'practice'
+      ? 'Retake Practice'
+      : assessment.type === 'final_exam'
+        ? 'Retake Final Exam'
+        : 'Retake Quiz';
+  const continueLabel =
+    assessment.type === 'practice'
+      ? 'Continue Practice'
+      : assessment.type === 'final_exam'
+        ? 'Continue Final Exam'
+        : 'Continue Quiz';
 
   return (
     <>
@@ -40,11 +65,13 @@ export function QuizActionPanel({
               </div>
               <div>
                 <p className="text-sm text-green-700 dark:text-green-400">
-                  Your Best Score
+                  {shouldHideScores ? 'Score Pending Review' : 'Your Best Score'}
                 </p>
-                <p className="text-3xl font-bold text-green-800 dark:text-green-500">
-                  {bestAttempt.score ?? 0} / {assessment.max_score}
-                </p>
+                {!shouldHideScores && (
+                  <p className="text-3xl font-bold text-green-800 dark:text-green-500">
+                    {bestAttempt.score ?? 0} / {assessment.max_score}
+                  </p>
+                )}
               </div>
             </div>
             {bestAttempt.completed_at && (
@@ -54,7 +81,7 @@ export function QuizActionPanel({
             )}
             {!bestAttempt.is_graded && (
               <p className="mt-2 text-xs text-orange-600 dark:text-orange-500">
-                Some questions pending tutor grading
+                Pending tutor review
               </p>
             )}
           </CardContent>
@@ -66,11 +93,11 @@ export function QuizActionPanel({
           {isTutor ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                As a tutor, you can edit this quiz or view student attempts.
+                As a tutor, you can edit this assessment or view student attempts.
               </p>
               <Button className="w-full" onClick={onEditQuiz}>
                 <PenLine className="mr-2 h-4 w-4" />
-                Edit Quiz
+                Edit Assessment
               </Button>
             </div>
           ) : hasInProgressAttempt ? (
@@ -89,7 +116,7 @@ export function QuizActionPanel({
               </div>
               <Button className="w-full" onClick={onContinueQuiz}>
                 <Play className="mr-2 h-4 w-4" />
-                Continue Quiz
+                {continueLabel}
               </Button>
             </div>
           ) : canAttempt ? (
@@ -101,8 +128,17 @@ export function QuizActionPanel({
               )}
               <Button className="w-full" onClick={onStartQuiz}>
                 <Play className="mr-2 h-4 w-4" />
-                {bestAttempt ? 'Retake Quiz' : 'Start Quiz'}
+                {bestAttempt ? retakeLabel : startLabel}
               </Button>
+              {canStartRemedial && onStartRemedial && (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                  onClick={onStartRemedial}
+                >
+                  Start Remedial Exam
+                </Button>
+              )}
               {assessment.time_limit_minutes && (
                 <p className="text-center text-xs text-muted-foreground">
                   You will have {assessment.time_limit_minutes} minutes to
@@ -114,12 +150,21 @@ export function QuizActionPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
                 <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">Quiz Completed</span>
+                <span className="font-medium">Assessment Completed</span>
               </div>
               {!assessment.allow_retakes && (
                 <p className="text-sm text-muted-foreground">
-                  Retakes are not allowed for this quiz.
+                  Retakes are not allowed for this assessment.
                 </p>
+              )}
+              {canStartRemedial && onStartRemedial && (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                  onClick={onStartRemedial}
+                >
+                  Start Remedial Exam
+                </Button>
               )}
             </div>
           )}

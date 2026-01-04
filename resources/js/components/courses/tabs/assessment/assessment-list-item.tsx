@@ -25,21 +25,39 @@ export function AssessmentListItem({
   isTutor,
 }: AssessmentListItemProps) {
   const hasCompleted = submission && submission.score !== null;
+  const isPendingReview =
+    assessment.type === 'final_exam' && submission && submission.score === null;
   const isPastDue =
     assessment.due_date && new Date(assessment.due_date) < new Date();
+  const typeLabel =
+    assessment.type === 'practice'
+      ? 'Practice'
+      : assessment.type === 'final_exam'
+        ? 'Final Exam'
+        : 'Quiz';
+  const actionLabel = hasCompleted
+    ? assessment.allow_retakes
+      ? `Retake ${typeLabel}`
+      : 'View'
+    : `Start ${typeLabel}`;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          {assessment.type === 'quiz' ? (
-            <CheckCircle className="h-4 w-4 text-blue-500" />
+          {assessment.type === 'final_exam' ? (
+            <FileText className="h-4 w-4 text-red-500" />
+          ) : assessment.type === 'practice' ? (
+            <CheckCircle className="h-4 w-4 text-emerald-500" />
           ) : (
-            <FileText className="h-4 w-4 text-orange-500" />
+            <CheckCircle className="h-4 w-4 text-blue-500" />
           )}
           <h4 className="font-medium text-gray-900 dark:text-gray-100">
             {assessment.title}
           </h4>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            {typeLabel}
+          </span>
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {assessment.max_score} pts
           </span>
@@ -82,6 +100,12 @@ export function AssessmentListItem({
               Score: {submission.score} / {assessment.max_score}
             </span>
           )}
+          {isPendingReview && (
+            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <Trophy className="h-3 w-3" />
+              Pending review
+            </span>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -89,18 +113,14 @@ export function AssessmentListItem({
           <Button variant="outline" size="sm" asChild>
             <Link href={`/courses/${courseId}/quiz/${assessment.id}/edit`}>
               <PenLine className="mr-2 h-4 w-4" />
-              Edit Quiz
+              Edit Assessment
             </Link>
           </Button>
         ) : (
           <Button size="sm" asChild>
             <Link href={`/courses/${courseId}/quiz/${assessment.id}`}>
               <Play className="mr-2 h-4 w-4" />
-              {hasCompleted
-                ? assessment.allow_retakes
-                  ? 'Retake'
-                  : 'View'
-                : 'Start'}
+              {actionLabel}
             </Link>
           </Button>
         )}

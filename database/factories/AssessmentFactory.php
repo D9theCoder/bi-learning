@@ -32,6 +32,7 @@ class AssessmentFactory extends Factory
             'allow_retakes' => false,
             'time_limit_minutes' => null,
             'is_published' => false,
+            'is_remedial' => false,
         ];
     }
 

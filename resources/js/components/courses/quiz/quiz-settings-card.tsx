@@ -3,6 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { Assessment, Powerup } from '@/types';
 import type { InertiaFormProps } from '@inertiajs/react';
@@ -10,6 +17,7 @@ import { Save } from 'lucide-react';
 import { PowerupSelector } from './powerup-selector';
 
 type SettingsFormData = {
+  type: 'practice' | 'quiz' | 'final_exam';
   title: string;
   description: string;
   lesson_id: number | '' | string;
@@ -35,6 +43,7 @@ export function QuizSettingsCard({
   onSave,
 }: QuizSettingsCardProps) {
   const handledErrors = [
+    'type',
     'title',
     'description',
     'due_date',
@@ -57,12 +66,40 @@ export function QuizSettingsCard({
     .filter(([field, message]) => Boolean(message) && field.startsWith('powerups'))
     .map(([, message]) => message as string);
 
+  const allowsPowerups = form.data.type !== 'final_exam';
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Quiz Settings</CardTitle>
+        <CardTitle className="text-lg">Assessment Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="type">Assessment Type</Label>
+          <Select
+            value={form.data.type}
+            onValueChange={(value) => {
+              const nextType = value as SettingsFormData['type'];
+              form.setData('type', nextType);
+              if (nextType === 'final_exam') {
+                form.setData('powerups', []);
+              }
+            }}
+          >
+            <SelectTrigger id="type" aria-invalid={Boolean(form.errors.type)}>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="practice">Practice</SelectItem>
+              <SelectItem value="quiz">Quiz</SelectItem>
+              <SelectItem value="final_exam">Final Exam</SelectItem>
+            </SelectContent>
+          </Select>
+          {form.errors.type && (
+            <p className="text-xs text-destructive">{form.errors.type}</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
           <Input
@@ -162,7 +199,7 @@ export function QuizSettingsCard({
             aria-invalid={Boolean(form.errors.is_published)}
           />
           <Label htmlFor="is_published" className="cursor-pointer">
-            Publish quiz (visible to students)
+            Publish assessment (visible to students)
           </Label>
           {form.errors.is_published ? (
             <p className="text-xs text-destructive">
@@ -171,21 +208,27 @@ export function QuizSettingsCard({
           ) : null}
         </div>
 
-        <div className="space-y-2">
-          <Label>Allowed Powerups</Label>
-          <PowerupSelector
-            availablePowerups={availablePowerups}
-            selectedPowerups={form.data.powerups}
-            onChange={(powerups) => form.setData('powerups', powerups)}
-          />
-          {powerupErrors.length > 0 ? (
-            <div className="space-y-1 text-xs text-destructive">
-              {powerupErrors.map((message, idx) => (
-                <div key={`${message}-${idx}`}>{message}</div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        {allowsPowerups ? (
+          <div className="space-y-2">
+            <Label>Allowed Powerups</Label>
+            <PowerupSelector
+              availablePowerups={availablePowerups}
+              selectedPowerups={form.data.powerups}
+              onChange={(powerups) => form.setData('powerups', powerups)}
+            />
+            {powerupErrors.length > 0 ? (
+              <div className="space-y-1 text-xs text-destructive">
+                {powerupErrors.map((message, idx) => (
+                  <div key={`${message}-${idx}`}>{message}</div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+            Powerups are disabled for final exams.
+          </div>
+        )}
 
         {generalErrors.length > 0 ? (
           <div className="space-y-1 text-xs text-destructive">
@@ -197,7 +240,7 @@ export function QuizSettingsCard({
 
         <div className="border-t pt-4">
           <div className="mb-4 rounded-lg bg-muted/50 p-3">
-            <p className="text-sm font-medium">Quiz Summary</p>
+            <p className="text-sm font-medium">Assessment Summary</p>
             <div className="mt-2 space-y-1 text-sm text-muted-foreground">
               <p>Questions: {assessment.questions?.length ?? 0}</p>
               <p>Total Points: {assessment.max_score}</p>

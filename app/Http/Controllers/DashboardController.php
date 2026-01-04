@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AssessmentAttempt;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CourseContentCompletion;
-use App\Models\QuizAttempt;
 use App\Models\Reward;
 use App\Models\User;
 use App\Services\AchievementProgressService;
@@ -164,7 +164,7 @@ class DashboardController extends Controller
             $attendanceRecords = Attendance::whereIn('lesson_id', $lessonIds)->get();
 
             $assessmentIds = $taughtCourses->flatMap(fn (Course $course) => $course->assessments->pluck('id'));
-            $completedQuizAttempts = QuizAttempt::whereIn('assessment_id', $assessmentIds)
+            $completedAssessmentAttempts = AssessmentAttempt::whereIn('assessment_id', $assessmentIds)
                 ->whereNotNull('completed_at')
                 ->get();
 
@@ -192,7 +192,7 @@ class DashboardController extends Controller
                 $courseAssessmentIds = $course->assessments->pluck('id');
                 $assessmentCount = $courseAssessmentIds->count();
 
-                $quizCompletedCount = $completedQuizAttempts
+                $quizCompletedCount = $completedAssessmentAttempts
                     ->whereIn('assessment_id', $courseAssessmentIds)
                     ->unique(fn ($attempt) => $attempt->user_id.'-'.$attempt->assessment_id)
                     ->count();

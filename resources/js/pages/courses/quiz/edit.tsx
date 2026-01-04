@@ -4,12 +4,12 @@ import {
   QuizSettingsCard,
 } from '@/components/courses/quiz';
 import AppLayout from '@/layouts/app-layout';
-import type { Assessment, Course, Powerup, QuizQuestion } from '@/types';
+import type { Assessment, AssessmentQuestion, Course, Powerup } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 
 interface QuizEditProps {
   course: Course;
-  assessment: Assessment & { questions: QuizQuestion[] };
+  assessment: Assessment & { questions: AssessmentQuestion[] };
   availablePowerups: Powerup[];
 }
 
@@ -25,6 +25,7 @@ export default function QuizEdit({
     })) ?? [];
 
   const settingsForm = useForm({
+    type: assessment.type ?? 'quiz',
     title: assessment.title ?? '',
     description: assessment.description ?? '',
     lesson_id: assessment.lesson_id ?? '',
@@ -49,10 +50,10 @@ export default function QuizEdit({
       breadcrumbs={[
         { title: 'Courses', href: '/courses' },
         { title: course.title, href: `/courses/${course.id}` },
-        { title: 'Quiz Builder', href: '#' },
+        { title: 'Assessment Builder', href: '#' },
       ]}
     >
-      <Head title={`Edit Quiz - ${assessment.title}`} />
+      <Head title={`Edit Assessment - ${assessment.title}`} />
 
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <QuizBuilderHeader

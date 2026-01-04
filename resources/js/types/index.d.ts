@@ -296,7 +296,7 @@ export interface Assessment {
   id: number;
   course_id: number;
   lesson_id?: number | null;
-  type: string;
+  type: 'practice' | 'quiz' | 'final_exam';
   title: string;
   description?: string | null;
   due_date?: string | null;
@@ -304,10 +304,11 @@ export interface Assessment {
   allow_retakes?: boolean;
   time_limit_minutes?: number | null;
   is_published?: boolean;
+  is_remedial?: boolean;
   created_at: string;
   updated_at: string;
   submissions?: AssessmentSubmission[];
-  questions?: QuizQuestion[];
+  questions?: AssessmentQuestion[];
   powerups?: Powerup[];
 }
 
@@ -324,11 +325,24 @@ export interface AssessmentSubmission {
   assessment?: Assessment;
 }
 
-export interface StudentWithSubmissions extends User {
-  submissions?: AssessmentSubmission[];
+export interface FinalScore {
+  id: number;
+  user_id: number;
+  course_id: number;
+  quiz_score: number;
+  final_exam_score: number;
+  total_score: number;
+  is_remedial: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface QuizQuestion {
+export interface StudentWithSubmissions extends User {
+  submissions?: AssessmentSubmission[];
+  final_score?: FinalScore | null;
+}
+
+export interface AssessmentQuestion {
   id: number;
   assessment_id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
@@ -341,7 +355,7 @@ export interface QuizQuestion {
   updated_at: string;
 }
 
-export interface QuizAttempt {
+export interface AssessmentAttempt {
   id: number;
   assessment_id: number;
   user_id: number;
@@ -352,6 +366,8 @@ export interface QuizAttempt {
   time_extension?: number | null;
   completed_at?: string | null;
   is_graded: boolean;
+  is_remedial?: boolean;
+  points_awarded?: number;
   remaining_time?: number | null;
   created_at: string;
   updated_at: string;

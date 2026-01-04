@@ -23,7 +23,7 @@ export function AssessmentsHeader({
         {isTutor && (
           <Button size="sm" onClick={onCreateQuiz}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Quiz
+            Create Assessment
           </Button>
         )}
       </div>

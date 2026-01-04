@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class QuizAttempt extends Model
+class AssessmentAttempt extends Model
 {
-    /** @use HasFactory<\Database\Factories\QuizAttemptFactory> */
+    /** @use HasFactory<\Database\Factories\AssessmentAttemptFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -22,6 +22,8 @@ class QuizAttempt extends Model
         'time_extension',
         'completed_at',
         'is_graded',
+        'is_remedial',
+        'points_awarded',
     ];
 
     /**
@@ -35,6 +37,8 @@ class QuizAttempt extends Model
             'completed_at' => 'datetime',
             'is_graded' => 'boolean',
             'time_extension' => 'integer',
+            'is_remedial' => 'boolean',
+            'points_awarded' => 'integer',
         ];
     }
 
@@ -50,9 +54,9 @@ class QuizAttempt extends Model
 
     public function powerups(): BelongsToMany
     {
-        return $this->belongsToMany(Powerup::class, 'quiz_attempt_powerups')
+        return $this->belongsToMany(Powerup::class, 'assessment_attempt_powerups')
             ->withPivot('used_at', 'details')
-            ->using(QuizAttemptPowerup::class);
+            ->using(AssessmentAttemptPowerup::class);
     }
 
     public function isExpired(): bool

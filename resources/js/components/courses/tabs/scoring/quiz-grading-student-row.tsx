@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Assessment, QuizAttempt, QuizQuestion } from '@/types';
+import { Assessment, AssessmentAttempt, AssessmentQuestion } from '@/types';
 import { Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -22,7 +22,7 @@ function normalizeFillBlank(value: unknown): string {
     .toLowerCase();
 }
 
-function computeAutoPoints(question: QuizQuestion, answer: unknown): number {
+function computeAutoPoints(question: AssessmentQuestion, answer: unknown): number {
   if (answer === null || answer === undefined || String(answer) === '') {
     return 0;
   }
@@ -82,8 +82,8 @@ interface QuizGradingStudentRowProps {
     [key: string]: unknown;
   };
   assessment: Assessment;
-  attempt: QuizAttempt;
-  questions: QuizQuestion[];
+  attempt: AssessmentAttempt;
+  questions: AssessmentQuestion[];
   grades: Record<string, string>;
   onGradeChange: (key: string, value: string) => void;
   onSave: (
@@ -164,6 +164,11 @@ export function QuizGradingStudentRow({
 
         <div className="flex items-center gap-3">
           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+          {attempt.is_remedial && (
+            <Badge variant="outline" className="text-xs">
+              Remedial
+            </Badge>
+          )}
           <div className="text-right">
             <p className="text-sm font-semibold">
               {attempt.score ?? 0}

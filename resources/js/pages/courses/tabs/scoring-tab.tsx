@@ -89,9 +89,11 @@ export function ScoringTab({
         </div>
 
         {assessments.map((assessment) => {
-          const isQuiz = assessment.type === 'quiz';
+          const usesQuestions = ['practice', 'quiz', 'final_exam'].includes(
+            assessment.type,
+          );
 
-          if (isQuiz) {
+          if (usesQuestions) {
             return (
               <QuizGradingAssessmentCard
                 key={assessment.id}

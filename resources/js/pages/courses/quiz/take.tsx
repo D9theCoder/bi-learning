@@ -26,6 +26,7 @@ interface QuizTakeProps {
     id: number;
     title: string;
     description?: string | null;
+    type: 'practice' | 'quiz' | 'final_exam';
     time_limit_minutes?: number | null;
     max_score: number;
     powerups?: Powerup[];
@@ -36,6 +37,7 @@ interface QuizTakeProps {
     answers: Record<number, string>;
     started_at: string;
     remaining_time?: number | null;
+    is_remedial?: boolean;
   };
   usedPowerups: PowerupUsage[];
 }
@@ -143,6 +145,13 @@ export default function QuizTake({
     }
   };
 
+  const titleLabel =
+    assessment.type === 'final_exam'
+      ? 'Final Exam'
+      : assessment.type === 'practice'
+        ? 'Practice'
+        : 'Quiz';
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -151,7 +160,7 @@ export default function QuizTake({
         { title: assessment.title, href: '#' },
       ]}
     >
-      <Head title={`Taking Quiz - ${assessment.title}`} />
+      <Head title={`Taking ${titleLabel} - ${assessment.title}`} />
 
       <div className="flex min-h-[calc(100vh-4rem)] flex-col lg:flex-row">
         <QuizTakeSidebar
@@ -164,6 +173,23 @@ export default function QuizTake({
         />
 
         <div className="flex-1 p-4 lg:p-6">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium">
+            <span
+              className={`rounded-full px-3 py-1 ${assessment.type === 'final_exam' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : assessment.type === 'practice' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}
+            >
+              {assessment.type === 'final_exam'
+                ? 'Final Exam'
+                : assessment.type === 'practice'
+                  ? 'Practice'
+                  : 'Quiz'}
+            </span>
+            {attempt.is_remedial && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                Remedial Attempt
+              </span>
+            )}
+          </div>
+
           {assessment.powerups && assessment.powerups.length > 0 ? (
             <QuizPowerupBar
               powerups={assessment.powerups}

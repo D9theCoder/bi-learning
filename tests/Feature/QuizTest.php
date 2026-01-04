@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentSubmission;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\FinalScore;
 use App\Models\Powerup;
-use App\Models\QuizAttempt;
-use App\Models\QuizQuestion;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -68,7 +70,7 @@ it('allows tutor to add a multiple choice question', function () {
     ]);
 
     $response->assertRedirect();
-    expect(QuizQuestion::where('assessment_id', $assessment->id)->count())->toBe(1);
+    expect(AssessmentQuestion::where('assessment_id', $assessment->id)->count())->toBe(1);
     $question = $assessment->questions()->first();
     expect($question)->toMatchArray([
         'type' => 'multiple_choice',
@@ -132,6 +134,7 @@ it('allows tutor to update quiz settings', function () {
     ]);
 
     $response = $this->actingAs($tutor)->put("/courses/{$course->id}/quiz/{$assessment->id}", [
+        'type' => 'quiz',
         'title' => 'Updated Quiz Title',
         'description' => 'Updated description',
         'max_score' => 100,
@@ -183,7 +186,7 @@ it('allows student to start a quiz attempt', function () {
         'is_published' => true,
         'allow_retakes' => true,
     ]);
-    QuizQuestion::factory()->for($assessment)->create([
+    AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'Test question',
         'options' => ['A', 'B', 'C', 'D'],
@@ -193,7 +196,7 @@ it('allows student to start a quiz attempt', function () {
     $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/start");
 
     $response->assertRedirect();
-    expect(QuizAttempt::where('user_id', $student->id)->where('assessment_id', $assessment->id)->count())->toBe(1);
+    expect(AssessmentAttempt::where('user_id', $student->id)->where('assessment_id', $assessment->id)->count())->toBe(1);
 });
 
 it('prevents student from starting quiz when retakes not allowed and has completed attempt', function () {
@@ -205,7 +208,7 @@ it('prevents student from starting quiz when retakes not allowed and has complet
         'is_published' => true,
         'allow_retakes' => false,
     ]);
-    QuizAttempt::factory()->for($student)->for($assessment)->create([
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'completed_at' => now(),
     ]);
 
@@ -221,14 +224,14 @@ it('auto-grades multiple choice questions correctly', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($student)->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
         'options' => ['1', '2', '3', '4'],
         'correct_answer' => '4',
         'points' => 10,
     ]);
-    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'answers' => [],
     ]);
@@ -249,13 +252,13 @@ it('auto-grades fill in the blank questions case-insensitively', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($student)->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'fill_blank',
         'question' => 'The capital of France is ___.',
         'correct_answer' => 'Paris',
         'points' => 5,
     ]);
-    QuizAttempt::factory()->for($student)->for($assessment)->create([
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'answers' => [],
     ]);
@@ -265,7 +268,7 @@ it('auto-grades fill in the blank questions case-insensitively', function () {
     ]);
 
     $response->assertRedirect();
-    $attempt = QuizAttempt::where('user_id', $student->id)->first();
+    $attempt = AssessmentAttempt::where('user_id', $student->id)->first();
     expect($attempt->score)->toBe(5);
 });
 
@@ -275,12 +278,12 @@ it('does not auto-grade essay questions', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($student)->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'essay',
         'question' => 'Explain photosynthesis.',
         'points' => 20,
     ]);
-    QuizAttempt::factory()->for($student)->for($assessment)->create([
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'answers' => [],
     ]);
@@ -290,7 +293,7 @@ it('does not auto-grade essay questions', function () {
     ]);
 
     $response->assertRedirect();
-    $attempt = QuizAttempt::where('user_id', $student->id)->first();
+    $attempt = AssessmentAttempt::where('user_id', $student->id)->first();
     expect($attempt->is_graded)->toBeFalse(); // Essay needs manual grading
 });
 
@@ -301,12 +304,12 @@ it('allows tutor to grade essay question', function () {
     $student->assignRole('student');
     $course = Course::factory()->create(['instructor_id' => $tutor->id]);
     $assessment = Assessment::factory()->for($course)->create();
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'essay',
         'question' => 'Explain photosynthesis.',
         'points' => 20,
     ]);
-    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'completed_at' => now(),
         'answers' => [$question->id => 'Plants use sunlight to make food.'],
@@ -353,7 +356,7 @@ it('allows tutor to manually grade objective questions per-question', function (
     $course = Course::factory()->create(['instructor_id' => $tutor->id]);
     $assessment = Assessment::factory()->for($course)->create();
 
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
         'options' => ['1', '2', '3', '4'],
@@ -361,7 +364,7 @@ it('allows tutor to manually grade objective questions per-question', function (
         'points' => 10,
     ]);
 
-    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'completed_at' => now(),
         'answers' => [$question->id => '1'],
@@ -410,7 +413,7 @@ it('keeps highest score when retakes are allowed', function () {
         'is_published' => true,
         'allow_retakes' => true,
     ]);
-    $question = QuizQuestion::factory()->for($assessment)->create([
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'options' => ['A', 'B', 'C', 'D'],
         'correct_answer' => 'A',
@@ -418,7 +421,7 @@ it('keeps highest score when retakes are allowed', function () {
     ]);
 
     // First attempt - wrong answer
-    QuizAttempt::factory()->for($student)->for($assessment)->create([
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now()->subHour(),
         'completed_at' => now()->subHour(),
         'answers' => [$question->id => 'B'],
@@ -428,7 +431,7 @@ it('keeps highest score when retakes are allowed', function () {
     ]);
 
     // Second attempt - correct answer
-    QuizAttempt::factory()->for($student)->for($assessment)->create([
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'completed_at' => now(),
         'answers' => [$question->id => 'A'],
@@ -450,7 +453,7 @@ it('adds time extension when using an extra time powerup', function () {
         'is_published' => true,
         'time_limit_minutes' => 10,
     ]);
-    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'time_extension' => 0,
     ]);
@@ -483,7 +486,7 @@ it('enforces powerup usage limits', function () {
         'is_published' => true,
         'time_limit_minutes' => 10,
     ]);
-    $attempt = QuizAttempt::factory()->for($student)->for($assessment)->create([
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'time_extension' => 0,
     ]);
@@ -507,4 +510,308 @@ it('enforces powerup usage limits', function () {
 
     $attempt->refresh();
     expect($attempt->time_extension)->toBe(60);
+});
+
+it('awards 150 points for completing practice assessment', function () {
+    $student = User::factory()->create(['points_balance' => 0]);
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'type' => 'practice',
+        'is_published' => true,
+        'max_score' => 10,
+    ]);
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
+        'type' => 'multiple_choice',
+        'options' => ['A', 'B', 'C', 'D'],
+        'correct_answer' => 'A',
+        'points' => 10,
+    ]);
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'answers' => [],
+    ]);
+
+    $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
+        'answers' => [$question->id => 'A'],
+    ]);
+
+    $response->assertRedirect();
+    $attempt = AssessmentAttempt::where('user_id', $student->id)
+        ->where('assessment_id', $assessment->id)
+        ->first();
+
+    expect($attempt?->points_awarded)->toBe(150);
+    $student->refresh();
+    expect($student->points_balance)->toBe(150);
+});
+
+it('disallows powerups in final exams', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'time_limit_minutes' => 10,
+    ]);
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'time_extension' => 0,
+    ]);
+    $powerup = Powerup::factory()->create([
+        'slug' => 'extra-time',
+        'config' => ['extra_time_seconds' => 60],
+        'default_limit' => 1,
+    ]);
+    $assessment->powerups()->attach($powerup->id, ['limit' => 1]);
+
+    $response = $this->actingAs($student)->postJson(
+        "/courses/{$course->id}/quiz/{$assessment->id}/powerups/use",
+        ['powerup_id' => $powerup->id]
+    );
+
+    $response->assertForbidden();
+});
+
+it('hides final exam scores until reviewed', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'max_score' => 10,
+    ]);
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
+        'type' => 'multiple_choice',
+        'options' => ['A', 'B', 'C', 'D'],
+        'correct_answer' => 'A',
+        'points' => 10,
+    ]);
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'answers' => [],
+    ]);
+
+    $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
+        'answers' => [$question->id => 'A'],
+    ])->assertRedirect();
+
+    $attempt = AssessmentAttempt::where('user_id', $student->id)->first();
+    expect($attempt?->is_graded)->toBeFalse();
+
+    $submission = AssessmentSubmission::where('assessment_id', $assessment->id)
+        ->where('user_id', $student->id)
+        ->first();
+
+    expect($submission?->score)->toBeNull();
+});
+
+it('weights final exam as 50 percent minimum', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    Enrollment::factory()->for($student)->for($course)->create();
+
+    $quiz = Assessment::factory()->for($course)->create([
+        'type' => 'quiz',
+        'is_published' => true,
+        'max_score' => 20,
+    ]);
+    $quizQuestionOne = AssessmentQuestion::factory()->for($quiz)->create([
+        'type' => 'multiple_choice',
+        'options' => ['A', 'B', 'C', 'D'],
+        'correct_answer' => 'A',
+        'points' => 10,
+    ]);
+    $quizQuestionTwo = AssessmentQuestion::factory()->for($quiz)->create([
+        'type' => 'multiple_choice',
+        'options' => ['A', 'B', 'C', 'D'],
+        'correct_answer' => 'B',
+        'points' => 10,
+    ]);
+    AssessmentAttempt::factory()->for($student)->for($quiz)->create([
+        'started_at' => now(),
+        'answers' => [],
+    ]);
+
+    $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$quiz->id}/submit", [
+        'answers' => [
+            $quizQuestionOne->id => 'A',
+            $quizQuestionTwo->id => 'C',
+        ],
+    ])->assertRedirect();
+
+    $finalExam = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'max_score' => 20,
+    ]);
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
+        'type' => 'essay',
+        'points' => 20,
+    ]);
+    $finalAttempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
+        'started_at' => now(),
+        'answers' => [$finalExamQuestion->id => 'Answer'],
+    ]);
+
+    $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$finalExam->id}/attempts/{$finalAttempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $finalExamQuestion->id,
+                'points' => 20,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $finalScore = FinalScore::where('user_id', $student->id)
+        ->where('course_id', $course->id)
+        ->first();
+
+    expect($finalScore?->quiz_score)->toBe(50);
+    expect($finalScore?->final_exam_score)->toBe(100);
+    expect($finalScore?->total_score)->toBe(75);
+});
+
+it('allows remedial attempt when final score is below 65', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    Enrollment::factory()->for($student)->for($course)->create();
+
+    $finalExam = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'max_score' => 100,
+    ]);
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
+        'type' => 'essay',
+        'points' => 100,
+    ]);
+    $attempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
+        'started_at' => now(),
+        'answers' => [$finalExamQuestion->id => 'Answer'],
+    ]);
+
+    $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$finalExam->id}/attempts/{$attempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $finalExamQuestion->id,
+                'points' => 60,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$finalExam->id}/remedial");
+
+    $response->assertRedirect();
+    expect(AssessmentAttempt::where('assessment_id', $finalExam->id)->where('user_id', $student->id)->where('is_remedial', true)->exists())->toBeTrue();
+});
+
+it('prevents remedial attempt when final score is 65 or above', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    Enrollment::factory()->for($student)->for($course)->create();
+
+    $finalExam = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'max_score' => 100,
+    ]);
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
+        'type' => 'essay',
+        'points' => 100,
+    ]);
+    $attempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
+        'started_at' => now(),
+        'answers' => [$finalExamQuestion->id => 'Answer'],
+    ]);
+
+    $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$finalExam->id}/attempts/{$attempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $finalExamQuestion->id,
+                'points' => 70,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$finalExam->id}/remedial");
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('error');
+});
+
+it('caps final score at 65 and awards no points for remedial attempts', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $student = User::factory()->create(['points_balance' => 0]);
+    $student->assignRole('student');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    Enrollment::factory()->for($student)->for($course)->create();
+
+    $finalExam = Assessment::factory()->for($course)->create([
+        'type' => 'final_exam',
+        'is_published' => true,
+        'max_score' => 100,
+    ]);
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
+        'type' => 'essay',
+        'points' => 100,
+    ]);
+    $initialAttempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
+        'started_at' => now(),
+        'answers' => [$finalExamQuestion->id => 'Answer'],
+    ]);
+
+    $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$finalExam->id}/attempts/{$initialAttempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $finalExamQuestion->id,
+                'points' => 50,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $student->refresh();
+    $initialPoints = $student->points_balance;
+
+    $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$finalExam->id}/remedial")
+        ->assertRedirect();
+
+    $remedialAttempt = AssessmentAttempt::where('assessment_id', $finalExam->id)
+        ->where('user_id', $student->id)
+        ->where('is_remedial', true)
+        ->first();
+
+    $this->actingAs($tutor)->post("/courses/{$course->id}/quiz/{$finalExam->id}/attempts/{$remedialAttempt->id}/grade-essay", [
+        'grades' => [
+            [
+                'question_id' => $finalExamQuestion->id,
+                'points' => 100,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $finalScore = FinalScore::where('user_id', $student->id)
+        ->where('course_id', $course->id)
+        ->first();
+
+    $remedialAttempt->refresh();
+    expect($finalScore?->total_score)->toBe(65);
+    expect($remedialAttempt->points_awarded)->toBe(0);
+    $student->refresh();
+    expect($student->points_balance)->toBe($initialPoints);
 });

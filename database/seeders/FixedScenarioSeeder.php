@@ -24,6 +24,7 @@ class FixedScenarioSeeder extends Seeder
                 'name' => 'Fixed Student',
                 'password' => 'password', // Mutator usually hashes this, or UserFactory does
                 'email_verified_at' => now(),
+                'points_balance' => 100000,
             ]
         );
         $student->syncRoles('student');
@@ -60,9 +61,9 @@ class FixedScenarioSeeder extends Seeder
             ]
         );
 
-        // 4. Create 4 Sessions with specific content
+        // 4. Create 6 Sessions with specific content
         // Ensure we don't duplicate if re-run
-        if ($course->lessons()->count() < 4) {
+        if ($course->lessons()->count() < 6) {
             $this->createSessions($course);
         }
     }
@@ -235,6 +236,191 @@ class FixedScenarioSeeder extends Seeder
         // Recalculate max score based on questions
         $assessment->update([
             'max_score' => $assessment->questions()->sum('points'),
+        ]);
+
+        // Session 5: Practice Assessment
+        $lesson5 = Lesson::create([
+            'course_id' => $course->id,
+            'title' => 'Session 5: Practice Assessment',
+            'order' => 5,
+            'meeting_url' => 'https://zoom.us/j/1234567895',
+            'meeting_start_time' => now()->addDays(5)->setHour(10)->setMinute(0),
+            'meeting_end_time' => now()->addDays(5)->setHour(11)->setMinute(0),
+            'duration_minutes' => 60,
+        ]);
+
+        $content5 = CourseContent::create([
+            'lesson_id' => $lesson5->id,
+            'title' => 'Practice Drill',
+            'type' => 'quiz',
+            'is_required' => true,
+            'due_date' => now()->addDays(6),
+            'description' => 'Practice assessment to build confidence.',
+        ]);
+
+        $practiceAssessment = Assessment::create([
+            'course_id' => $course->id,
+            'lesson_id' => $lesson5->id,
+            'type' => 'practice',
+            'title' => $content5->title,
+            'description' => $content5->description,
+            'due_date' => $content5->due_date,
+            'max_score' => 50,
+            'allow_retakes' => true,
+            'time_limit_minutes' => 20,
+            'is_published' => true,
+        ]);
+
+        $practiceAssessment->questions()->createMany([
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which Artisan command generates a model?',
+                'options' => [
+                    'php artisan make:model',
+                    'php artisan create:model',
+                    'php artisan new:model',
+                    'php artisan build:model',
+                ],
+                'correct_answer' => '0',
+                'points' => 10,
+                'order' => 1,
+            ],
+            [
+                'type' => 'fill_blank',
+                'question' => 'Laravel uses ___ for dependency injection.',
+                'options' => null,
+                'correct_answer' => 'service container',
+                'points' => 10,
+                'order' => 2,
+            ],
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which file defines web routes?',
+                'options' => [
+                    'routes/api.php',
+                    'routes/web.php',
+                    'routes/console.php',
+                    'routes/channels.php',
+                ],
+                'correct_answer' => '1',
+                'points' => 10,
+                'order' => 3,
+            ],
+            [
+                'type' => 'fill_blank',
+                'question' => 'Eloquent relationships are defined as ___ methods.',
+                'options' => null,
+                'correct_answer' => 'relationship',
+                'points' => 10,
+                'order' => 4,
+            ],
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which command runs the test suite?',
+                'options' => [
+                    'php artisan tests',
+                    'php artisan test',
+                    'php artisan run:tests',
+                    'php artisan pest',
+                ],
+                'correct_answer' => '1',
+                'points' => 10,
+                'order' => 5,
+            ],
+        ]);
+
+        $practiceAssessment->update([
+            'max_score' => $practiceAssessment->questions()->sum('points'),
+        ]);
+
+        // Session 6: Final Exam
+        $lesson6 = Lesson::create([
+            'course_id' => $course->id,
+            'title' => 'Session 6: Final Exam',
+            'order' => 6,
+            'meeting_url' => 'https://zoom.us/j/1234567896',
+            'meeting_start_time' => now()->addDays(6)->setHour(10)->setMinute(0),
+            'meeting_end_time' => now()->addDays(6)->setHour(11)->setMinute(0),
+            'duration_minutes' => 60,
+        ]);
+
+        $content6 = CourseContent::create([
+            'lesson_id' => $lesson6->id,
+            'title' => 'Final Exam',
+            'type' => 'quiz',
+            'is_required' => true,
+            'due_date' => now()->addDays(7),
+            'description' => 'Comprehensive final exam with mixed question types.',
+        ]);
+
+        $finalExam = Assessment::create([
+            'course_id' => $course->id,
+            'lesson_id' => $lesson6->id,
+            'type' => 'final_exam',
+            'title' => $content6->title,
+            'description' => $content6->description,
+            'due_date' => $content6->due_date,
+            'max_score' => 100,
+            'allow_retakes' => false,
+            'time_limit_minutes' => 45,
+            'is_published' => true,
+        ]);
+
+        $finalExam->questions()->createMany([
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which statement about migrations is true?',
+                'options' => [
+                    'They are used to seed data only.',
+                    'They define database schema changes.',
+                    'They replace model factories.',
+                    'They are only for production.',
+                ],
+                'correct_answer' => '1',
+                'points' => 10,
+                'order' => 1,
+            ],
+            [
+                'type' => 'fill_blank',
+                'question' => 'The __ method is used to render Inertia pages on the server.',
+                'options' => null,
+                'correct_answer' => 'Inertia::render',
+                'points' => 10,
+                'order' => 2,
+            ],
+            [
+                'type' => 'essay',
+                'question' => 'Explain how Laravel handles request validation and why Form Requests are useful.',
+                'options' => null,
+                'correct_answer' => null,
+                'points' => 30,
+                'order' => 3,
+            ],
+            [
+                'type' => 'essay',
+                'question' => 'Describe a strategy to prevent N+1 queries in a Laravel application.',
+                'options' => null,
+                'correct_answer' => null,
+                'points' => 30,
+                'order' => 4,
+            ],
+            [
+                'type' => 'multiple_choice',
+                'question' => 'Which command runs queued jobs?',
+                'options' => [
+                    'php artisan queue:listen',
+                    'php artisan queue:work',
+                    'php artisan queue:run',
+                    'php artisan queue:start',
+                ],
+                'correct_answer' => '1',
+                'points' => 20,
+                'order' => 5,
+            ],
+        ]);
+
+        $finalExam->update([
+            'max_score' => $finalExam->questions()->sum('points'),
         ]);
     }
 }

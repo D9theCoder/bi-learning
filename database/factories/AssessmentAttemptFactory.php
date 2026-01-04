@@ -3,16 +3,16 @@
 namespace Database\Factories;
 
 use App\Models\Assessment;
-use App\Models\QuizAttempt;
+use App\Models\AssessmentAttempt;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\QuizAttempt>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AssessmentAttempt>
  */
-class QuizAttemptFactory extends Factory
+class AssessmentAttemptFactory extends Factory
 {
-    protected $model = QuizAttempt::class;
+    protected $model = AssessmentAttempt::class;
 
     /**
      * Define the model's default state.
@@ -31,6 +31,8 @@ class QuizAttemptFactory extends Factory
             'time_extension' => 0,
             'completed_at' => null,
             'is_graded' => false,
+            'is_remedial' => false,
+            'points_awarded' => 0,
         ];
     }
 

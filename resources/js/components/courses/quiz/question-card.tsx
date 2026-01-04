@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { QuizQuestion } from '@/types';
+import type { AssessmentQuestion } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import {
   CheckCircle,
@@ -36,7 +36,7 @@ const questionTypes = [
 ] as const;
 
 interface QuestionCardProps {
-  question: QuizQuestion;
+  question: AssessmentQuestion;
   index: number;
   courseId: number;
   assessmentId: number;

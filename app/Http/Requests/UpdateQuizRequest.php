@@ -51,6 +51,7 @@ class UpdateQuizRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', 'in:practice,quiz,final_exam'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'lesson_id' => ['nullable', 'exists:lessons,id'],
@@ -59,7 +60,7 @@ class UpdateQuizRequest extends FormRequest
             'allow_retakes' => ['sometimes', 'boolean'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:480'],
             'is_published' => ['sometimes', 'boolean'],
-            'powerups' => ['nullable', 'array'],
+            'powerups' => ['nullable', 'array', 'prohibited_if:type,final_exam'],
             'powerups.*.id' => ['required', 'integer', 'exists:powerups,id'],
             'powerups.*.limit' => ['required', 'integer', 'min:1'],
         ];

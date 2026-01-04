@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Assessment, QuizQuestion } from '@/types';
+import type { Assessment, AssessmentQuestion } from '@/types';
 import {
   Clock,
   FileText,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface QuizInfoCardProps {
-  assessment: Assessment & { questions: QuizQuestion[] };
+  assessment: Assessment & { questions: AssessmentQuestion[] };
 }
 
 export function QuizInfoCard({ assessment }: QuizInfoCardProps) {
@@ -32,7 +32,7 @@ export function QuizInfoCard({ assessment }: QuizInfoCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quiz Information</CardTitle>
+        <CardTitle>Assessment Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {assessment.description && (

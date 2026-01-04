@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamp('used_at');
             $table->json('details')->nullable();
 
-            $table->index(['quiz_attempt_id', 'powerup_id']);
+            $table->index(['quiz_attempt_id', 'powerup_id'], 'quiz_attempt_powerup_idx');
         });
     }
 

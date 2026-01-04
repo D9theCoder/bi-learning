@@ -24,6 +24,7 @@ class Assessment extends Model
         'allow_retakes',
         'time_limit_minutes',
         'is_published',
+        'is_remedial',
     ];
 
     /**
@@ -35,6 +36,7 @@ class Assessment extends Model
             'due_date' => 'datetime',
             'allow_retakes' => 'boolean',
             'is_published' => 'boolean',
+            'is_remedial' => 'boolean',
         ];
     }
 
@@ -55,12 +57,12 @@ class Assessment extends Model
 
     public function questions(): HasMany
     {
-        return $this->hasMany(QuizQuestion::class)->orderBy('order');
+        return $this->hasMany(AssessmentQuestion::class)->orderBy('order');
     }
 
     public function attempts(): HasMany
     {
-        return $this->hasMany(QuizAttempt::class);
+        return $this->hasMany(AssessmentAttempt::class);
     }
 
     public function powerups(): BelongsToMany
@@ -69,7 +71,7 @@ class Assessment extends Model
             ->withPivot('limit');
     }
 
-    public function getBestAttemptForUser(int $userId): ?QuizAttempt
+    public function getBestAttemptForUser(int $userId): ?AssessmentAttempt
     {
         return $this->attempts()
             ->where('user_id', $userId)
@@ -78,7 +80,7 @@ class Assessment extends Model
             ->first();
     }
 
-    public function getLatestAttemptForUser(int $userId): ?QuizAttempt
+    public function getLatestAttemptForUser(int $userId): ?AssessmentAttempt
     {
         return $this->attempts()
             ->where('user_id', $userId)
@@ -103,5 +105,25 @@ class Assessment extends Model
         }
 
         return true;
+    }
+
+    public function allowsPowerups(): bool
+    {
+        return in_array($this->type, ['practice', 'quiz'], true);
+    }
+
+    public function shouldHideScores(): bool
+    {
+        return $this->isFinalExam();
+    }
+
+    public function isFinalExam(): bool
+    {
+        return $this->type === 'final_exam';
+    }
+
+    public function isPractice(): bool
+    {
+        return $this->type === 'practice';
     }
 }

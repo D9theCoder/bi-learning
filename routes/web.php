@@ -86,6 +86,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('courses/{course}/quiz/{assessment}')->name('quiz.')->group(function () {
         Route::get('/', [QuizController::class, 'show'])->name('show');
         Route::post('/start', [QuizController::class, 'startAttempt'])->name('start');
+        Route::post('/remedial', [QuizController::class, 'startRemedialAttempt'])->name('remedial');
         Route::get('/take', [QuizController::class, 'take'])->name('take');
         Route::post('/save', [QuizController::class, 'saveProgress'])->name('save');
         Route::post('/powerups/use', [QuizController::class, 'usePowerup'])->name('powerups.use');

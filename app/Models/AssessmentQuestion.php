@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class QuizQuestion extends Model
+class AssessmentQuestion extends Model
 {
-    /** @use HasFactory<\Database\Factories\QuizQuestionFactory> */
+    /** @use HasFactory<\Database\Factories\AssessmentQuestionFactory> */
     use HasFactory;
 
     protected $fillable = [

@@ -26,6 +26,10 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
               const submission = submissions.find(
                 (s) => s.assessment_id === assessment.id,
               );
+              const isPendingReview =
+                assessment.type === 'final_exam' &&
+                submission &&
+                submission.score === null;
               return (
                 <div
                   key={assessment.id}
@@ -43,12 +47,16 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
                   <div className="text-right">
                     {submission ? (
                       <div>
-                        <span className="block text-xl font-bold">
-                          {submission.score ?? '-'}
-                          <span className="text-sm font-normal text-gray-500">
-                            /{assessment.max_score}
+                        {isPendingReview ? (
+                          <Badge variant="outline">Pending review</Badge>
+                        ) : (
+                          <span className="block text-xl font-bold">
+                            {submission.score ?? '-'}
+                            <span className="text-sm font-normal text-gray-500">
+                              /{assessment.max_score}
+                            </span>
                           </span>
-                        </span>
+                        )}
                         {submission.feedback && (
                           <p
                             className="mt-1 max-w-[200px] truncate text-xs text-blue-500"

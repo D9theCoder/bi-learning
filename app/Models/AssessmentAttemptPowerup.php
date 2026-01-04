@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class QuizAttemptPowerup extends Pivot
+class AssessmentAttemptPowerup extends Pivot
 {
     public $timestamps = false;
 
     public $incrementing = true;
 
-    protected $table = 'quiz_attempt_powerups';
+    protected $table = 'assessment_attempt_powerups';
 
     protected $fillable = [
-        'quiz_attempt_id',
+        'assessment_attempt_id',
         'powerup_id',
         'used_at',
         'details',

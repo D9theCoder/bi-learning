@@ -6,18 +6,26 @@ use App\Http\Requests\StoreQuizRequest;
 use App\Http\Requests\UpdateQuizRequest;
 use App\Http\Requests\UseQuizPowerupRequest;
 use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentSubmission;
 use App\Models\Course;
+use App\Models\FinalScore;
 use App\Models\Powerup;
-use App\Models\QuizAttempt;
-use App\Models\QuizQuestion;
+use App\Services\GamificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QuizController extends Controller
 {
+    public function __construct(
+        protected GamificationService $gamificationService
+    ) {}
+
     /**
      * Calculate attempt score using a mix of:
      * - Manual per-question grades stored at "{questionId}_grade" in the answers payload
@@ -113,9 +121,11 @@ class QuizController extends Controller
             ->orderBy('name')
             ->get();
 
-        $assessmentPowerups = $assessment->powerups->map(function (Powerup $powerup) {
-            return $this->formatPowerup($powerup, $powerup->pivot?->limit);
-        });
+        $assessmentPowerups = $assessment->allowsPowerups()
+            ? $assessment->powerups->map(function (Powerup $powerup) {
+                return $this->formatPowerup($powerup, $powerup->pivot?->limit);
+            })
+            : collect();
 
         return Inertia::render('courses/quiz/edit', [
             'course' => $course,
@@ -136,15 +146,16 @@ class QuizController extends Controller
     {
         $validated = $request->validated();
         $powerups = collect($validated['powerups'] ?? []);
+        $type = $validated['type'];
 
         $assessment = $course->assessments()->create([
             ...$validated,
-            'type' => 'quiz',
+            'type' => $type,
             'allow_retakes' => $validated['allow_retakes'] ?? false,
             'is_published' => $validated['is_published'] ?? false,
         ]);
 
-        if ($powerups->isNotEmpty()) {
+        if ($assessment->allowsPowerups() && $powerups->isNotEmpty()) {
             $assessment->powerups()->sync(
                 $powerups->mapWithKeys(fn (array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
@@ -170,7 +181,9 @@ class QuizController extends Controller
             'is_published' => $validated['is_published'] ?? false,
         ]);
 
-        if (array_key_exists('powerups', $validated)) {
+        if (! $assessment->allowsPowerups()) {
+            $assessment->powerups()->detach();
+        } elseif (array_key_exists('powerups', $validated)) {
             $assessment->powerups()->sync(
                 $powerups->mapWithKeys(fn (array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
@@ -216,7 +229,7 @@ class QuizController extends Controller
     /**
      * Update a question.
      */
-    public function updateQuestion(Request $request, Course $course, Assessment $assessment, QuizQuestion $question): RedirectResponse
+    public function updateQuestion(Request $request, Course $course, Assessment $assessment, AssessmentQuestion $question): RedirectResponse
     {
         $user = auth()->user();
 
@@ -244,7 +257,7 @@ class QuizController extends Controller
     /**
      * Delete a question.
      */
-    public function destroyQuestion(Course $course, Assessment $assessment, QuizQuestion $question): RedirectResponse
+    public function destroyQuestion(Course $course, Assessment $assessment, AssessmentQuestion $question): RedirectResponse
     {
         $user = auth()->user();
 
@@ -272,12 +285,12 @@ class QuizController extends Controller
 
         $validated = $request->validate([
             'questions' => 'required|array',
-            'questions.*.id' => 'required|exists:quiz_questions,id',
+            'questions.*.id' => 'required|exists:assessment_questions,id',
             'questions.*.order' => 'required|integer|min:0',
         ]);
 
         foreach ($validated['questions'] as $questionData) {
-            QuizQuestion::where('id', $questionData['id'])
+            AssessmentQuestion::where('id', $questionData['id'])
                 ->where('assessment_id', $assessment->id)
                 ->update(['order' => $questionData['order']]);
         }
@@ -312,9 +325,33 @@ class QuizController extends Controller
         $existingAttempt = $assessment->getLatestAttemptForUser($user->id);
         $bestAttempt = $assessment->getBestAttemptForUser($user->id);
         $canAttempt = $assessment->canUserAttempt($user->id);
+        $finalScore = null;
+        $canStartRemedial = false;
+        $shouldHideScores = false;
 
         if ($existingAttempt && ! $existingAttempt->completed_at && ! $existingAttempt->isExpired()) {
             $existingAttempt->remaining_time = $existingAttempt->remaining_time;
+        }
+
+        if (! $isTutor) {
+            $finalScore = FinalScore::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->first();
+        }
+
+        $shouldHideScores = $assessment->shouldHideScores()
+            && ! $isTutor
+            && (! $bestAttempt?->is_graded);
+
+        if ($assessment->isFinalExam() && ! $isTutor && $finalScore) {
+            $hasRemedialAttempt = AssessmentAttempt::query()
+                ->where('assessment_id', $assessment->id)
+                ->where('user_id', $user->id)
+                ->where('is_remedial', true)
+                ->exists();
+
+            $canStartRemedial = $finalScore->total_score < 65 && ! $hasRemedialAttempt;
         }
 
         return Inertia::render('courses/quiz/show', [
@@ -324,6 +361,9 @@ class QuizController extends Controller
             'bestAttempt' => $bestAttempt,
             'canAttempt' => $canAttempt,
             'isTutor' => $isTutor,
+            'finalScore' => $finalScore,
+            'canStartRemedial' => $canStartRemedial,
+            'shouldHideScores' => $shouldHideScores,
         ]);
     }
 
@@ -358,11 +398,71 @@ class QuizController extends Controller
             return redirect()->route('quiz.take', [$course, $assessment]);
         }
 
-        QuizAttempt::create([
+        AssessmentAttempt::create([
             'assessment_id' => $assessment->id,
             'user_id' => $user->id,
             'started_at' => now(),
             'total_points' => $assessment->questions()->sum('points'),
+        ]);
+
+        return redirect()->route('quiz.take', [$course, $assessment]);
+    }
+
+    /**
+     * Start a remedial attempt for a final exam.
+     */
+    public function startRemedialAttempt(Course $course, Assessment $assessment): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            abort(401);
+        }
+
+        if (! $assessment->isFinalExam()) {
+            abort(404);
+        }
+
+        $isEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
+
+        if (! $isEnrolled) {
+            abort(403);
+        }
+
+        if (! $assessment->is_published) {
+            abort(403, 'This exam is not available yet.');
+        }
+
+        $finalScore = FinalScore::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if (! $finalScore || $finalScore->total_score >= 65) {
+            return back()->withErrors(['error' => 'You are not eligible for a remedial attempt.']);
+        }
+
+        $existingRemedial = AssessmentAttempt::query()
+            ->where('assessment_id', $assessment->id)
+            ->where('user_id', $user->id)
+            ->where('is_remedial', true)
+            ->latest()
+            ->first();
+
+        if ($existingRemedial && ! $existingRemedial->completed_at && ! $existingRemedial->isExpired()) {
+            return redirect()->route('quiz.take', [$course, $assessment]);
+        }
+
+        if ($existingRemedial && $existingRemedial->completed_at) {
+            return back()->withErrors(['error' => 'You have already completed a remedial attempt.']);
+        }
+
+        AssessmentAttempt::create([
+            'assessment_id' => $assessment->id,
+            'user_id' => $user->id,
+            'started_at' => now(),
+            'total_points' => $assessment->questions()->sum('points'),
+            'is_remedial' => true,
         ]);
 
         return redirect()->route('quiz.take', [$course, $assessment]);
@@ -427,9 +527,10 @@ class QuizController extends Controller
                 'id' => $assessment->id,
                 'title' => $assessment->title,
                 'description' => $assessment->description,
+                'type' => $assessment->type,
                 'time_limit_minutes' => $assessment->time_limit_minutes,
                 'max_score' => $assessment->max_score,
-                'powerups' => $assessmentPowerups,
+                'powerups' => $assessmentPowerups->values(),
             ],
             'questions' => $questions,
             'attempt' => [
@@ -437,6 +538,7 @@ class QuizController extends Controller
                 'answers' => $attempt->answers ?? [],
                 'started_at' => $attempt->started_at,
                 'remaining_time' => $attempt->remaining_time,
+                'is_remedial' => $attempt->is_remedial,
             ],
             'usedPowerups' => $usedPowerups,
         ]);
@@ -628,18 +730,23 @@ class QuizController extends Controller
     /**
      * Grade a quiz attempt.
      */
-    protected function gradeAttempt(QuizAttempt $attempt): void
+    protected function gradeAttempt(AssessmentAttempt $attempt): void
     {
         $assessment = $attempt->assessment;
         /** @var array<string, mixed> $answers */
         $answers = $attempt->answers ?? [];
         $calculated = $this->calculateAttemptScore($assessment, $answers);
+        $isGraded = $assessment->isFinalExam() ? false : $calculated['is_graded'];
 
         $attempt->update([
             'score' => $calculated['score'],
             'completed_at' => now(),
-            'is_graded' => $calculated['is_graded'],
+            'is_graded' => $isGraded,
         ]);
+
+        if ($isGraded) {
+            $this->awardAssessmentPoints($attempt);
+        }
 
         $this->syncSubmission($attempt);
     }
@@ -647,7 +754,7 @@ class QuizController extends Controller
     /**
      * Auto-submit an expired attempt.
      */
-    protected function autoSubmitAttempt(QuizAttempt $attempt): void
+    protected function autoSubmitAttempt(AssessmentAttempt $attempt): void
     {
         if ($attempt->completed_at) {
             return;
@@ -659,7 +766,7 @@ class QuizController extends Controller
     /**
      * Sync attempt score to assessment submission (for gradebook).
      */
-    protected function syncSubmission(QuizAttempt $attempt): void
+    protected function syncSubmission(AssessmentAttempt $attempt): void
     {
         $assessment = $attempt->assessment;
         $userId = $attempt->user_id;
@@ -671,7 +778,11 @@ class QuizController extends Controller
             $score = $attempt->score;
         }
 
-        \App\Models\AssessmentSubmission::updateOrCreate(
+        if ($assessment->isFinalExam() && ! $attempt->is_graded) {
+            $score = null;
+        }
+
+        AssessmentSubmission::updateOrCreate(
             [
                 'assessment_id' => $assessment->id,
                 'user_id' => $userId,
@@ -681,6 +792,123 @@ class QuizController extends Controller
                 'submitted_at' => $attempt->completed_at ?? now(),
             ]
         );
+
+        $this->syncFinalScore($assessment, $userId);
+    }
+
+    protected function awardAssessmentPoints(AssessmentAttempt $attempt): void
+    {
+        if ($attempt->points_awarded > 0 || $attempt->is_remedial) {
+            return;
+        }
+
+        $user = $attempt->user;
+
+        if (! $user || $attempt->score === null) {
+            return;
+        }
+
+        $points = $this->gamificationService->awardAssessmentPoints(
+            $user,
+            $attempt->assessment->type,
+            (int) $attempt->score,
+            (int) $attempt->assessment->max_score,
+            $attempt->is_remedial
+        );
+
+        $attempt->update([
+            'points_awarded' => $points,
+        ]);
+    }
+
+    protected function syncFinalScore(Assessment $assessment, int $userId): void
+    {
+        $course = $assessment->course;
+
+        if (! $course) {
+            return;
+        }
+
+        $assessments = $course->assessments()
+            ->whereIn('type', ['quiz', 'final_exam'])
+            ->get();
+
+        if ($assessments->isEmpty()) {
+            return;
+        }
+
+        $quizAssessments = $assessments->where('type', 'quiz');
+        $finalExamAssessments = $assessments->where('type', 'final_exam');
+
+        $quizPercent = $this->calculateAveragePercent($quizAssessments, $userId);
+        $finalExamPercent = $this->calculateAveragePercent($finalExamAssessments, $userId);
+
+        $quizScore = (int) round($quizPercent * 100);
+        $finalExamScore = (int) round($finalExamPercent * 100);
+
+        if ($finalExamAssessments->isNotEmpty()) {
+            $quizWeight = $quizAssessments->isNotEmpty() ? 0.5 : 0.0;
+            $finalExamWeight = $quizAssessments->isNotEmpty() ? 0.5 : 1.0;
+        } else {
+            $quizWeight = $quizAssessments->isNotEmpty() ? 1.0 : 0.0;
+            $finalExamWeight = 0.0;
+        }
+
+        $totalPercent = ($quizPercent * $quizWeight) + ($finalExamPercent * $finalExamWeight);
+        $totalScore = (int) round($totalPercent * 100);
+
+        $hasRemedialAttempt = $finalExamAssessments->isNotEmpty()
+            && AssessmentAttempt::query()
+                ->whereIn('assessment_id', $finalExamAssessments->pluck('id'))
+                ->where('user_id', $userId)
+                ->where('is_remedial', true)
+                ->whereNotNull('completed_at')
+                ->exists();
+
+        if ($hasRemedialAttempt) {
+            $totalScore = min(65, $totalScore);
+        }
+
+        FinalScore::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'course_id' => $course->id,
+            ],
+            [
+                'quiz_score' => $quizScore,
+                'final_exam_score' => $finalExamScore,
+                'total_score' => $totalScore,
+                'is_remedial' => $hasRemedialAttempt,
+            ]
+        );
+    }
+
+    /**
+     * @param  Collection<int, Assessment>  $assessments
+     */
+    protected function calculateAveragePercent(Collection $assessments, int $userId): float
+    {
+        if ($assessments->isEmpty()) {
+            return 0.0;
+        }
+
+        $submissions = AssessmentSubmission::query()
+            ->whereIn('assessment_id', $assessments->pluck('id'))
+            ->where('user_id', $userId)
+            ->get()
+            ->keyBy('assessment_id');
+
+        $percentTotal = 0.0;
+
+        foreach ($assessments as $assessmentItem) {
+            $submission = $submissions->get($assessmentItem->id);
+            $score = (float) ($submission?->score ?? 0);
+            $maxScore = max(1, (int) $assessmentItem->max_score);
+
+            $percentTotal += $score / $maxScore;
+        }
+
+        return $percentTotal / $assessments->count();
     }
 
     /**
@@ -695,7 +923,7 @@ class QuizController extends Controller
     /**
      * Grade essay questions (tutor only).
      */
-    public function gradeEssay(Request $request, Course $course, Assessment $assessment, QuizAttempt $attempt): RedirectResponse
+    public function gradeEssay(Request $request, Course $course, Assessment $assessment, AssessmentAttempt $attempt): RedirectResponse
     {
         $user = auth()->user();
 
@@ -713,7 +941,7 @@ class QuizController extends Controller
 
         $validated = $request->validate([
             'grades' => 'required|array',
-            'grades.*.question_id' => 'required|exists:quiz_questions,id',
+            'grades.*.question_id' => 'required|exists:assessment_questions,id',
             'grades.*.points' => 'required|integer|min:0',
         ]);
 
@@ -737,13 +965,18 @@ class QuizController extends Controller
         }
 
         $calculated = $this->calculateAttemptScore($assessment, $answers);
+        $isGraded = $calculated['is_graded'];
 
         $attempt->update([
             'answers' => $answers,
             'score' => $calculated['score'],
-            'is_graded' => $calculated['is_graded'],
+            'is_graded' => $isGraded,
             'completed_at' => $attempt->completed_at ?? now(),
         ]);
+
+        if ($isGraded) {
+            $this->awardAssessmentPoints($attempt);
+        }
 
         $this->syncSubmission($attempt);
 

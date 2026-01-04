@@ -31,6 +31,10 @@ class UseQuizPowerupRequest extends FormRequest
             return false;
         }
 
+        if (! $assessment->allowsPowerups()) {
+            return false;
+        }
+
         return $user->enrollments()->where('course_id', $course->id)->exists();
     }
 
@@ -43,7 +47,7 @@ class UseQuizPowerupRequest extends FormRequest
     {
         return [
             'powerup_id' => ['required', 'integer', 'exists:powerups,id'],
-            'question_id' => ['nullable', 'integer', 'exists:quiz_questions,id'],
+            'question_id' => ['nullable', 'integer', 'exists:assessment_questions,id'],
         ];
     }
 }

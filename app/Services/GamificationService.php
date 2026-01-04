@@ -81,6 +81,27 @@ class GamificationService
         return (int) round($basePoints * pow($multiplier, $newLevel - 2));
     }
 
+    public function awardAssessmentPoints(User $user, string $assessmentType, int $score, int $maxScore, bool $isRemedial): int
+    {
+        if ($isRemedial) {
+            return 0;
+        }
+
+        $percentage = $maxScore > 0 ? ($score / $maxScore) : 0;
+
+        $points = match ($assessmentType) {
+            'practice' => 150,
+            'quiz' => (int) round(200 + (100 * $percentage)),
+            'final_exam' => (int) round(400 + (600 * $percentage)),
+            default => 0,
+        };
+
+        $user->points_balance = ($user->points_balance ?? 0) + $points;
+        $user->save();
+
+        return $points;
+    }
+
     /**
      * Award XP to a user and handle level-ups.
      *

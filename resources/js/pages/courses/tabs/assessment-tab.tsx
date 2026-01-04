@@ -28,6 +28,7 @@ export function AssessmentTab({
 
   const handleCreateQuiz = () => {
     router.post(`/courses/${course.id}/quiz`, {
+      type: 'quiz',
       title: 'New Quiz',
       description: '',
       max_score: 100,

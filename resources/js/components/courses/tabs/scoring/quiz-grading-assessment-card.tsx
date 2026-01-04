@@ -11,7 +11,7 @@ type StudentForQuizGrading = {
   name: string;
   email?: string;
   avatar?: string;
-  quiz_attempts?: Array<{
+  assessment_attempts?: Array<{
     id: number;
     assessment_id: number;
     user_id: number;
@@ -23,6 +23,8 @@ type StudentForQuizGrading = {
     is_graded: boolean;
     created_at: string;
     updated_at: string;
+    is_remedial?: boolean;
+    points_awarded?: number;
   }>;
   [key: string]: unknown;
 };
@@ -60,7 +62,12 @@ export function QuizGradingAssessmentCard({
           <div>
             <h4 className="text-lg font-medium">{assessment.title}</h4>
             <p className="text-sm text-gray-500">
-              Quiz • Max Score: {assessment.max_score} • Due:{' '}
+              {assessment.type === 'final_exam'
+                ? 'Final Exam'
+                : assessment.type === 'practice'
+                  ? 'Practice'
+                  : 'Quiz'}{' '}
+              • Max Score: {assessment.max_score} • Due:{' '}
               {assessment.due_date
                 ? new Date(assessment.due_date).toLocaleDateString()
                 : 'No due date'}
@@ -81,7 +88,7 @@ export function QuizGradingAssessmentCard({
           <div className="space-y-4">
             {students.length > 0 ? (
               students.map((student) => {
-                const attempt = student.quiz_attempts?.find(
+                const attempt = student.assessment_attempts?.find(
                   (a) => a.assessment_id === assessment.id,
                 );
 
@@ -94,7 +101,7 @@ export function QuizGradingAssessmentCard({
                       <span className="font-medium text-gray-900 dark:text-gray-100">
                         {student.name}
                       </span>{' '}
-                      — No quiz attempt yet.
+                      — No attempt yet.
                     </div>
                   );
                 }

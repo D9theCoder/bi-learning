@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Assessment, StudentWithSubmissions } from '@/types';
 
@@ -38,6 +39,15 @@ export function GradebookTutorMatrix({
                   {a.title}
                 </th>
               ))}
+              <th className="p-4 text-center font-medium whitespace-nowrap">
+                Quiz Avg
+              </th>
+              <th className="p-4 text-center font-medium whitespace-nowrap">
+                Final Exam
+              </th>
+              <th className="p-4 text-center font-medium whitespace-nowrap">
+                Final Score
+              </th>
               <th className="p-4 text-center font-medium">Average</th>
             </tr>
           </thead>
@@ -46,6 +56,7 @@ export function GradebookTutorMatrix({
               students.map((student) => {
                 let totalScore = 0;
                 let maxTotal = 0;
+                const finalScore = student.final_score ?? null;
 
                 return (
                   <tr
@@ -87,6 +98,40 @@ export function GradebookTutorMatrix({
                         </td>
                       );
                     })}
+                    <td className="p-4 text-center">
+                      {finalScore ? (
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                          {finalScore.quiz_score}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {finalScore ? (
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                          {finalScore.final_exam_score}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {finalScore ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="font-bold text-gray-900 dark:text-gray-100">
+                            {finalScore.total_score}%
+                          </span>
+                          {finalScore.is_remedial && (
+                            <Badge variant="outline" className="text-xs">
+                              Remedial
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
                     <td className="p-4 text-center font-bold">
                       {maxTotal > 0
                         ? Math.round((totalScore / maxTotal) * 100)
@@ -99,7 +144,7 @@ export function GradebookTutorMatrix({
             ) : (
               <tr>
                 <td
-                  colSpan={assessments.length + 2}
+                  colSpan={assessments.length + 5}
                   className="p-8 text-center text-muted-foreground"
                 >
                   No students enrolled.

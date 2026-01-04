@@ -37,10 +37,10 @@ class Powerup extends Model
             ->withPivot('limit');
     }
 
-    public function quizAttempts(): BelongsToMany
+    public function assessmentAttempts(): BelongsToMany
     {
-        return $this->belongsToMany(QuizAttempt::class, 'quiz_attempt_powerups')
+        return $this->belongsToMany(AssessmentAttempt::class, 'assessment_attempt_powerups')
             ->withPivot('used_at', 'details')
-            ->using(QuizAttemptPowerup::class);
+            ->using(AssessmentAttemptPowerup::class);
     }
 }

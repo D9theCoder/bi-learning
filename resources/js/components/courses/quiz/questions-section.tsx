@@ -1,7 +1,7 @@
 import { NewQuestionForm, QuestionCard } from '@/components/courses/quiz';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { QuizQuestion } from '@/types';
+import type { AssessmentQuestion } from '@/types';
 import { HelpCircle, ListOrdered, PenLine, Plus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,7 +27,7 @@ const questionTypes = [
 ] as const;
 
 interface QuestionsSectionProps {
-  questions: QuizQuestion[];
+  questions: AssessmentQuestion[];
   courseId: number;
   assessmentId: number;
 }

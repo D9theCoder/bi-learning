@@ -1,199 +1,185 @@
-# Update Course Tests and Seeders for STEM Categories
+# Expand Assessment System: Practice, Final Exam, Remedial & Points
 
-This plan updates all course-related factories, seeders, and tests to use the new STEM category system (Basic Mathematics, Advanced Mathematics, Physics, Chemistry, Biology) instead of arbitrary categories.
+This plan adds two new assessment types (Practice and Final Exam) to the existing Quiz type, implements a remedial system, adds point rewards for completing assessments, and evaluates database structure improvements.
 
 ## User Review Required
 
-> [!NOTE]
-> This plan only updates test files and seeders. No production code changes are needed since the STEM categories were already implemented in the previous plan.
+> [!IMPORTANT] > **Database Redundancy Decision**: The current structure has dedicated tables for quizzes (`quiz_questions`, `quiz_attempts`, `quiz_attempt_answers`, `quiz_attempt_powerups`). These could potentially be generalized for all assessment types. However, this would require migrating existing data and updating all relationships. **Do you want to proceed with database refactoring, or keep the existing structure and extend it?**
+
+> [!WARNING] > **Breaking Change - Remedial Score Cap**: The remedial system caps the maximum final score at 65, even if students score 100% on the remedial exam. This cannot be reversed once implemented. Confirm this is acceptable.
+
+> [!WARNING] > **Final Exam Minimum Weight**: The plan requires final exams to make up at least 50% of the student's final score. This means quiz scores will be weighted accordingly. **How should this calculation work?** Should it be:
+>
+> - Option A: Final exam score × 0.5 + quiz scores × 0.5
+> - Option B: Final exam score counts as 50% minimum, with quizzes making up the remainder
+> - Option C: Another weighting formula?
+
+> [!IMPORTANT] > **Score Visibility for Final Exams**: Final exam scores are hidden until teacher manually grades if there are essay/fill-in-blank questions. For multiple-choice-only exams, scores show immediately. **Should students see their submitted answers before grading, or hide everything until the teacher reviews?**
 
 ---
 
 ## Proposed Changes
 
-### Backend: Update Factories
+### Backend - Models
+
+#### [MODIFY] [Assessment.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Models/Assessment.php)
+
+- Update `type` field to support `'practice'`, `'quiz'`, and `'final_exam'` (currently only `'quiz'`)
+- Add `is_remedial` boolean field to track remedial attempts
+- Add helper methods:
+  - `allowsPowerups()`: Returns true for practice and quiz, false for final exam
+  - `shouldHideScores()`: Returns true for final exams with essay/fill-in-blank questions until graded
+  - `isFinalExam()`: Check if assessment is final exam type
+  - `isPractice()`: Check if assessment is practice type
+
+#### [MODIFY] [QuizAttempt.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Models/QuizAttempt.php)
+
+- Add `is_remedial` boolean field
+- Add `points_awarded` field to track gamification points earned
+- Update relationships and logic to handle remedial attempts
 
 ---
 
-#### [MODIFY] [CourseFactory.php](file:///c:/Users/kevin/Herd/web-skripsi/database/factories/CourseFactory.php)
+### Backend - Database Migrations
 
-Replace the arbitrary categories with valid STEM subjects:
+#### [NEW] Migration: `add_assessment_types_and_remedial.php`
 
-```diff
-+ use App\Enums\CourseCategory;
+```php
+// Add columns to assessments table
+$table->enum('type', ['practice', 'quiz', 'final_exam'])->default('quiz')->change();
+$table->boolean('is_remedial')->default(false)->after('is_published');
 
-  public function definition(): array
-  {
-      $titles = [
--         'Introduction to Python Programming',
--         'Advanced JavaScript Techniques',
--         'Data Science Fundamentals',
--         'Machine Learning Basics',
--         'Web Development with React',
--         'Database Design and SQL',
--         'Mobile App Development',
--         'Cloud Computing Essentials',
--         'Cybersecurity Fundamentals',
--         'AI and Deep Learning',
-+         'Introduction to Algebra',
-+         'Advanced Calculus Techniques',
-+         'Quantum Physics Fundamentals',
-+         'Organic Chemistry Basics',
-+         'Molecular Biology',
-+         'Linear Algebra and Matrices',
-+         'Thermodynamics and Heat Transfer',
-+         'Chemical Bonding and Reactions',
-+         'Cell Biology and Genetics',
-+         'Differential Equations',
-      ];
+// Add columns to quiz_attempts table
+$table->boolean('is_remedial')->default(false)->after('is_graded');
+$table->integer('points_awarded')->default(0)->after('is_remedial');
+```
 
-      return [
-          'title' => fake()->randomElement($titles),
-          'description' => fake()->paragraphs(3, true),
-          'thumbnail' => 'https://picsum.photos/seed/'.fake()->uuid().'/800/600',
-          'instructor_id' => User::factory(),
-          'duration_minutes' => fake()->numberBetween(300, 3000),
-          'difficulty' => fake()->randomElement(['beginner', 'intermediate', 'advanced']),
--         'category' => fake()->randomElement(['Programming', 'Data Science', 'Web Development', 'Mobile', 'Cloud', 'Security']),
-+         'category' => fake()->randomElement(CourseCategory::values()),
-          'is_published' => fake()->boolean(80),
-      ];
-  }
+#### [NEW] Migration: `create_final_scores_table.php`
+
+Create a new `final_scores` table to track calculated final scores with quiz and exam weighting:
+
+```php
+Schema::create('final_scores', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->foreignId('course_id')->constrained()->onDelete('cascade');
+    $table->integer('quiz_score')->default(0);
+    $table->integer('final_exam_score')->default(0);
+    $table->integer('total_score')->default(0);
+    $table->boolean('is_remedial')->default(false);
+    $table->timestamps();
+
+    $table->unique(['user_id', 'course_id']);
+});
 ```
 
 ---
 
-### Backend: Update Seeders
+### Backend - Controllers
+
+#### [MODIFY] [QuizController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/QuizController.php)
+
+**Assessment Type Logic:**
+
+- Update `store()` to accept assessment type (`practice`, `quiz`, `final_exam`)
+- Update `take()` to disable powerups for final exams
+- Update `show()` to hide scores for ungraded final exams with subjective questions
+- Add logic to prevent showing correct answers for final exams until graded
+
+**Remedial System:**
+
+- Add `startRemedialAttempt()` method - Creates remedial attempt for failed students (score < 65)
+- Add validation: Only allow remedial if final score is below 65
+- Add score cap logic: Remedial attempts cap total final score at 65
+
+**Point Rewards:**
+
+- Update `submit()` to call `GamificationService` and award points:
+  - Practice: 150 points (flat)
+  - Quiz: 200-300 points (scaled by percentage: 0% = 200, 100% = 300)
+  - Final Exam: 400-1000 points (scaled: 0% = 400, 100% = 1000)
+  - Remedial: 0 points
+- Store awarded points in `quiz_attempts.points_awarded`
+
+**Score Calculation:**
+
+- Update `syncSubmission()` to calculate weighted final scores using `final_scores` table
+- Implement final exam 50% minimum weighting (pending user decision on formula)
 
 ---
 
-#### [MODIFY] [FixedScenarioSeeder.php](file:///c:/Users/kevin/Herd/web-skripsi/database/seeders/FixedScenarioSeeder.php)
+### Backend - Services
 
-Change the course category from 'General' to a valid STEM category:
+#### [MODIFY] [GamificationService.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Services/GamificationService.php)
 
-```diff
-+ use App\Enums\CourseCategory;
+Add new method:
 
-  $course = Course::firstOrCreate(
-      ['instructor_id' => $tutor->id, 'title' => 'Fixed Scenario Course'],
-      [
-          'description' => 'A course for testing fixed scenarios.',
-          'thumbnail' => 'https://placehold.co/600x400',
-          'difficulty' => 'intermediate',
--         'category' => 'General',
-+         'category' => CourseCategory::BasicMathematics->value,
-          'is_published' => true,
-      ]
-  );
+```php
+public function awardAssessmentPoints(User $user, string $assessmentType, int $score, int $maxScore, bool $isRemedial): int
+{
+    if ($isRemedial) {
+        return 0;
+    }
+
+    $percentage = $maxScore > 0 ? ($score / $maxScore) : 0;
+
+    $points = match($assessmentType) {
+        'practice' => 150,
+        'quiz' => (int) round(200 + (100 * $percentage)),
+        'final_exam' => (int) round(400 + (600 * $percentage)),
+        default => 0,
+    };
+
+    $user->points_balance = ($user->points_balance ?? 0) + $points;
+    $user->save();
+
+    return $points;
+}
 ```
 
 ---
 
-#### [MODIFY] [CourseContentSeeder.php](file:///c:/Users/kevin/Herd/web-skripsi/database/seeders/CourseContentSeeder.php)
+### Backend - Form Requests
 
-Change the course category from 'Research' to a valid STEM category, and update course title/description to match:
+#### [MODIFY] [StoreQuizRequest.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Requests/StoreQuizRequest.php)
 
-```diff
-+ use App\Enums\CourseCategory;
+Update validation rules to include assessment type:
 
-  $courseDefinition = [
--     'title' => 'IT Research Methodology',
--     'description' => 'Learn the fundamentals of research methodology in Information Technology, from defining topics to preparing for defense.',
-+     'title' => 'Advanced Physics Research',
-+     'description' => 'Learn the fundamentals of physics research methodology, from defining topics to preparing for defense.',
-      'thumbnail' => 'https://placehold.co/800x480/png?text=IT+Research',
-      'duration_minutes' => 720,
-      'difficulty' => 'intermediate',
--     'category' => 'Research',
-+     'category' => CourseCategory::Physics->value,
-      'is_published' => true,
-      'lessons' => [
-          [
--             'title' => 'Session 1: Research Foundations',
--             'description' => 'Overview of the research lifecycle, expectations, and milestone planning.',
-+             'title' => 'Session 1: Physics Research Foundations',
-+             'description' => 'Overview of the physics research lifecycle, expectations, and milestone planning.',
-              'duration_minutes' => 90,
-              'contents' => [
-                  // ... contents remain the same
-              ],
-          ],
-          // ... other lessons can keep similar structure
-      ],
-  ];
+```php
+'type' => 'required|in:practice,quiz,final_exam',
 ```
 
 ---
 
-### Backend: Update Tests
+### Frontend - Components
 
----
+#### [MODIFY] Quiz Edit Page (`resources/js/Pages/courses/quiz/edit.tsx`)
 
-#### [MODIFY] [CourseManagementTest.php](file:///c:/Users/kevin/Herd/web-skripsi/tests/Feature/CourseManagementTest.php)
+- Add assessment type selector (Practice, Quiz, Final Exam)
+- Show/hide powerup settings based on type (disable for Final Exam)
+- Add UI indicators for assessment type
 
-Update test cases to use valid STEM categories:
+#### [MODIFY] Quiz Show Page (`resources/js/Pages/courses/quiz/show.tsx`)
 
-```diff
-+ use App\Enums\CourseCategory;
+- Display assessment type badge
+- Show remedial button for students with final score < 65
+- Hide scores for ungraded final exams with subjective questions
+- Show "Pending Teacher Review" message for final exams awaiting grading
 
-  it('allows admins to view management and create courses', function () {
-      // ... setup code
-      $response = post('/courses/manage', [
-          '_token' => csrf_token(),
-          'title' => 'Admin Course',
-          'description' => 'Admin created course',
-          'difficulty' => 'beginner',
--         'category' => 'Physics',
-+         'category' => CourseCategory::Physics->value,
-          'is_published' => true,
-      ]);
-      // ... assertions
-  });
+#### [MODIFY] Quiz Take Page (`resources/js/Pages/courses/quiz/take.tsx`)
 
-  it('rejects invalid course categories', function () {
-      $admin = User::factory()->create();
-      $admin->assignRole('admin');
+- Disable powerup UI for final exams
+- Show assessment type indicator
+- Display remedial attempt badge if applicable
 
-      $response = $this->actingAs($admin)->post('/courses/manage', [
-          '_token' => csrf_token(),
-          'title' => 'Invalid Category',
-          'description' => 'Invalid category course',
-          'difficulty' => 'beginner',
--         'category' => 'History',
-+         'category' => 'History', // This should still be invalid
-          'is_published' => true,
-      ]);
+#### [NEW] Gradebook Integration
 
-      $response->assertInvalid(['category']);
-  });
+Update gradebook to show:
 
-  it('allows tutors to manage only their courses', function () {
-      // ... setup code
-      post("/courses/manage/{$ownCourse->id}", [
-          '_method' => 'put',
-          '_token' => csrf_token(),
-          'title' => 'Updated Title',
-          'description' => $ownCourse->description,
-          'difficulty' => 'intermediate',
--         'category' => 'Chemistry',
-+         'category' => CourseCategory::Chemistry->value,
-          'is_published' => true,
-      ])->assertRedirect();
-      // ... assertions
-  });
-```
-
----
-
-#### [VERIFY] [CoursesTest.php](file:///c:/Users/kevin/Herd/web-skripsi/tests/Feature/CoursesTest.php)
-
-No changes needed - this test file uses `Course::factory()` which will now automatically use valid STEM categories from the updated `CourseFactory`.
-
----
-
-#### [VERIFY] [CourseContentCompletionTest.php](file:///c:/Users/kevin/Herd/web-skripsi/tests/Feature/CourseContentCompletionTest.php)
-
-No changes needed - this test file uses `Course::factory()` which will now automatically use valid STEM categories from the updated `CourseFactory`.
+- Quiz average scores
+- Final exam scores
+- Calculated final scores with weighting
+- Remedial attempt indicators
 
 ---
 
@@ -201,66 +187,92 @@ No changes needed - this test file uses `Course::factory()` which will now autom
 
 ### Automated Tests
 
-1. **Run course-related tests**:
+**Update Existing Tests:**
 
-   ```bash
-   php artisan test --filter=Course
+- Modify `tests/Feature/QuizTest.php` to test all three assessment types
+- Run: `php artisan test tests/Feature/QuizTest.php`
+
+**New Tests to Add:**
+
+1. **Practice Assessment Tests:**
+
+   ```php
+   it('awards 150 points for completing practice assessment')
+   it('does not count practice scores toward final grade')
+   it('allows powerups in practice assessments')
    ```
 
-2. **Specifically test course management**:
+2. **Final Exam Tests:**
 
-   ```bash
-   php artisan test tests/Feature/CourseManagementTest.php
+   ```php
+   it('disallows powerups in final exams')
+   it('hides scores for ungraded final exams with essays')
+   it('shows scores immediately for multiple-choice-only final exams')
+   it('weights final exam as 50% of total score')
    ```
 
-3. **Run full test suite**:
+3. **Remedial System Tests:**
 
-   ```bash
-   php artisan test
+   ```php
+   it('allows remedial attempt when final score is below 65')
+   it('prevents remedial when score is 65 or above')
+   it('caps total score at 65 after remedial attempt')
+   it('does not award points for remedial attempts')
    ```
 
-4. **Run Laravel Pint for formatting**:
-   ```bash
-   vendor/bin/pint --dirty
+4. **Point Reward Tests:**
+   ```php
+   it('awards 150 points for completing practice')
+   it('awards 200-300 points for quiz based on score')
+   it('awards 400-1000 points for final exam based on score')
+   it('does not award points for remedial attempts')
    ```
+
+**Run all tests:** `php artisan test`
 
 ### Manual Verification
 
-1. **Seed database with new data**:
+1. **Create Each Assessment Type**
 
-   ```bash
-   php artisan migrate:fresh --seed
-   ```
+   - Login as tutor/admin
+   - Create a Practice assessment, verify powerups are available
+   - Create a Quiz assessment, verify no changes from current behavior
+   - Create a Final Exam assessment, verify powerups are disabled
 
-   - Verify all courses have STEM categories
-   - Check Fixed Scenario Course has valid category
-   - Check Course Content Seeder course has valid category
+2. **Test Student Flow**
 
-2. **Test course creation**:
-   - Navigate to `/courses/manage/create`
-   - Verify category dropdown shows only STEM subjects
-   - Create a test course with each STEM category
-   - Verify validation rejects invalid categories
+   - Login as student
+   - Complete a practice assessment → verify 150 points awarded
+   - Complete a quiz with 80% score → verify ~280 points awarded
+   - Complete a final exam with essay questions → verify score is hidden
+   - Complete a final exam with only multiple choice → verify score shows immediately
+
+3. **Test Remedial System**
+
+   - Complete course with final score of 60 → verify remedial button appears
+   - Take remedial exam and score 100% → verify final score caps at 65
+   - Complete course with score of 70 → verify no remedial option available
+
+4. **Run Pint:** `vendor/bin/pint --dirty`
 
 ---
 
-## Summary of Changes
+## Database Refactoring Consideration
 
-### Files to Modify:
+**Current Structure:** Dedicated tables for quizzes (`quiz_questions`, `quiz_attempts`, `quiz_attempt_answers`, `quiz_attempt_powerups`)
 
-1. **CourseFactory.php** - Update category randomElement to use `CourseCategory::values()`
-2. **FixedScenarioSeeder.php** - Change 'General' to `CourseCategory::BasicMathematics->value`
-3. **CourseContentSeeder.php** - Change 'Research' to `CourseCategory::Physics->value`
-4. **CourseManagementTest.php** - Update test categories to use `CourseCategory` enum values
+**Option 1 - Keep Current (Recommended):**
 
-### Files to Verify (no changes needed):
+- Extend existing quiz tables to handle all assessment types
+- Rename tables conceptually but keep structure
+- **Pros:** No data migration, less risk, faster implementation
+- **Cons:** Table names remain "quiz\_\*" which is slightly misleading
 
-1. **CoursesTest.php** - Uses factory which will automatically have valid categories
-2. **CourseContentCompletionTest.php** - Uses factory which will automatically have valid categories
+**Option 2 - Refactor to Generic:**
 
-### Expected Outcomes:
+- Rename to `assessment_questions`, `assessment_attempts`, etc.
+- Migrate all existing data
+- **Pros:** Cleaner naming, better long-term maintainability
+- **Cons:** Risky migration, requires updating all foreign keys and relationships
 
-- ✅ All course factories generate courses with valid STEM categories
-- ✅ All seeders create courses with valid STEM categories
-- ✅ All tests pass with the new category validation
-- ✅ Database seeding works without category validation errors
+**Recommendation:** Keep the current structure (Option 1) and extend it. The naming is less important than stability and speed of implementation.

@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FilterCoursesRequest;
 use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
 use App\Models\AssessmentSubmission;
 use App\Models\Attendance;
 use App\Models\Course;
+use App\Models\FinalScore;
 use App\Models\Lesson;
-use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -180,37 +181,37 @@ class CourseController extends Controller
                     ->with(['submissions.user', 'questions'])
                     ->get();
 
-                $quizAssessmentIds = $assessments
-                    ->where('type', 'quiz')
+                $assessmentIdsWithAttempts = $assessments
+                    ->whereIn('type', ['practice', 'quiz', 'final_exam'])
                     ->pluck('id')
                     ->values();
 
-                if ($quizAssessmentIds->isNotEmpty() && $students instanceof \Illuminate\Support\Collection && $students->isNotEmpty()) {
+                if ($assessmentIdsWithAttempts->isNotEmpty() && $students instanceof \Illuminate\Support\Collection && $students->isNotEmpty()) {
                     $studentIds = $students->pluck('id')->values();
 
-                    $latestAttemptsByKey = QuizAttempt::query()
-                        ->whereIn('assessment_id', $quizAssessmentIds)
+                    $latestAttemptsByKey = AssessmentAttempt::query()
+                        ->whereIn('assessment_id', $assessmentIdsWithAttempts)
                         ->whereIn('user_id', $studentIds)
                         ->orderByDesc('completed_at')
                         ->orderByDesc('created_at')
                         ->get()
-                        ->groupBy(function (QuizAttempt $attempt) {
+                        ->groupBy(function (AssessmentAttempt $attempt) {
                             return $attempt->assessment_id.'-'.$attempt->user_id;
                         })
                         ->map(function ($attempts) {
                             return $attempts->first();
                         });
 
-                    $students = $students->map(function (array $student) use ($quizAssessmentIds, $latestAttemptsByKey) {
+                    $students = $students->map(function (array $student) use ($assessmentIdsWithAttempts, $latestAttemptsByKey) {
                         $studentId = $student['id'] ?? null;
 
                         if (! $studentId) {
-                            $student['quiz_attempts'] = [];
+                            $student['assessment_attempts'] = [];
 
                             return $student;
                         }
 
-                        $student['quiz_attempts'] = $quizAssessmentIds
+                        $student['assessment_attempts'] = $assessmentIdsWithAttempts
                             ->map(function (int $assessmentId) use ($studentId, $latestAttemptsByKey) {
                                 $attempt = $latestAttemptsByKey[$assessmentId.'-'.$studentId] ?? null;
 
@@ -228,12 +229,28 @@ class CourseController extends Controller
                                     'started_at' => $attempt->started_at?->toIsoString(),
                                     'completed_at' => $attempt->completed_at?->toIsoString(),
                                     'is_graded' => (bool) $attempt->is_graded,
+                                    'is_remedial' => (bool) $attempt->is_remedial,
+                                    'points_awarded' => (int) $attempt->points_awarded,
                                     'created_at' => $attempt->created_at?->toIsoString(),
                                     'updated_at' => $attempt->updated_at?->toIsoString(),
                                 ];
                             })
                             ->filter()
                             ->values();
+
+                        return $student;
+                    });
+                }
+
+                if ($students instanceof \Illuminate\Support\Collection && $students->isNotEmpty()) {
+                    $finalScores = FinalScore::query()
+                        ->where('course_id', $course->id)
+                        ->get()
+                        ->keyBy('user_id');
+
+                    $students = $students->map(function (array $student) use ($finalScores) {
+                        $finalScore = $finalScores->get($student['id'] ?? null);
+                        $student['final_score'] = $finalScore?->toArray();
 
                         return $student;
                     });
