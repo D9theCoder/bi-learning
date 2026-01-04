@@ -33,8 +33,7 @@ export default function EditCourse({
   return (
     <AppLayout
       breadcrumbs={[
-        { title: 'Courses', href: '/courses' },
-        { title: 'Manage', href: '/courses/manage' },
+        { title: 'Courses', href: '/courses/manage' },
         { title: isEdit ? 'Edit Course' : 'Create Course', href: '#' },
       ]}
     >

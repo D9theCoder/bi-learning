@@ -31,8 +31,7 @@ export default function ManageCourses({
   return (
     <AppLayout
       breadcrumbs={[
-        { title: 'Courses', href: '/courses' },
-        { title: 'Manage', href: '/courses/manage' },
+        { title: 'Courses', href: '/courses/manage' },
       ]}
     >
       <Head title="Manage Courses" />

@@ -16,9 +16,14 @@ use Inertia\Response;
 
 class CourseController extends Controller
 {
-    public function index(FilterCoursesRequest $request): Response
+    public function index(FilterCoursesRequest $request): Response|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
+
+        // Redirect tutors to manage courses page
+        if ($user->hasRole('tutor') && ! $user->hasRole('admin')) {
+            return redirect()->route('courses.manage.index');
+        }
 
         $enrolledCourses = collect();
         $enrolledCourseIds = [];
@@ -196,7 +201,7 @@ class CourseController extends Controller
                         ->orderByDesc('created_at')
                         ->get()
                         ->groupBy(function (AssessmentAttempt $attempt) {
-                            return $attempt->assessment_id.'-'.$attempt->user_id;
+                            return $attempt->assessment_id . '-' . $attempt->user_id;
                         })
                         ->map(function ($attempts) {
                             return $attempts->first();
@@ -213,7 +218,7 @@ class CourseController extends Controller
 
                         $student['assessment_attempts'] = $assessmentIdsWithAttempts
                             ->map(function (int $assessmentId) use ($studentId, $latestAttemptsByKey) {
-                                $attempt = $latestAttemptsByKey[$assessmentId.'-'.$studentId] ?? null;
+                                $attempt = $latestAttemptsByKey[$assessmentId . '-' . $studentId] ?? null;
 
                                 if (! $attempt) {
                                     return null;
@@ -328,7 +333,7 @@ class CourseController extends Controller
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'score' => 'required|integer|min:0|max:'.$assessment->max_score,
+            'score' => 'required|integer|min:0|max:' . $assessment->max_score,
             'feedback' => 'nullable|string',
         ]);
 

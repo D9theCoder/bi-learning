@@ -105,10 +105,12 @@ export default function CourseShow({
     (l) => l.id.toString() === activeSessionId,
   );
 
+  const coursesHref = isAdmin || isTutor ? '/courses/manage' : '/courses';
+
   return (
     <AppLayout
       breadcrumbs={[
-        { title: 'Courses', href: '/courses' },
+        { title: 'Courses', href: coursesHref },
         { title: course.title, href: '#' },
       ]}
     >
