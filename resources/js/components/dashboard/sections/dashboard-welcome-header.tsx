@@ -1,5 +1,5 @@
-import { Coins } from 'lucide-react';
 import { useRoles } from '@/hooks/use-roles';
+import { Coins } from 'lucide-react';
 interface DashboardWelcomeHeaderProps {
   userName: string;
   pointsBalance: number;
@@ -24,8 +24,8 @@ export function DashboardWelcomeHeader({
             : "Ready to continue your learning streak? You're doing great!"}
         </p>
       </div>
-      <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
-        {isStudent && (
+      {isStudent && (
+        <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
           <>
             <Coins className="size-4 text-primary" />
             <span className="text-foreground">Points</span>
@@ -33,8 +33,8 @@ export function DashboardWelcomeHeader({
               {pointsBalance}
             </span>
           </>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
