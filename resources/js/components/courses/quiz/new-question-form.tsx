@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 interface NewQuestionFormProps {
   courseId: number;
@@ -23,7 +23,7 @@ export function NewQuestionForm({
   const form = useForm({
     type,
     question: '',
-    options: ['', '', '', ''],
+    options: type === 'fill_blank' ? [''] : ['', '', '', ''],
     correct_answer: '',
     points: 1,
   });
@@ -113,16 +113,55 @@ export function NewQuestionForm({
 
       {type === 'fill_blank' && (
         <div className="space-y-2">
-          <Label htmlFor="correct-answer">Correct Answer</Label>
-          <Input
-            id="correct-answer"
-            value={form.data.correct_answer}
-            onChange={(e) => form.setData('correct_answer', e.target.value)}
-            placeholder="Enter the correct answer..."
-            aria-invalid={Boolean(form.errors.correct_answer)}
-          />
+          <Label htmlFor="correct-answer">
+            Correct Answers (multiple allowed)
+          </Label>
+          {(form.data.options && form.data.options.length > 0
+            ? form.data.options
+            : ['']
+          ).map((answer, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <Input
+                value={answer}
+                onChange={(e) => {
+                  const newOptions = [...(form.data.options || [''])];
+                  newOptions[idx] = e.target.value;
+                  form.setData('options', newOptions);
+                }}
+                placeholder={`Answer ${idx + 1}`}
+                aria-invalid={Boolean(form.errors.correct_answer)}
+              />
+              {idx > 0 && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    const newOptions = [...(form.data.options || [''])];
+                    newOptions.splice(idx, 1);
+                    form.setData('options', newOptions);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
+            </div>
+          ))}
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            onClick={() => {
+              const newOptions = [...(form.data.options || [''])];
+              newOptions.push('');
+              form.setData('options', newOptions);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Answer
+          </Button>
           <p className="text-xs text-muted-foreground">
-            Case-insensitive exact match
+            Student answer will match any of these (case-insensitive)
           </p>
           {form.errors.correct_answer ? (
             <p className="text-xs text-destructive">

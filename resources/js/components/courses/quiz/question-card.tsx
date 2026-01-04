@@ -4,12 +4,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { AssessmentQuestion } from '@/types';
 import { router, useForm } from '@inertiajs/react';
+import { Reorder, useDragControls } from 'framer-motion';
 import {
   CheckCircle,
   GripVertical,
   HelpCircle,
   ListOrdered,
   PenLine,
+  Plus,
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -49,11 +51,19 @@ export function QuestionCard({
   assessmentId,
 }: QuestionCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const dragControls = useDragControls();
 
   const form = useForm({
     type: question.type,
     question: question.question,
-    options: question.options ?? ['', '', '', ''],
+    options:
+      question.type === 'fill_blank'
+        ? question.options && question.options.length > 0
+          ? question.options
+          : question.correct_answer
+            ? [question.correct_answer]
+            : ['']
+        : (question.options ?? ['', '', '', '']),
     correct_answer: question.correct_answer ?? '',
     points: question.points,
   });
@@ -95,11 +105,19 @@ export function QuestionCard({
   const typeConfig = questionTypes.find((t) => t.value === question.type);
 
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <Reorder.Item
+      value={question}
+      dragListener={false}
+      dragControls={dragControls}
+      className="rounded-lg border bg-card p-4 shadow-sm"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="flex flex-col items-center gap-1">
-            <GripVertical className="h-5 w-5 cursor-move text-muted-foreground" />
+            <GripVertical
+              className="h-5 w-5 cursor-grab text-muted-foreground select-none active:cursor-grabbing"
+              onPointerDown={(e) => dragControls.start(e)}
+            />
             <span className="text-xs font-medium text-muted-foreground">
               {index + 1}
             </span>
@@ -167,14 +185,56 @@ export function QuestionCard({
 
                 {question.type === 'fill_blank' && (
                   <div className="space-y-2">
-                    <Label>Correct Answer</Label>
-                    <Input
-                      value={form.data.correct_answer}
-                      onChange={(e) =>
-                        form.setData('correct_answer', e.target.value)
-                      }
-                      aria-invalid={Boolean(form.errors.correct_answer)}
-                    />
+                    <Label>Correct Answers (multiple allowed)</Label>
+                    {(form.data.options && form.data.options.length > 0
+                      ? form.data.options
+                      : ['']
+                    ).map((answer, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          value={answer}
+                          onChange={(e) => {
+                            const newOptions = [...(form.data.options || [''])];
+                            newOptions[idx] = e.target.value;
+                            form.setData('options', newOptions);
+                          }}
+                          placeholder={`Answer ${idx + 1}`}
+                          aria-invalid={Boolean(form.errors.correct_answer)}
+                        />
+                        {idx > 0 && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            type="button"
+                            onClick={() => {
+                              const newOptions = [
+                                ...(form.data.options || ['']),
+                              ];
+                              newOptions.splice(idx, 1);
+                              form.setData('options', newOptions);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        const newOptions = [...(form.data.options || [''])];
+                        newOptions.push('');
+                        form.setData('options', newOptions);
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Answer
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Student answer will match any of these (case-insensitive)
+                    </p>
                     {form.errors.correct_answer ? (
                       <p className="text-xs text-destructive">
                         {form.errors.correct_answer}
@@ -265,10 +325,20 @@ export function QuestionCard({
                   </div>
                 )}
 
-                {question.type === 'fill_blank' && question.correct_answer && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Answer: {question.correct_answer}
-                  </p>
+                {question.type === 'fill_blank' && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Valid Answers:
+                    </p>
+                    {(question.options && question.options.length > 0
+                      ? question.options
+                      : [question.correct_answer]
+                    ).map((answer, idx) => (
+                      <p key={idx} className="text-sm text-muted-foreground">
+                        • {answer}
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -290,6 +360,6 @@ export function QuestionCard({
           </div>
         )}
       </div>
-    </div>
+    </Reorder.Item>
   );
 }

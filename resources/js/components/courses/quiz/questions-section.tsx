@@ -2,8 +2,10 @@ import { NewQuestionForm, QuestionCard } from '@/components/courses/quiz';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AssessmentQuestion } from '@/types';
+import { router } from '@inertiajs/react';
+import { Reorder } from 'framer-motion';
 import { HelpCircle, ListOrdered, PenLine, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const questionTypes = [
   {
@@ -41,6 +43,32 @@ export function QuestionsSection({
   const [newQuestionType, setNewQuestionType] = useState<
     'multiple_choice' | 'fill_blank' | 'essay'
   >('multiple_choice');
+
+  const [items, setItems] = useState<AssessmentQuestion[]>(questions);
+
+  // Sync internal state when questions prop changes (e.g., after add/delete/refresh)
+  useEffect(() => {
+    setItems(questions);
+  }, [questions]);
+
+  const handleReorder = (newItems: AssessmentQuestion[]) => {
+    setItems(newItems);
+
+    // Persist new order to backend
+    router.post(
+      `/courses/${courseId}/quiz/${assessmentId}/questions/reorder`,
+      {
+        questions: newItems.map((q, idx) => ({
+          id: q.id,
+          order: idx + 1,
+        })),
+      },
+      {
+        preserveScroll: true,
+        preserveState: true,
+      },
+    );
+  };
 
   return (
     <Card>
@@ -88,9 +116,14 @@ export function QuestionsSection({
           </div>
         )}
 
-        {questions && questions.length > 0 ? (
-          <div className="space-y-4">
-            {questions.map((question, index) => (
+        {items && items.length > 0 ? (
+          <Reorder.Group
+            axis="y"
+            values={items}
+            onReorder={handleReorder}
+            className="space-y-4"
+          >
+            {items.map((question, index) => (
               <QuestionCard
                 key={question.id}
                 question={question}
@@ -99,7 +132,7 @@ export function QuestionsSection({
                 assessmentId={assessmentId}
               />
             ))}
-          </div>
+          </Reorder.Group>
         ) : (
           !showNewQuestion && (
             <div className="rounded-lg border border-dashed p-8 text-center">

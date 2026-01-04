@@ -42,7 +42,7 @@ class QuizController extends Controller
         $hasUngradedEssay = false;
 
         foreach ($questions as $question) {
-            $gradeKey = $question->id.'_grade';
+            $gradeKey = $question->id . '_grade';
 
             if (array_key_exists($gradeKey, $answers)) {
                 $awardedPoints = (int) $answers[$gradeKey];
@@ -74,9 +74,20 @@ class QuizController extends Controller
 
             if ($question->type === 'fill_blank') {
                 $normalizedAnswer = strtolower(trim((string) $answer));
-                $normalizedCorrect = strtolower(trim((string) ($question->correct_answer ?? '')));
+                $correctAnswers = $question->options ?? [];
 
-                if ($normalizedAnswer === $normalizedCorrect) {
+                // Fallback to correct_answer if options is empty
+                if (empty($correctAnswers) && $question->correct_answer) {
+                    $correctAnswers = [$question->correct_answer];
+                }
+
+                // Normalize all correct answers and check if student answer matches any
+                $normalizedCorrectAnswers = array_map(
+                    fn($ans) => strtolower(trim((string) $ans)),
+                    $correctAnswers
+                );
+
+                if (in_array($normalizedAnswer, $normalizedCorrectAnswers, true)) {
                     $score += (int) $question->points;
                 }
             }
@@ -165,7 +176,7 @@ class QuizController extends Controller
 
         if ($assessment->allowsPowerups() && $powerups->isNotEmpty()) {
             $assessment->powerups()->sync(
-                $powerups->mapWithKeys(fn (array $powerup) => [
+                $powerups->mapWithKeys(fn(array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
                 ])->all()
             );
@@ -203,7 +214,7 @@ class QuizController extends Controller
             $assessment->powerups()->detach();
         } elseif (array_key_exists('powerups', $validated)) {
             $assessment->powerups()->sync(
-                $powerups->mapWithKeys(fn (array $powerup) => [
+                $powerups->mapWithKeys(fn(array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
                 ])->all()
             );
@@ -223,10 +234,12 @@ class QuizController extends Controller
             abort(403);
         }
 
+        $type = $request->input('type');
+
         $validated = $request->validate([
             'type' => 'required|in:multiple_choice,fill_blank,essay',
             'question' => 'required|string',
-            'options' => 'nullable|array|max:4',
+            'options' => $type === 'fill_blank' ? 'nullable|array|max:20' : 'nullable|array|max:4',
             'options.*' => 'nullable|string',
             'correct_answer' => 'nullable|string',
             'points' => 'required|integer|min:1',
@@ -255,10 +268,12 @@ class QuizController extends Controller
             abort(403);
         }
 
+        $type = $request->input('type');
+
         $validated = $request->validate([
             'type' => 'required|in:multiple_choice,fill_blank,essay',
             'question' => 'required|string',
-            'options' => 'nullable|array|max:4',
+            'options' => $type === 'fill_blank' ? 'nullable|array|max:20' : 'nullable|array|max:4',
             'options.*' => 'nullable|string',
             'correct_answer' => 'nullable|string',
             'points' => 'required|integer|min:1',
@@ -880,11 +895,11 @@ class QuizController extends Controller
 
         $hasRemedialAttempt = $finalExamAssessments->isNotEmpty()
             && AssessmentAttempt::query()
-                ->whereIn('assessment_id', $finalExamAssessments->pluck('id'))
-                ->where('user_id', $userId)
-                ->where('is_remedial', true)
-                ->whereNotNull('completed_at')
-                ->exists();
+            ->whereIn('assessment_id', $finalExamAssessments->pluck('id'))
+            ->where('user_id', $userId)
+            ->where('is_remedial', true)
+            ->whereNotNull('completed_at')
+            ->exists();
 
         if ($hasRemedialAttempt) {
             $totalScore = min(65, $totalScore);
@@ -982,7 +997,7 @@ class QuizController extends Controller
             $awardedPoints = min((int) $grade['points'], $maxPoints);
             $awardedPoints = max(0, $awardedPoints);
 
-            $answers[$question->id.'_grade'] = $awardedPoints;
+            $answers[$question->id . '_grade'] = $awardedPoints;
         }
 
         $calculated = $this->calculateAttemptScore($assessment, $answers);

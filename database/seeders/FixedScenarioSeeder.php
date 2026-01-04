@@ -205,7 +205,7 @@ class FixedScenarioSeeder extends Seeder
             [
                 'type' => 'fill_blank',
                 'question' => 'In Laravel, the ___ file is the entry point for all HTTP requests.',
-                'options' => null,
+                'options' => ['index.php'],
                 'correct_answer' => 'index.php',
                 'points' => 10,
                 'order' => 3,
@@ -213,7 +213,7 @@ class FixedScenarioSeeder extends Seeder
             [
                 'type' => 'fill_blank',
                 'question' => 'The ___ pattern in Laravel helps to avoid tight coupling between classes.',
-                'options' => null,
+                'options' => ['dependency injection'],
                 'correct_answer' => 'dependency injection',
                 'points' => 10,
                 'order' => 4,
@@ -299,7 +299,7 @@ class FixedScenarioSeeder extends Seeder
             [
                 'type' => 'fill_blank',
                 'question' => 'Laravel uses ___ for dependency injection.',
-                'options' => null,
+                'options' => ['service container', 'container'],
                 'correct_answer' => 'service container',
                 'points' => 10,
                 'order' => 2,
@@ -320,7 +320,7 @@ class FixedScenarioSeeder extends Seeder
             [
                 'type' => 'fill_blank',
                 'question' => 'Eloquent relationships are defined as ___ methods.',
-                'options' => null,
+                'options' => ['relationship', 'public'],
                 'correct_answer' => 'relationship',
                 'points' => 10,
                 'order' => 4,
@@ -403,7 +403,7 @@ class FixedScenarioSeeder extends Seeder
             [
                 'type' => 'fill_blank',
                 'question' => 'The __ method is used to render Inertia pages on the server.',
-                'options' => null,
+                'options' => ['Inertia::render', 'render'],
                 'correct_answer' => 'Inertia::render',
                 'points' => 10,
                 'order' => 2,
