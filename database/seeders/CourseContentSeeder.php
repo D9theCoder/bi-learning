@@ -76,7 +76,7 @@ class CourseContentSeeder extends Seeder
                     'contents' => [
                         ['title' => 'Research Onion Reading', 'type' => 'file', 'file_path' => '/materials/research-onion.pdf', 'duration_minutes' => 20],
                         ['title' => 'Instrument Draft', 'type' => 'file', 'file_path' => '/templates/instrument-draft.docx', 'duration_minutes' => 25],
-                        ['title' => 'Method Match Quiz', 'type' => 'quiz', 'duration_minutes' => 15],
+                        ['title' => 'Method Match Quiz', 'type' => 'assessment', 'assessment_type' => 'quiz', 'duration_minutes' => 15, 'max_score' => 100, 'allow_powerups' => true],
                     ],
                 ],
                 [
@@ -88,6 +88,14 @@ class CourseContentSeeder extends Seeder
                         ['title' => 'Consent Form Template', 'type' => 'file', 'file_path' => '/templates/consent-form.pdf', 'duration_minutes' => 10],
                         ['title' => 'Field Guide', 'type' => 'file', 'file_path' => '/materials/field-guide.pdf', 'duration_minutes' => 15],
                         ['title' => 'Pilot Dataset Upload', 'type' => 'link', 'url' => 'https://example.com/pilot-upload', 'duration_minutes' => 10],
+                    ],
+                ],
+                [
+                    'title' => 'Session 6: Final Examination',
+                    'description' => 'Comprehensive final exam covering all course material.',
+                    'duration_minutes' => 120,
+                    'contents' => [
+                        ['title' => 'Final Exam', 'type' => 'assessment', 'assessment_type' => 'final_exam', 'duration_minutes' => 120, 'max_score' => 100, 'allow_powerups' => false, 'is_required' => true],
                     ],
                 ],
             ],
@@ -132,6 +140,10 @@ class CourseContentSeeder extends Seeder
                     'duration_minutes' => $contentData['duration_minutes'] ?? null,
                     'is_required' => $contentData['is_required'] ?? false,
                     'order' => $contentData['order'] ?? $contentIndex + 1,
+                    // Assessment-specific fields
+                    'assessment_type' => $contentData['assessment_type'] ?? null,
+                    'max_score' => $contentData['max_score'] ?? null,
+                    'allow_powerups' => $contentData['allow_powerups'] ?? true,
                 ]);
             }
         }

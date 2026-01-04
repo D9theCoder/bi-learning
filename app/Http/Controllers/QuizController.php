@@ -147,12 +147,20 @@ class QuizController extends Controller
         $validated = $request->validated();
         $powerups = collect($validated['powerups'] ?? []);
         $type = $validated['type'];
+        $maxScore = in_array($type, ['practice', 'quiz'], true)
+            ? 100
+            : ($validated['max_score'] ?? 100);
+        $weightPercentage = $type === 'final_exam'
+            ? ($validated['weight_percentage'] ?? null)
+            : null;
 
         $assessment = $course->assessments()->create([
             ...$validated,
             'type' => $type,
+            'max_score' => $maxScore,
             'allow_retakes' => $validated['allow_retakes'] ?? false,
             'is_published' => $validated['is_published'] ?? false,
+            'weight_percentage' => $weightPercentage,
         ]);
 
         if ($assessment->allowsPowerups() && $powerups->isNotEmpty()) {
@@ -174,11 +182,21 @@ class QuizController extends Controller
     {
         $validated = $request->validated();
         $powerups = collect($validated['powerups'] ?? []);
+        $type = $validated['type'];
+        $maxScore = in_array($type, ['practice', 'quiz'], true)
+            ? 100
+            : ($validated['max_score'] ?? $assessment->max_score);
+        $weightPercentage = $type === 'final_exam'
+            ? ($validated['weight_percentage'] ?? $assessment->weight_percentage)
+            : null;
 
         $assessment->update([
             ...$validated,
+            'type' => $type,
+            'max_score' => $maxScore,
             'allow_retakes' => $validated['allow_retakes'] ?? false,
             'is_published' => $validated['is_published'] ?? false,
+            'weight_percentage' => $weightPercentage,
         ]);
 
         if (! $assessment->allowsPowerups()) {
@@ -846,10 +864,13 @@ class QuizController extends Controller
         $quizScore = (int) round($quizPercent * 100);
         $finalExamScore = (int) round($finalExamPercent * 100);
 
+        // New scoring logic based on final exam weight_percentage
         if ($finalExamAssessments->isNotEmpty()) {
-            $quizWeight = $quizAssessments->isNotEmpty() ? 0.5 : 0.0;
-            $finalExamWeight = $quizAssessments->isNotEmpty() ? 0.5 : 1.0;
+            $finalExam = $finalExamAssessments->first();
+            $finalExamWeight = ($finalExam->weight_percentage ?? 50) / 100; // Use custom weight or default to 50%
+            $quizWeight = $quizAssessments->isNotEmpty() ? (1.0 - $finalExamWeight) : 0.0;
         } else {
+            // No final exam: quizzes count for 100%
             $quizWeight = $quizAssessments->isNotEmpty() ? 1.0 : 0.0;
             $finalExamWeight = 0.0;
         }

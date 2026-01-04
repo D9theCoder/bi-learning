@@ -1,154 +1,127 @@
-# Add Lesson Session Selector and Display Assessment Types
+# Fix Assessment Due Date, Max Score, and Weight Percentage Issues
 
-Plan to enhance the assessment form by adding a lesson session selector and ensuring all assessment types (Practice, Quiz, Final Exam) are visible in the manage courses interface.
+## Problem Summary
+
+After analyzing the codebase and uploaded image, the following issues need to be fixed:
+
+1. **Due date is always null** in the assessment management page (`resources/js/pages/courses/manage`) when creating assessments
+2. **Useless max score input field** for regular assessments (should be fixed to 100 for quizzes/practice)
+3. **Missing weight percentage input** for final exam assessments
+4. **SQL integrity constraint violation** for `weight_percentage` column being null
+5. **Score distribution not displayed** in the gradebook tab
+6. **Quiz score distribution logic**: Quizzes should collectively share (100% - final exam percentage)
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Frontend changes will add a lesson selector dropdown to the assessment settings form. This will allow tutors to associate an assessment with a specific lesson session.
-
-> [!IMPORTANT]
-> The lesson-card component currently shows "contents" but assessments are stored separately. We need to clarify how to display assessments in the manage courses form. Should they be:
+> The following changes will affect how assessments are created and how final scores are calculated:
 >
-> 1. Displayed as part of the lesson's contents section (even though they're separate entities)?
-> 2. Displayed in a separate "Assessments" section within each lesson card?
-> 3. Displayed in a separate card/section outside of the lesson card?
+> - Max score for quizzes/practice will be automatically set to 100 (no user input)
+> - Final exam will require a weight percentage input (51-100%)
+> - Quizzes will automatically distribute the remaining percentage equally
+> - Database migration is required to set default value for `weight_percentage`
 
 ## Proposed Changes
 
-### Frontend Components
+### Backend Changes
 
-#### [MODIFY] [quiz-settings-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/quiz/quiz-settings-card.tsx)
+#### [MODIFY] [StoreQuizRequest.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Requests/StoreQuizRequest.php)
 
-- Add a new `lessons` prop to receive available lessons from the parent component
-- Add a Select component for lesson selection (after the Assessment Type field)
-- Wire up the `lesson_id` field to the form data (already exists in form)
-- Display the selected lesson's title or "None selected" placeholder
-- Handle validation errors for `lesson_id` field (validation already exists in backend)
-- Make the field optional with clear labeling
+- Update `prepareForValidation()` to:
+  - Set `max_score` to 100 for practice/quiz types
+  - Properly handle `weight_percentage` default value only for final_exam type
+- Update validation rules to:
+  - Make `max_score` not required (will be set programmatically)
+  - Ensure `weight_percentage` has proper validation
 
-#### [MODIFY] [edit.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/quiz/edit.tsx)
+#### [MODIFY] [UpdateQuizRequest.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Requests/UpdateQuizRequest.php)
 
-- Add `lessons` to the `QuizEditProps` interface
-- Pass `lessons` prop to `QuizSettingsCard` component
-- The lessons data will be provided by the backend
-
-#### [MODIFY] [lesson-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/manage/lesson-card.tsx)
-
-**Option 1: Display as part of contents (recommended)**
-
-- Add a new "Assessments" subsection after the "Contents" section
-- Query and display assessments linked to this lesson
-- Show assessment type badges (Practice, Quiz, Final Exam) with distinct colors
-- Add "Edit Assessment" button for each assessment
-- Show assessment status (published/draft)
-
-**Option 2: Separate assessments section**
-
-- Display in a completely separate section outside of lesson card
-- Would require changes to the parent component structure
-
----
-
-### Backend Controller
+- Apply same logic as StoreQuizRequest for consistency
 
 #### [MODIFY] [QuizController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/QuizController.php)
 
-**Method: `edit()`**
+- Update `store()` method to ensure `max_score` is set to 100 for quiz/practice
+- Update `update()` method with same logic
+- Ensure `weight_percentage` is only saved for final_exam type
 
-- Load the course's lessons along with the assessment
-- Pass lessons data to the Inertia view
-- Order lessons by `order` column for consistent display
+#### [NEW] [Migration File](file:///c:/Users/kevin/Herd/web-skripsi/database/migrations/YYYY_MM_DD_HHMMSS_update_assessments_weight_percentage_default.php)
 
-```diff
- $assessment->load(['questions', 'powerups']);
-+$lessons = $course->lessons()->orderBy('order')->get();
- $availablePowerups = Powerup::query()
-     ->orderBy('name')
-     ->get();
-
- // ... existing powerups code ...
-
- return Inertia::render('courses/quiz/edit', [
-     'course' => $course,
-+    'lessons' => $lessons,
-     'assessment' => [
-         ...$assessment->toArray(),
-         'powerups' => $assessmentPowerups,
-     ],
-     'availablePowerups' => $availablePowerups->map(function (Powerup $powerup) {
-         return $this->formatPowerup($powerup);
-     }),
- ]);
-```
-
-#### [MODIFY] [CourseManagementController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/CourseManagementController.php)
-
-**Method: `edit()`**
-
-- Ensure assessments are loaded with lessons when editing a course
-- Pass assessment data grouped by lesson_id to the frontend
-- Include assessment type and status information
+- Add migration to modify `weight_percentage` column:
+  - Make it nullable
+  - Set default value to null (only final exams need this value)
 
 ---
+
+### Frontend Changes
+
+#### [MODIFY] [new-content-form.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/manage/new-content-form.tsx)
+
+- Remove max_score input field for quiz/practice assessments (will default to 100)
+- Add weight_percentage input field for final_exam type (51-100% range)
+- Fix due_date format to properly convert to datetime-local format
+- Update form data structure to include `weight_percentage`
+
+#### [MODIFY] [quiz-settings-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/quiz/quiz-settings-card.tsx)
+
+- Remove max_score input field for quiz/practice types
+- Add weight_percentage input for final_exam type
+- Update form interface to include `weight_percentage`
+- Add proper validation messaging
+
+#### [MODIFY] [edit.tsx (quiz)](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/quiz/edit.tsx)
+
+- Add `weight_percentage` to form initialization
+
+#### [MODIFY] [gradebook-tab.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/tabs/gradebook-tab.tsx)
+
+- Add score distribution information display
+- Show final exam weight percentage
+- Show quiz distribution percentage (100% - final exam %)
+- Update component to pass weight_percentage data from backend
+
+---
+
+### Documentation Changes
+
+#### [MODIFY] [database_guide.md](file:///c:/Users/kevin/Herd/web-skripsi/database_guide.md)
+
+- Update `assessments` table documentation to reflect:
+  - `weight_percentage` is nullable (only used for final_exam type)
+  - Default value is null
+  - Only final exams require this value (51-100%)
+  - Quizzes collectively receive (100 - final_exam_weight_percentage)%
+  - Practice assessments don't use this field
 
 ## Verification Plan
 
 ### Automated Tests
 
-#### Update Existing Tests
+1. Create/update feature test for assessment creation:
 
-Since the form request validation is already in place and we're only adding UI elements, we should verify the existing validation tests still pass:
+   ```bash
+   php artisan test --filter=QuizController
+   ```
 
-```bash
-# Run existing quiz tests
-php artisan test --filter=QuizTest
-```
-
-#### Add New Browser Test
-
-Create a new browser test to verify the lesson selector UI:
-
-**File:** `tests/Browser/AssessmentLessonSelectorTest.php`
-
-```bash
-# After creating the test, run it with:
-php artisan test tests/Browser/AssessmentLessonSelectorTest.php
-```
-
-**Test should verify:**
-
-1. Tutor can see lesson selector dropdown in assessment edit page
-2. Dropdown shows all lessons for the course
-3. Selecting a lesson updates the form data
-4. Saving the assessment with a lesson_id persists correctly
-5. Assessment displays the selected lesson in the manage courses page
+2. Test that:
+   - Creating a quiz sets max_score to 100 automatically
+   - Creating a practice sets max_score to 100 automatically
+   - Creating a final exam requires weight_percentage (51-100%)
+   - Creating a final exam with weight_percentage stores it correctly
+   - Due date is properly saved for all assessment types
+   - Validation fails if weight_percentage is null for final_exam
+   - Validation fails if weight_percentage < 51 for final_exam
 
 ### Manual Verification
 
-1. **Navigate to a course management page** as a tutor:
-
-   - Use the absolute URL tool to get: `/courses/manage`
-   - Click "Edit" on an existing course
-
-2. **Create or edit an assessment**:
-
-   - Click "New Assessment" or edit an existing one
-   - Verify the "Lesson Session" dropdown appears below "Assessment Type"
-   - Verify all lessons for the course are listed in the dropdown
-   - Select a lesson and save the assessment
-   - Verify no errors occur
-
-3. **Verify lesson-card displays assessments**:
-
-   - Return to the course edit page
-   - Scroll to the lessons section
-   - Verify assessments linked to each lesson are displayed
-   - Verify Practice, Quiz, and Final Exam assessments all show correctly
-   - Verify each assessment has an "Edit" button that navigates to the quiz editor
-
-4. **Test assessment types**:
-   - Create one assessment of each type (Practice, Quiz, Final Exam)
-   - Assign each to a different lesson
-   - Verify they all display correctly in the manage courses interface
-   - Verify the assessment type badges have distinct visual styling
+1. Navigate to course management page
+2. Create a new assessment (quiz type) and verify:
+   - No max_score input field is shown
+   - Due date can be set and is saved correctly
+3. Create a new assessment (final_exam type) and verify:
+   - No max_score input field is shown
+   - Weight percentage input field is shown (51-100% range)
+   - Can successfully create final exam with weight_percentage
+4. Check gradebook tab to verify:
+   - Score distribution is displayed
+   - Final exam percentage is shown
+   - Quiz distribution is calculated correctly

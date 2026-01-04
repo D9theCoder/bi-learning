@@ -21,6 +21,24 @@ const contentTypes = [
   { value: 'assessment', label: 'Assessment' },
 ];
 
+const formatDateTimeLocal = (value?: string | null): string => {
+  if (!value) {
+    return '';
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return `${value}T00:00`;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+};
+
 interface ContentRowProps {
   courseId: number;
   lessonId: number;
@@ -46,6 +64,7 @@ export function ContentRow({
     // Assessment-specific fields
     assessment_type: 'practice' | 'quiz' | 'final_exam';
     max_score: number | '';
+    weight_percentage: number | '';
     allow_powerups: boolean;
     allowed_powerups: Array<{ id: number; limit: number }>;
   }>({
@@ -54,11 +73,12 @@ export function ContentRow({
     file_path: content.file_path ?? '',
     url: content.url ?? '',
     description: content.description ?? '',
-    due_date: content.due_date ?? '',
+    due_date: formatDateTimeLocal(content.due_date),
     duration_minutes: content.duration_minutes ?? '',
     is_required: content.is_required ?? false,
     assessment_type: content.assessment_type ?? 'quiz',
     max_score: content.max_score ?? 100,
+    weight_percentage: content.weight_percentage ?? '',
     allow_powerups: content.allow_powerups ?? true,
     allowed_powerups: content.allowed_powerups ?? [],
   });
@@ -75,9 +95,14 @@ export function ContentRow({
     if (isAssessmentType && contentForm.data.assessment_type === 'final_exam') {
       contentForm.setData('allowed_powerups', []);
       contentForm.setData('allow_powerups', false);
+      contentForm.setData('weight_percentage', '');
     } else if (!isAssessmentType) {
       contentForm.setData('allowed_powerups', []);
       contentForm.setData('allow_powerups', true);
+      contentForm.setData('weight_percentage', '');
+      contentForm.setData('max_score', 100);
+    } else {
+      contentForm.setData('max_score', 100);
     }
   }, [contentForm.data.type, contentForm.data.assessment_type]);
 
@@ -224,22 +249,52 @@ export function ContentRow({
 
       {isAssessment && (
         <div className="grid gap-3 pt-3 lg:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor={`content-max-score-${content.id}`}>Max Score</Label>
-            <Input
-              id={`content-max-score-${content.id}`}
-              type="number"
-              min={1}
-              value={contentForm.data.max_score ?? ''}
-              onChange={(e) =>
-                contentForm.setData(
-                  'max_score',
-                  e.target.value === '' ? '' : Number(e.target.value),
-                )
-              }
-              placeholder="100"
-            />
-          </div>
+          {contentForm.data.assessment_type === 'final_exam' && (
+            <div className="space-y-2">
+              <Label htmlFor={`content-weight-${content.id}`}>
+                Final Exam Weight (%)
+              </Label>
+              <Input
+                id={`content-weight-${content.id}`}
+                type="number"
+                min={51}
+                max={100}
+                value={contentForm.data.weight_percentage ?? ''}
+                onChange={(e) =>
+                  contentForm.setData(
+                    'weight_percentage',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                placeholder="80"
+              />
+              {contentForm.errors.weight_percentage ? (
+                <p className="text-xs text-destructive">
+                  {contentForm.errors.weight_percentage}
+                </p>
+              ) : null}
+            </div>
+          )}
+          {contentForm.data.assessment_type === 'final_exam' && (
+            <div className="space-y-2">
+              <Label htmlFor={`content-max-score-${content.id}`}>
+                Max Score
+              </Label>
+              <Input
+                id={`content-max-score-${content.id}`}
+                type="number"
+                min={1}
+                value={contentForm.data.max_score ?? ''}
+                onChange={(e) =>
+                  contentForm.setData(
+                    'max_score',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                placeholder="100"
+              />
+            </div>
+          )}
         </div>
       )}
 

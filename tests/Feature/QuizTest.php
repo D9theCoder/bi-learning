@@ -55,6 +55,64 @@ it('prevents student from accessing quiz edit page', function () {
     $response->assertForbidden();
 });
 
+it('sets max score to 100 for quiz assessments on creation', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz", [
+        'type' => 'quiz',
+        'title' => 'Intro Quiz',
+        'description' => 'Quick knowledge check.',
+    ]);
+
+    $response->assertRedirect();
+    $assessment = Assessment::where('course_id', $course->id)->first();
+
+    expect($assessment)->not->toBeNull();
+    expect($assessment?->max_score)->toBe(100);
+    expect($assessment?->weight_percentage)->toBeNull();
+});
+
+it('requires weight percentage for final exam creation', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz", [
+        'type' => 'final_exam',
+        'title' => 'Final Exam',
+        'description' => 'Comprehensive test.',
+    ]);
+
+    $response->assertSessionHasErrors('weight_percentage');
+    $this->assertDatabaseMissing('assessments', [
+        'course_id' => $course->id,
+        'type' => 'final_exam',
+        'title' => 'Final Exam',
+    ]);
+});
+
+it('stores final exam weight percentage on creation', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+
+    $response = $this->actingAs($tutor)->post("/courses/{$course->id}/quiz", [
+        'type' => 'final_exam',
+        'title' => 'Final Exam',
+        'description' => 'Comprehensive test.',
+        'weight_percentage' => 80,
+    ]);
+
+    $response->assertRedirect();
+    $assessment = Assessment::where('course_id', $course->id)->first();
+
+    expect($assessment)->not->toBeNull();
+    expect($assessment?->weight_percentage)->toBe(80);
+    expect($assessment?->max_score)->toBe(100);
+});
+
 it('allows tutor to add a multiple choice question', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');
@@ -458,11 +516,16 @@ it('adds time extension when using an extra time powerup', function () {
         'time_extension' => 0,
     ]);
 
-    $powerup = Powerup::factory()->create([
-        'slug' => 'extra-time',
-        'config' => ['extra_time_seconds' => 120],
-        'default_limit' => 1,
-    ]);
+    $powerup = Powerup::query()->updateOrCreate(
+        ['slug' => 'extra-time'],
+        [
+            'name' => 'Extra Time',
+            'description' => 'Adds extra time to an assessment.',
+            'icon' => 'power',
+            'default_limit' => 1,
+            'config' => ['extra_time_seconds' => 120],
+        ]
+    );
     $assessment->powerups()->attach($powerup->id, ['limit' => 2]);
 
     $response = $this->actingAs($student)->postJson(
@@ -491,11 +554,16 @@ it('enforces powerup usage limits', function () {
         'time_extension' => 0,
     ]);
 
-    $powerup = Powerup::factory()->create([
-        'slug' => 'extra-time',
-        'config' => ['extra_time_seconds' => 60],
-        'default_limit' => 1,
-    ]);
+    $powerup = Powerup::query()->updateOrCreate(
+        ['slug' => 'extra-time'],
+        [
+            'name' => 'Extra Time',
+            'description' => 'Adds extra time to an assessment.',
+            'icon' => 'power',
+            'default_limit' => 1,
+            'config' => ['extra_time_seconds' => 60],
+        ]
+    );
     $assessment->powerups()->attach($powerup->id, ['limit' => 1]);
 
     $this->actingAs($student)->postJson(
@@ -561,11 +629,16 @@ it('disallows powerups in final exams', function () {
         'started_at' => now(),
         'time_extension' => 0,
     ]);
-    $powerup = Powerup::factory()->create([
-        'slug' => 'extra-time',
-        'config' => ['extra_time_seconds' => 60],
-        'default_limit' => 1,
-    ]);
+    $powerup = Powerup::query()->updateOrCreate(
+        ['slug' => 'extra-time'],
+        [
+            'name' => 'Extra Time',
+            'description' => 'Adds extra time to an assessment.',
+            'icon' => 'power',
+            'default_limit' => 1,
+            'config' => ['extra_time_seconds' => 60],
+        ]
+    );
     $assessment->powerups()->attach($powerup->id, ['limit' => 1]);
 
     $response = $this->actingAs($student)->postJson(
@@ -611,7 +684,7 @@ it('hides final exam scores until reviewed', function () {
     expect($submission?->score)->toBeNull();
 });
 
-it('weights final exam as 50 percent minimum', function () {
+it('weights final exam using configured percentage', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');
     $student = User::factory()->create();
@@ -652,6 +725,7 @@ it('weights final exam as 50 percent minimum', function () {
         'type' => 'final_exam',
         'is_published' => true,
         'max_score' => 20,
+        'weight_percentage' => 80,
     ]);
     $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
         'type' => 'essay',
@@ -677,7 +751,7 @@ it('weights final exam as 50 percent minimum', function () {
 
     expect($finalScore?->quiz_score)->toBe(50);
     expect($finalScore?->final_exam_score)->toBe(100);
-    expect($finalScore?->total_score)->toBe(75);
+    expect($finalScore?->total_score)->toBe(90);
 });
 
 it('allows remedial attempt when final score is below 65', function () {
@@ -692,6 +766,7 @@ it('allows remedial attempt when final score is below 65', function () {
         'type' => 'final_exam',
         'is_published' => true,
         'max_score' => 100,
+        'weight_percentage' => 100,
     ]);
     $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
         'type' => 'essay',
@@ -729,6 +804,7 @@ it('prevents remedial attempt when final score is 65 or above', function () {
         'type' => 'final_exam',
         'is_published' => true,
         'max_score' => 100,
+        'weight_percentage' => 100,
     ]);
     $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
         'type' => 'essay',
@@ -766,6 +842,7 @@ it('caps final score at 65 and awards no points for remedial attempts', function
         'type' => 'final_exam',
         'is_published' => true,
         'max_score' => 100,
+        'weight_percentage' => 100,
     ]);
     $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
         'type' => 'essay',

@@ -45,6 +45,7 @@ export function NewContentForm({
     // Assessment-specific fields
     assessment_type: 'practice' | 'quiz' | 'final_exam';
     max_score: number | '';
+    weight_percentage: number | '';
     allow_powerups: boolean;
     allowed_powerups: Array<{ id: number; limit: number }>;
   }>({
@@ -58,6 +59,7 @@ export function NewContentForm({
     is_required: false,
     assessment_type: 'quiz',
     max_score: 100,
+    weight_percentage: '',
     allow_powerups: true,
     allowed_powerups: [],
   });
@@ -75,9 +77,14 @@ export function NewContentForm({
     ) {
       newContentForm.setData('allowed_powerups', []);
       newContentForm.setData('allow_powerups', false);
+      newContentForm.setData('weight_percentage', '');
     } else if (!isAssessmentType) {
       newContentForm.setData('allowed_powerups', []);
       newContentForm.setData('allow_powerups', true);
+      newContentForm.setData('weight_percentage', '');
+      newContentForm.setData('max_score', 100);
+    } else {
+      newContentForm.setData('max_score', 100);
     }
   }, [newContentForm.data.type, newContentForm.data.assessment_type]);
 
@@ -214,24 +221,52 @@ export function NewContentForm({
 
       {isAssessment && (
         <div className="grid gap-3 pt-3 lg:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor={`new-content-max-score-${lessonId}`}>
-              Max Score
-            </Label>
-            <Input
-              id={`new-content-max-score-${lessonId}`}
-              type="number"
-              min={1}
-              value={newContentForm.data.max_score ?? ''}
-              onChange={(e) =>
-                newContentForm.setData(
-                  'max_score',
-                  e.target.value === '' ? '' : Number(e.target.value),
-                )
-              }
-              placeholder="100"
-            />
-          </div>
+          {newContentForm.data.assessment_type === 'final_exam' && (
+            <div className="space-y-2">
+              <Label htmlFor={`new-content-weight-${lessonId}`}>
+                Final Exam Weight (%)
+              </Label>
+              <Input
+                id={`new-content-weight-${lessonId}`}
+                type="number"
+                min={51}
+                max={100}
+                value={newContentForm.data.weight_percentage ?? ''}
+                onChange={(e) =>
+                  newContentForm.setData(
+                    'weight_percentage',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                placeholder="80"
+              />
+              {newContentForm.errors.weight_percentage ? (
+                <p className="text-xs text-destructive">
+                  {newContentForm.errors.weight_percentage}
+                </p>
+              ) : null}
+            </div>
+          )}
+          {newContentForm.data.assessment_type === 'final_exam' && (
+            <div className="space-y-2">
+              <Label htmlFor={`new-content-max-score-${lessonId}`}>
+                Max Score
+              </Label>
+              <Input
+                id={`new-content-max-score-${lessonId}`}
+                type="number"
+                min={1}
+                value={newContentForm.data.max_score ?? ''}
+                onChange={(e) =>
+                  newContentForm.setData(
+                    'max_score',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                placeholder="100"
+              />
+            </div>
+          )}
         </div>
       )}
 

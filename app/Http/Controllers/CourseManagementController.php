@@ -108,7 +108,7 @@ class CourseManagementController extends Controller
             abort(403);
         }
 
-        $course->load(['lessons.contents']);
+        $course->load(['lessons.contents.assessment']);
 
         $availablePowerups = Powerup::query()->orderBy('name')->get();
 
@@ -147,6 +147,7 @@ class CourseManagementController extends Controller
                                 'duration_minutes' => $content->duration_minutes,
                                 'is_required' => $content->is_required,
                                 'order' => $content->order,
+                                'weight_percentage' => $content->assessment?->weight_percentage,
                                 'created_at' => $content->created_at?->toIsoString(),
                                 'updated_at' => $content->updated_at?->toIsoString(),
                             ];
@@ -236,15 +237,24 @@ class CourseManagementController extends Controller
 
         // Create Assessment if type is assessment
         if ($content->type === 'assessment') {
+            $assessmentType = $content->assessment_type ?? 'quiz';
+            $maxScore = in_array($assessmentType, ['practice', 'quiz'], true)
+                ? 100
+                : ($content->max_score ?? 100);
+            $weightPercentage = $assessmentType === 'final_exam'
+                ? ($data['weight_percentage'] ?? null)
+                : null;
+
             $assessment = Assessment::create([
                 'course_id' => $course->id,
                 'lesson_id' => $lesson->id,
-                'type' => $content->assessment_type ?? 'quiz',
+                'type' => $assessmentType,
                 'title' => $content->title,
                 'description' => $content->description,
                 'due_date' => $content->due_date,
-                'max_score' => $content->max_score ?? 100,
+                'max_score' => $maxScore,
                 'is_published' => false,
+                'weight_percentage' => $weightPercentage,
             ]);
 
             // Sync powerups if allowed
@@ -294,29 +304,38 @@ class CourseManagementController extends Controller
         // Sync Assessment if type is assessment
         if ($content->type === 'assessment') {
             $assessment = $content->assessment;
+            $assessmentType = $content->assessment_type ?? 'quiz';
+            $maxScore = in_array($assessmentType, ['practice', 'quiz'], true)
+                ? 100
+                : ($content->max_score ?? 100);
+            $weightPercentage = $assessmentType === 'final_exam'
+                ? ($data['weight_percentage'] ?? $assessment?->weight_percentage)
+                : null;
 
             // If assessment doesn't exist, create it
             if (! $assessment) {
                 $assessment = Assessment::create([
                     'course_id' => $course->id,
                     'lesson_id' => $lesson->id,
-                    'type' => $content->assessment_type ?? 'quiz',
+                    'type' => $assessmentType,
                     'title' => $content->title,
                     'description' => $content->description,
                     'due_date' => $content->due_date,
-                    'max_score' => $content->max_score ?? 100,
+                    'max_score' => $maxScore,
                     'is_published' => false,
+                    'weight_percentage' => $weightPercentage,
                 ]);
 
                 $content->update(['assessment_id' => $assessment->id]);
             } else {
                 // Update existing assessment
                 $assessment->update([
-                    'type' => $content->assessment_type ?? 'quiz',
+                    'type' => $assessmentType,
                     'title' => $content->title,
                     'description' => $content->description,
                     'due_date' => $content->due_date,
-                    'max_score' => $content->max_score ?? 100,
+                    'max_score' => $maxScore,
+                    'weight_percentage' => $weightPercentage,
                 ]);
             }
 

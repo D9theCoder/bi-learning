@@ -10,6 +10,24 @@ class StoreCourseContentRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        $type = $this->input('type');
+        $assessmentType = $this->input('assessment_type');
+        $maxScore = $this->input('max_score');
+        $weightPercentage = $this->input('weight_percentage');
+
+        $normalizedMaxScore = $maxScore === '' ? null : $maxScore;
+        if ($type === 'assessment' && in_array($assessmentType, ['practice', 'quiz'], true)) {
+            $normalizedMaxScore = 100;
+        }
+        if ($type === 'assessment' && $assessmentType === 'final_exam' && $normalizedMaxScore === null) {
+            $normalizedMaxScore = 100;
+        }
+
+        $normalizedWeightPercentage = $weightPercentage === '' ? null : $weightPercentage;
+        if ($type !== 'assessment' || $assessmentType !== 'final_exam') {
+            $normalizedWeightPercentage = null;
+        }
+
         $this->merge([
             'duration_minutes' => $this->input('duration_minutes') === '' ? null : $this->input('duration_minutes'),
             'url' => $this->input('url') === '' ? null : $this->input('url'),
@@ -17,8 +35,9 @@ class StoreCourseContentRequest extends FormRequest
             'due_date' => $this->input('due_date') === '' ? null : $this->input('due_date'),
             'is_required' => $this->boolean('is_required'),
             // Assessment specific fields
-            'max_score' => $this->input('max_score') === '' ? null : $this->input('max_score'),
+            'max_score' => $normalizedMaxScore,
             'allow_powerups' => $this->boolean('allow_powerups', true),
+            'weight_percentage' => $normalizedWeightPercentage,
         ]);
     }
 
@@ -54,7 +73,8 @@ class StoreCourseContentRequest extends FormRequest
             'is_required' => ['sometimes', 'boolean'],
             // Assessment-specific fields
             'assessment_type' => ['nullable', 'required_if:type,assessment', 'in:practice,quiz,final_exam'],
-            'max_score' => ['nullable', 'required_if:type,assessment', 'integer', 'min:1'],
+            'max_score' => ['nullable', 'integer', 'min:1'],
+            'weight_percentage' => ['nullable', 'integer', 'min:51', 'max:100', 'required_if:assessment_type,final_exam'],
             'allow_powerups' => ['sometimes', 'boolean'],
             'allowed_powerups' => ['nullable', 'array'],
             'allowed_powerups.*.id' => ['required', 'integer', 'exists:powerups,id'],

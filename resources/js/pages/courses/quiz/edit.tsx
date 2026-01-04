@@ -33,6 +33,7 @@ export default function QuizEdit({
       ? new Date(assessment.due_date).toISOString().slice(0, 16)
       : '',
     max_score: assessment.max_score ?? 100,
+    weight_percentage: assessment.weight_percentage ?? '',
     allow_retakes: assessment.allow_retakes ?? false,
     time_limit_minutes: assessment.time_limit_minutes ?? '',
     is_published: assessment.is_published ?? false,

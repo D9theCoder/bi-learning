@@ -23,6 +23,7 @@ type SettingsFormData = {
   lesson_id: number | '' | string;
   due_date: string;
   max_score: number;
+  weight_percentage: number | '';
   allow_retakes: boolean;
   time_limit_minutes: number | '' | string;
   is_published: boolean;
@@ -47,6 +48,7 @@ export function QuizSettingsCard({
     'title',
     'description',
     'due_date',
+    'weight_percentage',
     'time_limit_minutes',
     'allow_retakes',
     'is_published',
@@ -83,6 +85,8 @@ export function QuizSettingsCard({
               form.setData('type', nextType);
               if (nextType === 'final_exam') {
                 form.setData('powerups', []);
+              } else {
+                form.setData('weight_percentage', '');
               }
             }}
           >
@@ -142,6 +146,34 @@ export function QuizSettingsCard({
             <p className="text-xs text-destructive">{form.errors.due_date}</p>
           ) : null}
         </div>
+
+        {form.data.type === 'final_exam' && (
+          <div className="space-y-2">
+            <Label htmlFor="weight_percentage">Final Exam Weight (%)</Label>
+            <Input
+              id="weight_percentage"
+              type="number"
+              min={51}
+              max={100}
+              value={form.data.weight_percentage}
+              onChange={(e) =>
+                form.setData(
+                  'weight_percentage',
+                  e.target.value === '' ? '' : Number(e.target.value),
+                )
+              }
+              aria-invalid={Boolean(form.errors.weight_percentage)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Quizzes share the remaining percentage of the final score.
+            </p>
+            {form.errors.weight_percentage ? (
+              <p className="text-xs text-destructive">
+                {form.errors.weight_percentage}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="time_limit">Time Limit (minutes, optional)</Label>

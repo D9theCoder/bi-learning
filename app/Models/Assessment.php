@@ -25,6 +25,7 @@ class Assessment extends Model
         'time_limit_minutes',
         'is_published',
         'is_remedial',
+        'weight_percentage',
     ];
 
     /**
@@ -37,6 +38,7 @@ class Assessment extends Model
             'allow_retakes' => 'boolean',
             'is_published' => 'boolean',
             'is_remedial' => 'boolean',
+            'weight_percentage' => 'integer',
         ];
     }
 

@@ -207,6 +207,7 @@ export interface CourseContent {
   assessment_id?: number | null;
   assessment_type?: 'practice' | 'quiz' | 'final_exam' | null;
   max_score?: number | null;
+  weight_percentage?: number | null;
   allow_powerups?: boolean | null;
   allowed_powerups?: Array<{ id: number; limit: number }> | null;
 }
@@ -311,6 +312,7 @@ export interface Assessment {
   time_limit_minutes?: number | null;
   is_published?: boolean;
   is_remedial?: boolean;
+  weight_percentage?: number | null;
   created_at: string;
   updated_at: string;
   submissions?: AssessmentSubmission[];

@@ -126,6 +126,7 @@ erDiagram
 		int time_limit_minutes
 		boolean is_published
 		boolean is_remedial
+		int weight_percentage
 		timestamp created_at
 		timestamp updated_at
 	}
@@ -525,7 +526,7 @@ Columns:
 - `id` (bigint unsigned, not null)
 - `course_id` (bigint unsigned, not null)
 - `lesson_id` (bigint unsigned, null)
-- `type` (varchar(255), not null)
+- `type` (varchar(255), not null) - Values: 'practice', 'quiz', 'final_exam'
 - `title` (varchar(255), not null)
 - `description` (text, null)
 - `due_date` (timestamp, null)
@@ -534,6 +535,7 @@ Columns:
 - `time_limit_minutes` (int, null)
 - `is_published` (tinyint(1), not null)
 - `is_remedial` (tinyint(1), not null)
+- `weight_percentage` (int, null, default: null) - Percentage weight for final exam in final score calculation (51-100). Quizzes automatically receive the remaining percentage (100 - weight_percentage).
 - `created_at` (timestamp, null)
 - `updated_at` (timestamp, null)
 
@@ -543,6 +545,14 @@ Relationships:
 - Optionally belongs to `lessons`.
 - Has many `assessment_questions`, `assessment_attempts`, and `assessment_submissions`.
 - Uses `powerups` via `assessment_powerup`.
+
+Notes:
+
+- Only one final exam is allowed per course (enforced by validation).
+- `weight_percentage` is only used for `type='final_exam'` assessments and is null otherwise.
+- Final exam must have `weight_percentage` between 51 and 100.
+- Quizzes collectively share (100 - final_exam_weight_percentage)% of the final score.
+- Practice assessments do not contribute to the final score.
 
 ### `assessment_questions`
 

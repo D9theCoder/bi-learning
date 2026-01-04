@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Assessment;
 use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -9,10 +10,26 @@ class StoreQuizRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        $type = $this->input('type');
+        $maxScore = $this->input('max_score');
+        $weightPercentage = $this->input('weight_percentage');
+
+        $normalizedMaxScore = $maxScore === '' ? null : $maxScore;
+        if (in_array($type, ['practice', 'quiz'], true)) {
+            $normalizedMaxScore = 100;
+        }
+
+        $normalizedWeightPercentage = $weightPercentage === '' ? null : $weightPercentage;
+        if ($type !== 'final_exam') {
+            $normalizedWeightPercentage = null;
+        }
+
         $this->merge([
             'lesson_id' => $this->input('lesson_id') === '' ? null : $this->input('lesson_id'),
             'due_date' => $this->input('due_date') === '' ? null : $this->input('due_date'),
             'time_limit_minutes' => $this->input('time_limit_minutes') === '' ? null : $this->input('time_limit_minutes'),
+            'max_score' => $normalizedMaxScore,
+            'weight_percentage' => $normalizedWeightPercentage,
         ]);
     }
 
@@ -43,16 +60,33 @@ class StoreQuizRequest extends FormRequest
      */
     public function rules(): array
     {
+        $course = $this->route('course');
+
         return [
-            'type' => ['required', 'in:practice,quiz,final_exam'],
+            'type' => [
+                'required',
+                'in:practice,quiz,final_exam',
+                function ($attribute, $value, $fail) use ($course) {
+                    if ($value === 'final_exam' && $course) {
+                        $existingFinalExams = Assessment::where('course_id', $course->id)
+                            ->where('type', 'final_exam')
+                            ->count();
+
+                        if ($existingFinalExams >= 1) {
+                            $fail('A course can only have one final exam.');
+                        }
+                    }
+                },
+            ],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'lesson_id' => ['nullable', 'exists:lessons,id'],
             'due_date' => ['nullable', 'date'],
-            'max_score' => ['required', 'integer', 'min:1'],
+            'max_score' => ['nullable', 'integer', 'min:1'],
             'allow_retakes' => ['sometimes', 'boolean'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:480'],
             'is_published' => ['sometimes', 'boolean'],
+            'weight_percentage' => ['nullable', 'integer', 'min:51', 'max:100', 'required_if:type,final_exam'],
             'powerups' => ['nullable', 'array', 'prohibited_if:type,final_exam'],
             'powerups.*.id' => ['required', 'integer', 'exists:powerups,id'],
             'powerups.*.limit' => ['required', 'integer', 'min:1'],
