@@ -136,6 +136,7 @@ export default function CourseShow({
               canManageCourse={canManageCourse}
               isEnrolled={isEnrolled}
               courseId={course.id}
+              assessments={assessments}
               isAdmin={isAdmin}
               isTutor={isTutor}
               onEnrollClick={() => setIsEnrollModalOpen(true)}

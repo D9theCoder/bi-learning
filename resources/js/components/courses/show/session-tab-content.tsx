@@ -6,7 +6,7 @@ import {
   SessionSelector,
   SessionTodoList,
 } from '@/components/courses/show';
-import type { CourseContent, Lesson } from '@/types';
+import type { Assessment, CourseContent, Lesson } from '@/types';
 
 interface SessionTabContentProps {
   lessons: (Lesson & { contents: CourseContent[] })[];
@@ -17,6 +17,7 @@ interface SessionTabContentProps {
   canManageCourse: boolean;
   isEnrolled: boolean;
   courseId: number;
+  assessments: Assessment[];
   isAdmin: boolean;
   isTutor: boolean;
   onEnrollClick: () => void;
@@ -31,6 +32,7 @@ export function SessionTabContent({
   canManageCourse,
   isEnrolled,
   courseId,
+  assessments,
   isAdmin,
   isTutor,
   onEnrollClick,
@@ -71,6 +73,9 @@ export function SessionTabContent({
             <SessionTodoList
               contents={activeSession.contents}
               canViewContent={canViewContent}
+              assessments={assessments}
+              currentLessonId={activeSession.id}
+              courseId={courseId}
             />
           </div>
         </div>

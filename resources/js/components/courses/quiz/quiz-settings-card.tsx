@@ -34,6 +34,7 @@ interface QuizSettingsCardProps {
   form: InertiaFormProps<SettingsFormData>;
   assessment: Assessment;
   availablePowerups: Powerup[];
+  lessons: Array<{ id: number; title: string; order: number | null }>;
   onSave: () => void;
 }
 
@@ -41,12 +42,14 @@ export function QuizSettingsCard({
   form,
   assessment,
   availablePowerups,
+  lessons,
   onSave,
 }: QuizSettingsCardProps) {
   const handledErrors = [
     'type',
     'title',
     'description',
+    'lesson_id',
     'due_date',
     'weight_percentage',
     'time_limit_minutes',
@@ -130,6 +133,38 @@ export function QuizSettingsCard({
             <p className="text-xs text-destructive">
               {form.errors.description}
             </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="lesson_id">Assign to Session</Label>
+          <Select
+            value={form.data.lesson_id ? String(form.data.lesson_id) : 'none'}
+            onValueChange={(value) =>
+              form.setData('lesson_id', value === 'none' ? '' : Number(value))
+            }
+          >
+            <SelectTrigger
+              id="lesson_id"
+              aria-invalid={Boolean(form.errors.lesson_id)}
+            >
+              <SelectValue placeholder="Select session" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {lessons.map((lesson) => (
+                <SelectItem key={lesson.id} value={String(lesson.id)}>
+                  {lesson.order !== null ? `Session ${lesson.order}: ` : ''}
+                  {lesson.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Choose a session to show this assessment in the session todo list.
+          </p>
+          {form.errors.lesson_id ? (
+            <p className="text-xs text-destructive">{form.errors.lesson_id}</p>
           ) : null}
         </div>
 

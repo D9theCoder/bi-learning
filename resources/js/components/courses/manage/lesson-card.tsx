@@ -2,12 +2,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CourseContent, Lesson, Powerup } from '@/types';
-import { router, useForm } from '@inertiajs/react';
+import type { Assessment, CourseContent, Lesson, Powerup } from '@/types';
+import { Link, router, useForm } from '@inertiajs/react';
 import { ContentRow } from './content-row';
 import { NewContentForm } from './new-content-form';
 
-type LessonWithContents = Lesson & { contents?: CourseContent[] };
+type LessonWithContents = Lesson & {
+  contents?: CourseContent[];
+  assessments?: Assessment[];
+};
 
 interface LessonCardProps {
   courseId: number;
@@ -55,6 +58,11 @@ export function LessonCard({
       preserveScroll: true,
     });
   };
+
+  const visibleContents = (lesson.contents ?? []).filter(
+    (content) => content.type !== 'assessment',
+  );
+  const assessments = lesson.assessments ?? [];
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -222,9 +230,9 @@ export function LessonCard({
 
       <div className="mt-4 space-y-3">
         <p className="text-sm font-semibold text-foreground">Contents</p>
-        {lesson.contents && lesson.contents.length > 0 ? (
+        {visibleContents.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {lesson.contents.map((content) => (
+            {visibleContents.map((content) => (
               <ContentRow
                 key={content.id}
                 courseId={courseId}
@@ -237,6 +245,62 @@ export function LessonCard({
         ) : (
           <p className="text-sm text-muted-foreground">No contents yet.</p>
         )}
+
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-foreground">Assessments</p>
+          {assessments.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {assessments.map((assessment) => {
+                const typeLabel =
+                  assessment.type === 'practice'
+                    ? 'Practice'
+                    : assessment.type === 'final_exam'
+                      ? 'Final Exam'
+                      : 'Quiz';
+                const dueDate = assessment.due_date
+                  ? new Date(assessment.due_date).toLocaleDateString()
+                  : null;
+
+                return (
+                  <div
+                    key={assessment.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/40 p-3"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">
+                          {assessment.title}
+                        </p>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          {typeLabel}
+                        </span>
+                        {dueDate ? (
+                          <span className="text-xs text-muted-foreground">
+                            Due {dueDate}
+                          </span>
+                        ) : null}
+                      </div>
+                      {assessment.description ? (
+                        <p className="text-xs text-muted-foreground">
+                          {assessment.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Button size="sm" variant="secondary" asChild>
+                      <Link
+                        href={`/courses/${courseId}/quiz/${assessment.id}/edit`}
+                      >
+                        Edit assessment
+                      </Link>
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No assessments yet.</p>
+          )}
+        </div>
 
         <NewContentForm
           courseId={courseId}

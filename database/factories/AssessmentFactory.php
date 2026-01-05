@@ -22,8 +22,8 @@ class AssessmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'course_id' => Course::factory(),
-            'lesson_id' => Lesson::factory(),
+            'lesson_id' => Lesson::factory()->for(Course::factory()),
+            'course_id' => fn (array $attributes) => Lesson::find($attributes['lesson_id'])?->course_id,
             'type' => 'quiz',
             'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),

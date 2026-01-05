@@ -11,6 +11,7 @@ use App\Models\AssessmentQuestion;
 use App\Models\AssessmentSubmission;
 use App\Models\Course;
 use App\Models\FinalScore;
+use App\Models\Lesson;
 use App\Models\Powerup;
 use App\Services\GamificationService;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,7 @@ class QuizController extends Controller
         $hasUngradedEssay = false;
 
         foreach ($questions as $question) {
-            $gradeKey = $question->id . '_grade';
+            $gradeKey = $question->id.'_grade';
 
             if (array_key_exists($gradeKey, $answers)) {
                 $awardedPoints = (int) $answers[$gradeKey];
@@ -83,7 +84,7 @@ class QuizController extends Controller
 
                 // Normalize all correct answers and check if student answer matches any
                 $normalizedCorrectAnswers = array_map(
-                    fn($ans) => strtolower(trim((string) $ans)),
+                    fn ($ans) => strtolower(trim((string) $ans)),
                     $correctAnswers
                 );
 
@@ -128,6 +129,10 @@ class QuizController extends Controller
         }
 
         $assessment->load(['questions', 'powerups']);
+        $lessons = Lesson::query()
+            ->where('course_id', $course->id)
+            ->orderBy('order')
+            ->get(['id', 'title', 'order']);
         $availablePowerups = Powerup::query()
             ->orderBy('name')
             ->get();
@@ -140,6 +145,11 @@ class QuizController extends Controller
 
         return Inertia::render('courses/quiz/edit', [
             'course' => $course,
+            'lessons' => $lessons->map(fn (Lesson $lesson) => [
+                'id' => $lesson->id,
+                'title' => $lesson->title,
+                'order' => $lesson->order,
+            ]),
             'assessment' => [
                 ...$assessment->toArray(),
                 'powerups' => $assessmentPowerups,
@@ -176,7 +186,7 @@ class QuizController extends Controller
 
         if ($assessment->allowsPowerups() && $powerups->isNotEmpty()) {
             $assessment->powerups()->sync(
-                $powerups->mapWithKeys(fn(array $powerup) => [
+                $powerups->mapWithKeys(fn (array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
                 ])->all()
             );
@@ -214,7 +224,7 @@ class QuizController extends Controller
             $assessment->powerups()->detach();
         } elseif (array_key_exists('powerups', $validated)) {
             $assessment->powerups()->sync(
-                $powerups->mapWithKeys(fn(array $powerup) => [
+                $powerups->mapWithKeys(fn (array $powerup) => [
                     $powerup['id'] => ['limit' => $powerup['limit']],
                 ])->all()
             );
@@ -895,11 +905,11 @@ class QuizController extends Controller
 
         $hasRemedialAttempt = $finalExamAssessments->isNotEmpty()
             && AssessmentAttempt::query()
-            ->whereIn('assessment_id', $finalExamAssessments->pluck('id'))
-            ->where('user_id', $userId)
-            ->where('is_remedial', true)
-            ->whereNotNull('completed_at')
-            ->exists();
+                ->whereIn('assessment_id', $finalExamAssessments->pluck('id'))
+                ->where('user_id', $userId)
+                ->where('is_remedial', true)
+                ->whereNotNull('completed_at')
+                ->exists();
 
         if ($hasRemedialAttempt) {
             $totalScore = min(65, $totalScore);
@@ -997,7 +1007,7 @@ class QuizController extends Controller
             $awardedPoints = min((int) $grade['points'], $maxPoints);
             $awardedPoints = max(0, $awardedPoints);
 
-            $answers[$question->id . '_grade'] = $awardedPoints;
+            $answers[$question->id.'_grade'] = $awardedPoints;
         }
 
         $calculated = $this->calculateAttemptScore($assessment, $answers);

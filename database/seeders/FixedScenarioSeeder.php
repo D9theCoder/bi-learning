@@ -148,26 +148,14 @@ class FixedScenarioSeeder extends Seeder
             'duration_minutes' => 60,
         ]);
 
-        $content4 = CourseContent::create([
-            'lesson_id' => $lesson4->id,
-            'title' => 'Final Knowledge Check',
-            'type' => 'assessment',
-            'assessment_type' => 'quiz',
-            'is_required' => true,
-            'due_date' => now()->addDays(5),
-            'description' => 'Please complete this quiz to finish the course.',
-            'max_score' => 100,
-            'allow_powerups' => true,
-        ]);
-
         // Sync Assessment with Questions
         $assessment = Assessment::create([
             'course_id' => $course->id,
             'lesson_id' => $lesson4->id,
             'type' => 'quiz',
-            'title' => $content4->title,
-            'description' => $content4->description,
-            'due_date' => $content4->due_date,
+            'title' => 'Final Knowledge Check',
+            'description' => 'Please complete this quiz to finish the course.',
+            'due_date' => now()->addDays(5),
             'max_score' => 100,
             'allow_retakes' => true,
             'time_limit_minutes' => 30,
@@ -240,12 +228,6 @@ class FixedScenarioSeeder extends Seeder
         $totalScore = $assessment->questions()->sum('points');
         $assessment->update(['max_score' => $totalScore]);
 
-        // Update content with assessment reference
-        $content4->update([
-            'assessment_id' => $assessment->id,
-            'max_score' => $totalScore,
-        ]);
-
         // Session 5: Practice Assessment
         $lesson5 = Lesson::create([
             'course_id' => $course->id,
@@ -257,25 +239,13 @@ class FixedScenarioSeeder extends Seeder
             'duration_minutes' => 60,
         ]);
 
-        $content5 = CourseContent::create([
-            'lesson_id' => $lesson5->id,
-            'title' => 'Practice Drill',
-            'type' => 'assessment',
-            'assessment_type' => 'practice',
-            'is_required' => true,
-            'due_date' => now()->addDays(6),
-            'description' => 'Practice assessment to build confidence.',
-            'max_score' => 50,
-            'allow_powerups' => true,
-        ]);
-
         $practiceAssessment = Assessment::create([
             'course_id' => $course->id,
             'lesson_id' => $lesson5->id,
             'type' => 'practice',
-            'title' => $content5->title,
-            'description' => $content5->description,
-            'due_date' => $content5->due_date,
+            'title' => 'Practice Drill',
+            'description' => 'Practice assessment to build confidence.',
+            'due_date' => now()->addDays(6),
             'max_score' => 50,
             'allow_retakes' => true,
             'time_limit_minutes' => 20,
@@ -343,12 +313,6 @@ class FixedScenarioSeeder extends Seeder
         $totalScorePractice = $practiceAssessment->questions()->sum('points');
         $practiceAssessment->update(['max_score' => $totalScorePractice]);
 
-        // Update content with assessment reference
-        $content5->update([
-            'assessment_id' => $practiceAssessment->id,
-            'max_score' => $totalScorePractice,
-        ]);
-
         // Session 6: Final Exam
         $lesson6 = Lesson::create([
             'course_id' => $course->id,
@@ -360,25 +324,13 @@ class FixedScenarioSeeder extends Seeder
             'duration_minutes' => 60,
         ]);
 
-        $content6 = CourseContent::create([
-            'lesson_id' => $lesson6->id,
-            'title' => 'Final Exam',
-            'type' => 'assessment',
-            'assessment_type' => 'final_exam',
-            'is_required' => true,
-            'due_date' => now()->addDays(7),
-            'description' => 'Comprehensive final exam with mixed question types.',
-            'max_score' => 100,
-            'allow_powerups' => false, // Final exams don't allow powerups
-        ]);
-
         $finalExam = Assessment::create([
             'course_id' => $course->id,
             'lesson_id' => $lesson6->id,
             'type' => 'final_exam',
-            'title' => $content6->title,
-            'description' => $content6->description,
-            'due_date' => $content6->due_date,
+            'title' => 'Final Exam',
+            'description' => 'Comprehensive final exam with mixed question types.',
+            'due_date' => now()->addDays(7),
             'max_score' => 100,
             'allow_retakes' => false,
             'time_limit_minutes' => 45,
@@ -441,11 +393,5 @@ class FixedScenarioSeeder extends Seeder
 
         $totalScoreFinal = $finalExam->questions()->sum('points');
         $finalExam->update(['max_score' => $totalScoreFinal]);
-
-        // Update content with assessment reference
-        $content6->update([
-            'assessment_id' => $finalExam->id,
-            'max_score' => $totalScoreFinal,
-        ]);
     }
 }

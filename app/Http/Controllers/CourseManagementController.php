@@ -108,7 +108,7 @@ class CourseManagementController extends Controller
             abort(403);
         }
 
-        $course->load(['lessons.contents.assessment']);
+        $course->load(['lessons.contents.assessment', 'lessons.assessments']);
 
         $availablePowerups = Powerup::query()->orderBy('name')->get();
 
@@ -134,22 +134,42 @@ class CourseManagementController extends Controller
                         'meeting_url' => $lesson->meeting_url,
                         'meeting_start_time' => $lesson->meeting_start_time?->toIsoString(),
                         'meeting_end_time' => $lesson->meeting_end_time?->toIsoString(),
-                        'contents' => $lesson->contents->map(function (CourseContent $content) {
+                        'contents' => $lesson->contents
+                            ->where('type', '!=', 'assessment')
+                            ->map(function (CourseContent $content) {
+                                return [
+                                    'id' => $content->id,
+                                    'lesson_id' => $content->lesson_id,
+                                    'title' => $content->title,
+                                    'type' => $content->type,
+                                    'file_path' => $content->file_path,
+                                    'url' => $content->url,
+                                    'description' => $content->description,
+                                    'due_date' => $content->due_date?->toDateString(),
+                                    'duration_minutes' => $content->duration_minutes,
+                                    'is_required' => $content->is_required,
+                                    'order' => $content->order,
+                                    'weight_percentage' => $content->assessment?->weight_percentage,
+                                    'created_at' => $content->created_at?->toIsoString(),
+                                    'updated_at' => $content->updated_at?->toIsoString(),
+                                ];
+                            })->values(),
+                        'assessments' => $lesson->assessments->map(function (Assessment $assessment) {
                             return [
-                                'id' => $content->id,
-                                'lesson_id' => $content->lesson_id,
-                                'title' => $content->title,
-                                'type' => $content->type,
-                                'file_path' => $content->file_path,
-                                'url' => $content->url,
-                                'description' => $content->description,
-                                'due_date' => $content->due_date?->toDateString(),
-                                'duration_minutes' => $content->duration_minutes,
-                                'is_required' => $content->is_required,
-                                'order' => $content->order,
-                                'weight_percentage' => $content->assessment?->weight_percentage,
-                                'created_at' => $content->created_at?->toIsoString(),
-                                'updated_at' => $content->updated_at?->toIsoString(),
+                                'id' => $assessment->id,
+                                'course_id' => $assessment->course_id,
+                                'lesson_id' => $assessment->lesson_id,
+                                'type' => $assessment->type,
+                                'title' => $assessment->title,
+                                'description' => $assessment->description,
+                                'due_date' => $assessment->due_date?->toIsoString(),
+                                'max_score' => $assessment->max_score,
+                                'allow_retakes' => $assessment->allow_retakes,
+                                'time_limit_minutes' => $assessment->time_limit_minutes,
+                                'is_published' => $assessment->is_published,
+                                'weight_percentage' => $assessment->weight_percentage,
+                                'created_at' => $assessment->created_at?->toIsoString(),
+                                'updated_at' => $assessment->updated_at?->toIsoString(),
                             ];
                         })->values(),
                         'created_at' => $lesson->created_at?->toIsoString(),
@@ -226,21 +246,11 @@ class CourseManagementController extends Controller
 
         $data = $request->validated();
 
-        // Handle file upload
-        if ($request->hasFile('file_path')) {
-            $file = $request->file('file_path');
-            $path = $file->store('course-content', 'public');
-            $data['file_path'] = $path;
-        }
-
-        $content = $lesson->contents()->create($data);
-
-        // Create Assessment if type is assessment
-        if ($content->type === 'assessment') {
-            $assessmentType = $content->assessment_type ?? 'quiz';
+        if ($data['type'] === 'assessment') {
+            $assessmentType = $data['assessment_type'] ?? 'quiz';
             $maxScore = in_array($assessmentType, ['practice', 'quiz'], true)
                 ? 100
-                : ($content->max_score ?? 100);
+                : ($data['max_score'] ?? 100);
             $weightPercentage = $assessmentType === 'final_exam'
                 ? ($data['weight_percentage'] ?? null)
                 : null;
@@ -249,26 +259,39 @@ class CourseManagementController extends Controller
                 'course_id' => $course->id,
                 'lesson_id' => $lesson->id,
                 'type' => $assessmentType,
-                'title' => $content->title,
-                'description' => $content->description,
-                'due_date' => $content->due_date,
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'due_date' => $data['due_date'] ?? null,
                 'max_score' => $maxScore,
                 'is_published' => false,
                 'weight_percentage' => $weightPercentage,
             ]);
 
-            // Sync powerups if allowed
-            if ($content->allow_powerups && $content->assessment_type !== 'final_exam' && ! empty($content->allowed_powerups)) {
-                $powerupsToSync = collect($content->allowed_powerups)->mapWithKeys(function ($powerup) {
+            if (
+                ($data['allow_powerups'] ?? false)
+                && $assessmentType !== 'final_exam'
+                && ! empty($data['allowed_powerups'])
+            ) {
+                $powerupsToSync = collect($data['allowed_powerups'])->mapWithKeys(function ($powerup) {
                     return [$powerup['id'] => ['limit' => $powerup['limit']]];
                 })->all();
 
                 $assessment->powerups()->sync($powerupsToSync);
             }
 
-            // Update content with assessment_id
-            $content->update(['assessment_id' => $assessment->id]);
+            return redirect()
+                ->route('courses.manage.edit', $course)
+                ->with('message', 'Assessment created.');
         }
+
+        // Handle file upload
+        if ($request->hasFile('file_path')) {
+            $file = $request->file('file_path');
+            $path = $file->store('course-content', 'public');
+            $data['file_path'] = $path;
+        }
+
+        $content = $lesson->contents()->create($data);
 
         return redirect()
             ->route('courses.manage.edit', $course)

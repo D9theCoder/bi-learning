@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\CourseCategory;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -130,6 +131,30 @@ class CourseContentSeeder extends Seeder
             ]);
 
             foreach ($lessonData['contents'] as $contentIndex => $contentData) {
+                if ($contentData['type'] === 'assessment') {
+                    $assessmentType = $contentData['assessment_type'] ?? 'quiz';
+                    $maxScore = in_array($assessmentType, ['practice', 'quiz'], true)
+                        ? 100
+                        : ($contentData['max_score'] ?? 100);
+                    $weightPercentage = $assessmentType === 'final_exam'
+                        ? ($contentData['weight_percentage'] ?? null)
+                        : null;
+
+                    Assessment::create([
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
+                        'type' => $assessmentType,
+                        'title' => $contentData['title'],
+                        'description' => $contentData['description'] ?? null,
+                        'due_date' => $contentData['due_date'] ?? null,
+                        'max_score' => $maxScore,
+                        'is_published' => false,
+                        'weight_percentage' => $weightPercentage,
+                    ]);
+
+                    continue;
+                }
+
                 CourseContent::create([
                     'lesson_id' => $lesson->id,
                     'title' => $contentData['title'],
@@ -140,10 +165,6 @@ class CourseContentSeeder extends Seeder
                     'duration_minutes' => $contentData['duration_minutes'] ?? null,
                     'is_required' => $contentData['is_required'] ?? false,
                     'order' => $contentData['order'] ?? $contentIndex + 1,
-                    // Assessment-specific fields
-                    'assessment_type' => $contentData['assessment_type'] ?? null,
-                    'max_score' => $contentData['max_score'] ?? null,
-                    'allow_powerups' => $contentData['allow_powerups'] ?? true,
                 ]);
             }
         }

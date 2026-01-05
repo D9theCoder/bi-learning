@@ -71,10 +71,15 @@ class CourseContentController extends Controller
      */
     protected function checkLessonCompletion($user, $lesson, $course): void
     {
-        $requiredContents = $lesson->contents()->where('is_required', true)->pluck('id');
+        $requiredContents = $lesson->contents()
+            ->where('type', '!=', 'assessment')
+            ->where('is_required', true)
+            ->pluck('id');
 
         if ($requiredContents->isEmpty()) {
-            $allContents = $lesson->contents()->pluck('id');
+            $allContents = $lesson->contents()
+                ->where('type', '!=', 'assessment')
+                ->pluck('id');
             if ($allContents->isEmpty()) {
                 return;
             }

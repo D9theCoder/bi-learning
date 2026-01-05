@@ -1,6 +1,7 @@
 <?php
 
 use App\CourseCategory;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -87,6 +88,30 @@ it('allows tutors to add content to their lessons', function () {
     expect(CourseContent::where('lesson_id', $lesson->id)->where('title', 'Watch video')->exists())->toBeTrue();
 });
 
+it('creates assessments without course contents when added via course management', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+    $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $lesson = Lesson::factory()->for($course)->create();
+
+    $response = $this->actingAs($tutor)->post(
+        route('courses.manage.contents.store', [$course, $lesson]),
+        [
+            'title' => 'Week 1 Quiz',
+            'type' => 'assessment',
+            'assessment_type' => 'quiz',
+            'due_date' => now()->addDay()->toIsoString(),
+            'allow_powerups' => true,
+            'allowed_powerups' => [],
+        ],
+    );
+
+    $response->assertRedirect(route('courses.manage.edit', $course));
+
+    expect(Assessment::where('lesson_id', $lesson->id)->where('title', 'Week 1 Quiz')->exists())->toBeTrue();
+    expect(CourseContent::where('lesson_id', $lesson->id)->where('title', 'Week 1 Quiz')->exists())->toBeFalse();
+});
+
 it('includes lessons and contents in manage edit payload', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');
@@ -99,6 +124,17 @@ it('includes lessons and contents in manage edit payload', function () {
         'is_required' => true,
         'order' => 1,
     ]);
+    CourseContent::query()->create([
+        'lesson_id' => $lesson->id,
+        'title' => 'Legacy Quiz',
+        'type' => 'assessment',
+        'is_required' => false,
+        'order' => 2,
+    ]);
+    Assessment::factory()->for($course)->for($lesson)->create([
+        'title' => 'Session Quiz',
+        'type' => 'quiz',
+    ]);
 
     $response = $this->actingAs($tutor)->get(route('courses.manage.edit', $course));
 
@@ -106,6 +142,8 @@ it('includes lessons and contents in manage edit payload', function () {
         ->component('courses/manage/edit')
         ->where('course.lessons.0.title', 'Session 1')
         ->where('course.lessons.0.contents.0.title', 'Slides')
+        ->has('course.lessons.0.assessments', 1)
+        ->where('course.lessons.0.assessments.0.title', 'Session Quiz')
         ->has('categories', 5)
     );
 });

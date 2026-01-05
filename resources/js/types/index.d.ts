@@ -69,6 +69,7 @@ export interface Lesson {
   description?: string;
   content?: string;
   contents?: CourseContent[];
+  assessments?: Assessment[];
   duration_minutes: number | null;
   order: number | null;
   video_url?: string | null;

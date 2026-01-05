@@ -7,6 +7,7 @@ use App\Models\AssessmentSubmission;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\FinalScore;
+use App\Models\Lesson;
 use App\Models\Powerup;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -33,6 +34,8 @@ it('allows tutor to access quiz edit page', function () {
     $tutor->assignRole('tutor');
     $course = Course::factory()->create(['instructor_id' => $tutor->id]);
     $assessment = Assessment::factory()->for($course)->create();
+    Lesson::factory()->for($course)->create(['order' => 1]);
+    Lesson::factory()->for($course)->create(['order' => 2]);
 
     $response = $this->actingAs($tutor)->get("/courses/{$course->id}/quiz/{$assessment->id}/edit");
 
@@ -41,6 +44,8 @@ it('allows tutor to access quiz edit page', function () {
         ->component('courses/quiz/edit')
         ->has('assessment')
         ->has('course')
+        ->has('lessons', 2)
+        ->where('lessons.0.order', 1)
     );
 });
 
@@ -185,6 +190,7 @@ it('allows tutor to update quiz settings', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');
     $course = Course::factory()->create(['instructor_id' => $tutor->id]);
+    $lesson = Lesson::factory()->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create([
         'allow_retakes' => false,
         'time_limit_minutes' => null,
@@ -195,6 +201,7 @@ it('allows tutor to update quiz settings', function () {
         'type' => 'quiz',
         'title' => 'Updated Quiz Title',
         'description' => 'Updated description',
+        'lesson_id' => $lesson->id,
         'max_score' => 100,
         'allow_retakes' => true,
         'time_limit_minutes' => 30,
@@ -207,6 +214,7 @@ it('allows tutor to update quiz settings', function () {
     expect($assessment->allow_retakes)->toBeTrue();
     expect($assessment->time_limit_minutes)->toBe(30);
     expect($assessment->is_published)->toBeTrue();
+    expect($assessment->lesson_id)->toBe($lesson->id);
 });
 
 it('allows student to view published quiz', function () {

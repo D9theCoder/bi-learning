@@ -11,12 +11,14 @@ interface QuizEditProps {
   course: Course;
   assessment: Assessment & { questions: AssessmentQuestion[] };
   availablePowerups: Powerup[];
+  lessons: Array<{ id: number; title: string; order: number | null }>;
 }
 
 export default function QuizEdit({
   course,
   assessment,
   availablePowerups,
+  lessons,
 }: QuizEditProps) {
   const initialPowerups =
     assessment.powerups?.map((powerup) => ({
@@ -70,6 +72,7 @@ export default function QuizEdit({
               form={settingsForm}
               assessment={assessment}
               availablePowerups={availablePowerups}
+              lessons={lessons}
               onSave={saveSettings}
             />
           </div>
