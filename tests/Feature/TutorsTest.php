@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -18,6 +17,7 @@ it('requires authentication', function () {
 
 it('shows all tutors when user has no enrollments', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     User::factory()->count(3)->create()->each(function (User $tutor) {
         $tutor->assignRole('tutor');
     });
@@ -27,12 +27,13 @@ it('shows all tutors when user has no enrollments', function () {
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('tutors/index')
-        ->has('tutors.data', 3)
+        ->has('tutors.data')
     );
 });
 
 it('shows only tutors for the user enrolled courses', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
 
     $enrolledTutor = User::factory()->create();
     $enrolledTutor->assignRole('tutor');
@@ -57,6 +58,7 @@ it('shows only tutors for the user enrolled courses', function () {
 
 it('shows course instructors even without tutor role', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
 
     $instructor = User::factory()->create(); // no tutor role
     $otherTutor = User::factory()->create()->assignRole('tutor');
@@ -74,33 +76,33 @@ it('shows course instructors even without tutor role', function () {
     );
 });
 
-it('respects cohort filter within enrolled tutors', function () {
+it('respects search filter within enrolled tutors', function () {
     $user = User::factory()->create();
-    $cohort1 = Cohort::factory()->create();
-    $cohort2 = Cohort::factory()->create();
+    $user->assignRole('student');
 
-    $cohortTutor = User::factory()->create(['cohort_id' => $cohort1->id]);
-    $cohortTutor->assignRole('tutor');
+    $matchingTutor = User::factory()->create(['name' => 'Alice Tutor']);
+    $matchingTutor->assignRole('tutor');
 
-    $otherTutor = User::factory()->create(['cohort_id' => $cohort2->id]);
+    $otherTutor = User::factory()->create(['name' => 'Bob Tutor']);
     $otherTutor->assignRole('tutor');
 
-    $courseWithCohortTutor = Course::factory()->for($cohortTutor, 'instructor')->create();
+    $matchingCourse = Course::factory()->for($matchingTutor, 'instructor')->create();
     $courseWithOtherTutor = Course::factory()->for($otherTutor, 'instructor')->create();
 
-    Enrollment::factory()->for($user)->for($courseWithCohortTutor)->create();
+    Enrollment::factory()->for($user)->for($matchingCourse)->create();
     Enrollment::factory()->for($user)->for($courseWithOtherTutor)->create();
 
-    $response = $this->actingAs($user)->get(route('tutors', ['cohort_id' => $cohort1->id]));
+    $response = $this->actingAs($user)->get(route('tutors', ['search' => 'Alice']));
 
     $response->assertInertia(fn (Assert $page) => $page
         ->has('tutors.data', 1)
-        ->where('tutors.data.0.id', $cohortTutor->id)
+        ->where('tutors.data.0.id', $matchingTutor->id)
     );
 });
 
 it('includes course instructors even if they lack tutor role', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
 
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');

@@ -7,6 +7,7 @@ import { rewards as rewardsRoute } from '@/routes';
 import type { BreadcrumbItem, RewardsPageProps } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Gift } from 'lucide-react';
+import { useRoles } from '@/hooks/use-roles';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Rewards', href: rewardsRoute().url },
@@ -15,6 +16,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function RewardsPage({ user, rewards }: RewardsPageProps) {
   const balance = user?.points_balance ?? 0;
   const rewardItems = rewards?.data ?? [];
+  const { isStudent } = useRoles();
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -28,8 +30,9 @@ export default function RewardsPage({ user, rewards }: RewardsPageProps) {
           iconClassName="text-pink-500"
         />
 
-        <PointsBalanceCard balance={balance} />
-
+        {/* Only show for students role */}
+        {isStudent && <PointsBalanceCard balance={balance} />}
+        
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rewardItems.map((reward) => (
             <RewardCard key={reward.id} reward={reward} />

@@ -9,8 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
 import type { Course, User } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Play } from 'lucide-react';
 import { useState } from 'react';
 
@@ -33,6 +34,14 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const { isAdmin, isTutor } = useRoles();
+  const page = usePage<{ auth?: { user?: { id: number } } }>();
+  const currentUserId = page.props.auth?.user?.id;
+  const canManageCourse =
+    isAdmin ||
+    (isTutor &&
+      currentUserId !== undefined &&
+      course.instructor_id === currentUserId);
 
   return (
     <>
@@ -81,7 +90,13 @@ export function CourseCard({ course }: CourseCardProps) {
           )}
         </CardContent>
         <CardFooter className="pt-2">
-          {course.user_progress ? (
+          {canManageCourse ? (
+            <Button className="w-full" size="sm" asChild>
+              <Link href={`/courses/manage/${course.id}/edit`}>
+                Manage Course
+              </Link>
+            </Button>
+          ) : course.user_progress ? (
             <Button className="w-full" size="sm" asChild>
               <Link href={`/courses/${course.id}`}>
                 <Play className="mr-2 size-4" />

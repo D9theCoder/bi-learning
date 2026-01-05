@@ -1,52 +1,147 @@
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Course, User } from '@/types';
+import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
-  Award,
-} from 'lucide-react';
+  GradingAssessmentCard,
+  MyScoresCard,
+  QuizGradingAssessmentCard,
+} from '@/components/courses/tabs/scoring';
+import { Card, CardContent } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
+import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import { router } from '@inertiajs/react';
+import { Award } from 'lucide-react';
+import { useState } from 'react';
 
 interface ScoringTabProps {
   course: Course & {
     instructor: User;
   };
   isEnrolled: boolean;
+  isTutor?: boolean;
+  assessments?: Assessment[];
+  students?: any[];
+  submissions?: AssessmentSubmission[];
 }
 
-export function ScoringTab({ isEnrolled }: ScoringTabProps) {
-  if (!isEnrolled) {
+export function ScoringTab({
+  course,
+  isEnrolled,
+  isTutor = false,
+  assessments = [],
+  students = [],
+  submissions = [],
+}: ScoringTabProps) {
+  const { isAdmin } = useRoles();
+  const canView = isEnrolled || isAdmin || isTutor;
+
+  const [expandedAssessmentId, setExpandedAssessmentId] = useState<
+    number | null
+  >(null);
+  const [scores, setScores] = useState<Record<string, string>>({});
+  const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
+
+  if (!canView) {
     return (
-      <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
-        <CardContent className="py-12 text-center">
-          <Award className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
-          <h3 className="mb-2 text-lg font-semibold text-yellow-800 dark:text-yellow-400">
-            Scoring Not Available
-          </h3>
-          <p className="text-sm text-yellow-700 dark:text-yellow-500">
-            Enroll in this course to view your grades and scoring details.
-          </p>
-        </CardContent>
-      </Card>
+      <AccessGateWarningCard
+        icon={Award}
+        title="Scoring Not Available"
+        description="Enroll in this course to view your grades and scoring details."
+      />
+    );
+  }
+
+  if (isTutor) {
+    if (assessments.length === 0) {
+      return (
+        <Card className="gap-0 overflow-hidden py-0">
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No assessments available to grade.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const handleSave = (assessmentId: number, studentId: number) => {
+      const key = `${assessmentId}-${studentId}`;
+      const scoreVal = scores[key];
+      const feedbackVal = feedbacks[key];
+
+      if (scoreVal === undefined && feedbackVal === undefined) {
+        return;
+      }
+
+      router.post(
+        `/assessments/${assessmentId}/score`,
+        {
+          user_id: studentId,
+          score: scoreVal,
+          feedback: feedbackVal,
+        },
+        {
+          preserveScroll: true,
+        },
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Grading Dashboard</h3>
+        </div>
+
+        {assessments.map((assessment) => {
+          const usesQuestions = ['practice', 'quiz', 'final_exam'].includes(
+            assessment.type,
+          );
+
+          if (usesQuestions) {
+            return (
+              <QuizGradingAssessmentCard
+                key={assessment.id}
+                courseId={course.id}
+                assessment={assessment}
+                students={students}
+                isExpanded={expandedAssessmentId === assessment.id}
+                onToggle={() =>
+                  setExpandedAssessmentId(
+                    expandedAssessmentId === assessment.id
+                      ? null
+                      : assessment.id,
+                  )
+                }
+              />
+            );
+          }
+
+          return (
+            <GradingAssessmentCard
+              key={assessment.id}
+              assessment={assessment}
+              students={students}
+              isExpanded={expandedAssessmentId === assessment.id}
+              onToggle={() =>
+                setExpandedAssessmentId(
+                  expandedAssessmentId === assessment.id ? null : assessment.id,
+                )
+              }
+              scores={scores}
+              feedbacks={feedbacks}
+              onScoreChange={(key, value) =>
+                setScores({ ...scores, [key]: value })
+              }
+              onFeedbackChange={(key, value) =>
+                setFeedbacks({ ...feedbacks, [key]: value })
+              }
+              onSave={(studentId) => handleSave(assessment.id, studentId)}
+            />
+          );
+        })}
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Scoring
-          </CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Grading details will be available once assessments are published.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-sm text-muted-foreground dark:border-gray-700">
-            Grades and scoring breakdown will appear here once released.
-          </div>
-        </CardContent>
-      </Card>
+      <MyScoresCard assessments={assessments} submissions={submissions} />
     </div>
   );
 }

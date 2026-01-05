@@ -1,15 +1,8 @@
-import { CourseCard } from '@/components/dashboard/course-card';
-import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
-import { MiniChart } from '@/components/dashboard/mini-chart';
-import { DashboardSidebar } from '@/components/dashboard/sidebar';
-import { ActivityChartSkeleton } from '@/components/dashboard/skeletons/activity-chart-skeleton';
-import { CoursesSkeleton } from '@/components/dashboard/skeletons/courses-skeleton';
-import { SidebarSkeleton } from '@/components/dashboard/skeletons/sidebar-skeleton';
-import { StatsSkeleton } from '@/components/dashboard/skeletons/stats-skeleton';
-import { TodayTasksSkeleton } from '@/components/dashboard/skeletons/today-tasks-skeleton';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { TodayTaskList } from '@/components/dashboard/today-task-list';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  StudentDashboardView,
+  TutorDashboardView,
+} from '@/components/dashboard/views';
+import { useRoles } from '@/hooks/use-roles';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type {
@@ -21,162 +14,53 @@ import type {
   LeaderboardEntry,
   LearningStats,
   Reward,
+  StudentCalendarItem,
+  TutorDashboardData,
   TutorMessage,
+  User,
 } from '@/types';
-import { Head } from '@inertiajs/react';
-import { Activity as ActivityIcon, BookOpen, Clock, Coins, Flame, Zap } from 'lucide-react';
-import React, { memo } from 'react';
-
-// Constants for magic numbers
-const CHART_HEIGHT = 200;
-
-// Memoized components for performance optimization
-
-const DashboardStatsSection = memo(({ stats }: { stats: LearningStats }) => (
-  <section
-    className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-    aria-label="Learning statistics"
-  >
-    <StatCard
-      icon={Flame}
-      label="Current Streak"
-      value={`${stats.streak} days`}
-      color="orange"
-      animate={stats.streak > 0}
-    />
-    <StatCard
-      icon={Zap}
-      label="XP This Week"
-      value={stats.xp_this_week}
-      color="yellow"
-    />
-    <StatCard
-      icon={Clock}
-      label="Hours Learned"
-      value={stats.hours_learned}
-      color="blue"
-    />
-    <StatCard
-      icon={BookOpen}
-      label="Active Courses"
-      value={stats.active_courses}
-      color="purple"
-    />
-  </section>
-));
-
-DashboardStatsSection.displayName = 'DashboardStatsSection';
-
-const DashboardCoursesSection = memo(
-  ({ enrolledCourses }: { enrolledCourses: Enrollment[] }) => (
-    <section aria-labelledby="courses-heading" className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2
-          id="courses-heading"
-          className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground"
-        >
-          <BookOpen className="size-5 text-primary" />
-          My Courses
-        </h2>
-        <span className="cursor-pointer text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-          View All
-        </span>
-      </div>
-      {enrolledCourses.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2" role="list">
-          {enrolledCourses.map((enrollment) => (
-            <CourseCard key={enrollment.id} enrollment={enrollment} />
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <BookOpen className="mb-4 size-12 text-muted-foreground" />
-            <h3 className="mb-2 font-semibold">No courses yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Start your learning journey by enrolling in a course! Welcome to
-              bi-lear
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </section>
-  ),
-);
-
-DashboardCoursesSection.displayName = 'DashboardCoursesSection';
-
-const DashboardActivityChartSection = memo(
-  ({
-    weeklyActivityData,
-  }: {
-    weeklyActivityData: { name: string; value: number }[];
-  }) => (
-    <section aria-labelledby="activity-heading" className="space-y-4">
-      <div className="flex items-center gap-2">
-        <ActivityIcon className="size-5 text-primary" />
-        <h2
-          id="activity-heading"
-          className="text-xl font-bold tracking-tight text-foreground"
-        >
-          Weekly Activity
-        </h2>
-      </div>
-      <Card>
-        <CardContent>
-          <MiniChart
-            data={weeklyActivityData}
-            type="area"
-            height={CHART_HEIGHT}
-            xAxisLabel="Day"
-            yAxisLabel="XP"
-            showGrid
-            showAxes
-            showAxisLabels
-            compact
-          />
-        </CardContent>
-      </Card>
-    </section>
-  ),
-);
-
-DashboardActivityChartSection.displayName = 'DashboardActivityChartSection';
+import { Head, usePage } from '@inertiajs/react';
+import React from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-  {
-    title: 'Dashboard',
-    href: dashboard().url,
-  },
+  { title: 'Dashboard', href: dashboard().url },
 ];
 
 interface DashboardPageProps {
   stats: LearningStats;
   today_tasks: DailyTask[];
   enrolled_courses: Enrollment[];
+  student_calendar: StudentCalendarItem[];
   recent_achievements: Achievement[];
   next_milestone: Achievement | null;
   recent_activity: Activity[];
   tutor_messages: TutorMessage[];
   unread_message_count: number;
-  cohort_leaderboard: LeaderboardEntry[];
+  global_leaderboard: LeaderboardEntry[];
   weekly_activity_data: { name: string; value: number }[];
   available_rewards?: Reward[];
   current_user_rank?: number | null;
+  tutor_dashboard?: TutorDashboardData | null;
 }
 
 export default function Dashboard({
   stats,
   today_tasks,
   enrolled_courses,
+  student_calendar,
   recent_achievements,
   next_milestone,
   recent_activity,
   tutor_messages,
   unread_message_count,
-  cohort_leaderboard,
+  global_leaderboard,
   weekly_activity_data,
+  tutor_dashboard,
 }: DashboardPageProps) {
+  const { isAdmin, isTutor } = useRoles();
+  const page = usePage<{ auth?: { user?: User } }>();
+  const userName = page.props.auth?.user?.name ?? 'there';
+
   const [isLoading, setIsLoading] = React.useState(true);
   React.useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 250);
@@ -195,8 +79,9 @@ export default function Dashboard({
 
   const todayTasks = today_tasks ?? [];
   const enrolledCourses = enrolled_courses ?? [];
+  const studentCalendar = student_calendar ?? [];
   const recentAchievements = recent_achievements ?? [];
-  const cohortLeaderboard = cohort_leaderboard ?? [];
+  const globalLeaderboard = global_leaderboard ?? [];
   const tutorMessages = tutor_messages ?? [];
   const recentActivity = recent_activity ?? [];
   const weeklyActivityData = weekly_activity_data ?? [];
@@ -205,88 +90,56 @@ export default function Dashboard({
     unread_message_count ??
     tutorMessages.filter((message) => message.is_read === false).length;
 
+  const tutorData = tutor_dashboard ?? null;
+  const tutorChart = tutorData?.chart ?? [];
+  const attendanceAverage =
+    tutorChart.length > 0
+      ? Math.round(
+          tutorChart.reduce((sum, entry) => sum + entry.attendance, 0) /
+            tutorChart.length,
+        )
+      : 0;
+  const assignmentAverage =
+    tutorChart.length > 0
+      ? Math.round(
+          tutorChart.reduce((sum, entry) => sum + entry.assignments, 0) /
+            tutorChart.length,
+        )
+      : 0;
+
+  const isTutorView = isTutor || isAdmin;
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
-
-      <div className="flex h-full flex-1 flex-col gap-8 overflow-x-auto p-4 lg:p-8">
-        {/* Welcome Header */}
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-2">
-            <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight lg:text-4xl">
-              Welcome back, Kevin!
-            </h1>
-            <p className="text-muted-foreground">
-              Ready to continue your learning streak? You're doing great!
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
-            <Coins className="size-4 text-primary" />
-            <span className="text-foreground">Points</span>
-            <span className="text-lg font-bold text-foreground">{safeStats.points_balance}</span>
-          </div>
-        </div>
-
-        {/* KPI Overview Section */}
-        <DashboardErrorBoundary>
-          {isLoading ? (
-            <StatsSkeleton />
-          ) : (
-            <DashboardStatsSection stats={safeStats} />
-          )}
-        </DashboardErrorBoundary>
-
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Content - 2 columns */}
-          <div className="flex flex-col gap-8 lg:col-span-2">
-            {/* Today Widget */}
-            <DashboardErrorBoundary>
-              {isLoading ? (
-                <TodayTasksSkeleton />
-              ) : (
-                <TodayTaskList tasks={todayTasks} />
-              )}
-            </DashboardErrorBoundary>
-
-            {/* Enrolled Courses */}
-            <DashboardErrorBoundary>
-              {isLoading ? (
-                <CoursesSkeleton />
-              ) : (
-                <DashboardCoursesSection enrolledCourses={enrolledCourses} />
-              )}
-            </DashboardErrorBoundary>
-
-            {/* Weekly Activity Chart */}
-            {isLoading ? (
-              <ActivityChartSkeleton />
-            ) : (
-              weeklyActivityData.length > 0 && (
-                <DashboardErrorBoundary>
-                  <DashboardActivityChartSection
-                    weeklyActivityData={weeklyActivityData}
-                  />
-                </DashboardErrorBoundary>
-              )
-            )}
-          </div>
-
-          {/* Sidebar - 1 column */}
-          {isLoading ? (
-            <SidebarSkeleton />
-          ) : (
-            <DashboardSidebar
-              stats={safeStats}
-              recentAchievements={recentAchievements}
-              nextMilestone={nextMilestone}
-              cohortLeaderboard={cohortLeaderboard}
-              tutorMessages={tutorMessages}
-              unreadMessageCount={unreadMessageCount}
-              recentActivity={recentActivity}
-            />
-          )}
-        </div>
-      </div>
+      {isTutorView ? (
+        <TutorDashboardView
+          userName={userName}
+          pointsBalance={safeStats.points_balance}
+          isLoading={isLoading}
+          tutorData={tutorData}
+          tutorMessages={tutorMessages}
+          unreadMessageCount={unreadMessageCount}
+          attendanceAverage={attendanceAverage}
+          assignmentAverage={assignmentAverage}
+        />
+      ) : (
+        <StudentDashboardView
+          userName={userName}
+          stats={safeStats}
+          isLoading={isLoading}
+          todayTasks={todayTasks}
+          enrolledCourses={enrolledCourses}
+          studentCalendar={studentCalendar}
+          weeklyActivityData={weeklyActivityData}
+          recentAchievements={recentAchievements}
+          nextMilestone={nextMilestone}
+          globalLeaderboard={globalLeaderboard}
+          tutorMessages={tutorMessages}
+          unreadMessageCount={unreadMessageCount}
+          recentActivity={recentActivity}
+        />
+      )}
     </AppLayout>
   );
 }

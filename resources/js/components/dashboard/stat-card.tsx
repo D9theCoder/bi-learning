@@ -14,6 +14,7 @@ export interface StatCardProps {
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'yellow';
   className?: string;
   animate?: boolean;
+  disableHover?: boolean;
 }
 
 const colorStyles = {
@@ -37,21 +38,27 @@ export function StatCard({
   color,
   className,
   animate = false,
+  disableHover = false,
 }: StatCardProps) {
-  const isNumber = typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)));
+  const isNumber =
+    typeof value === 'number' ||
+    (typeof value === 'string' && !isNaN(Number(value)));
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
 
   return (
     <Card
       className={cn(
-        'overflow-hidden border border-border shadow-sm transition-all hover:scale-[1.02] hover:border-primary/30',
+        'overflow-hidden border border-border shadow-sm',
+        disableHover
+          ? 'cursor-default'
+          : 'transition-all hover:scale-[1.02] hover:border-primary/30',
         className,
       )}
     >
       <CardContent className="flex items-center gap-4 p-6">
         <div
           className={cn(
-            'flex size-12 items-center justify-center rounded-xl shadow-sm relative',
+            'relative flex size-12 items-center justify-center rounded-xl shadow-sm',
             color
               ? colorStyles[color]
               : variant === 'accent'
@@ -59,27 +66,33 @@ export function StatCard({
                 : 'bg-muted text-muted-foreground',
           )}
         >
-          {animate && label.toLowerCase().includes('streak') && numericValue > 0 ? (
-             <motion.div
-               animate={{ scale: [1, 1.2, 1] }}
-               transition={{ repeat: Infinity, duration: 1.5 }}
-               className="absolute inset-0 flex items-center justify-center"
-             >
-                <Icon className="size-6" />
-             </motion.div>
+          {animate &&
+          label.toLowerCase().includes('streak') &&
+          numericValue > 0 ? (
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <Icon className="size-6" />
+            </motion.div>
           ) : (
-             <Icon className="size-6" />
+            <Icon className="size-6" />
           )}
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <div className="flex items-baseline gap-2">
             <p className="text-2xl font-bold tracking-tight">
-               {isNumber ? (
-                 <CountUp end={numericValue as number} duration={2} separator="," />
-               ) : (
-                 value
-               )}
+              {isNumber ? (
+                <CountUp
+                  end={numericValue as number}
+                  duration={2}
+                  separator=","
+                />
+              ) : (
+                value
+              )}
             </p>
             {trend !== undefined && (
               <Badge

@@ -1,12 +1,24 @@
 <?php
 
 use App\Models\Achievement;
-use App\Models\Cohort;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\User;
+use App\Services\DailyTaskGeneratorService;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
+beforeEach(function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach (['admin', 'tutor', 'student'] as $role) {
+        Role::firstOrCreate(['name' => $role]);
+    }
+});
 
 test('guests are redirected to the login page', function () {
     $this->get(route('dashboard'))->assertRedirect(route('login'));
@@ -14,6 +26,7 @@ test('guests are redirected to the login page', function () {
 
 test('authenticated users can visit the dashboard', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -27,15 +40,26 @@ test('authenticated users can visit the dashboard', function () {
         );
 });
 
+test('tutors can visit the dashboard', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $this->actingAs($tutor)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+        );
+});
+
 test('dashboard displays user statistics', function () {
-    $cohort = Cohort::factory()->create();
     $user = User::factory()->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => 2500,
         'level' => 8,
         'points_balance' => 850,
         'current_streak' => 5,
     ]);
+    $user->assignRole('student');
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -48,6 +72,7 @@ test('dashboard displays user statistics', function () {
 
 test('dashboard shows enrolled courses', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     $course = Course::factory()->create();
     $enrollment = Enrollment::factory()->create([
         'user_id' => $user->id,
@@ -66,9 +91,14 @@ test('dashboard shows enrolled courses', function () {
 
 test('dashboard displays today tasks', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
+
+    // Use the same timezone as the dashboard controller
+    $taskToday = app(DailyTaskGeneratorService::class)->getTaskDate()->toDateString();
+
     DailyTask::factory()->create([
         'user_id' => $user->id,
-        'due_date' => today(),
+        'due_date' => $taskToday,
         'is_completed' => false,
     ]);
 
@@ -79,29 +109,27 @@ test('dashboard displays today tasks', function () {
         );
 });
 
-test('dashboard shows cohort leaderboard when user is in cohort', function () {
-    $cohort = Cohort::factory()->create();
+test('dashboard shows global leaderboard', function () {
     $user = User::factory()->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => 1000,
     ]);
+    $user->assignRole('student');
 
-    // Create other users in cohort
     User::factory(5)->create([
-        'cohort_id' => $cohort->id,
         'total_xp' => fake()->numberBetween(500, 2000),
     ]);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('cohort_leaderboard')
+            ->has('global_leaderboard')
             ->has('current_user_rank')
         );
 });
 
 test('dashboard shows recent achievements', function () {
     $user = User::factory()->create();
+    $user->assignRole('student');
     $achievement = Achievement::factory()->create();
     $user->achievements()->attach($achievement->id, ['earned_at' => now()]);
 
@@ -109,5 +137,144 @@ test('dashboard shows recent achievements', function () {
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->has('recent_achievements', 1)
+        );
+});
+
+test('tutor dashboard includes tutor data and chart metrics', function () {
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create([
+        'instructor_id' => $tutor->id,
+    ]);
+
+    $lesson = Lesson::factory()->create([
+        'course_id' => $course->id,
+        'order' => 1,
+    ]);
+
+    // Create assessments with future due dates for the calendar
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'type' => 'quiz',
+        'due_date' => now()->addDays(2),
+    ]);
+
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'type' => 'assignment',
+        'due_date' => now()->addDays(3),
+    ]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'progress_percentage' => 60,
+    ]);
+
+    $this->actingAs($tutor)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tutor_dashboard')
+            ->where('tutor_dashboard.summary.course_count', 1)
+            ->has('tutor_dashboard.chart', 1)
+            ->has('tutor_dashboard.calendar', 2)
+            ->has('tutor_dashboard.courses', 1)
+        );
+});
+
+test('leaderboard is sorted by XP descending', function () {
+    // Create users with known XP values
+    $user1 = User::factory()->create(['total_xp' => 7_000_000]);
+    $user1->assignRole('student');
+
+    $user2 = User::factory()->create(['total_xp' => 9_000_000]);
+    $user2->assignRole('student');
+
+    $user3 = User::factory()->create(['total_xp' => 8_000_000]);
+    $user3->assignRole('student');
+
+    $this->actingAs($user1)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.xp', 9_000_000) // user2 is first
+            ->where('global_leaderboard.0.rank', 1)
+            ->where('global_leaderboard.1.xp', 8_000_000) // user3 is second
+            ->where('global_leaderboard.1.rank', 2)
+            ->where('global_leaderboard.2.xp', 7_000_000)  // user1 is third
+            ->where('global_leaderboard.2.rank', 3)
+        );
+});
+
+test('leaderboard shows correct current user indicator', function () {
+    $currentUser = User::factory()->create(['total_xp' => 8_000_000]);
+    $currentUser->assignRole('student');
+
+    $otherUser = User::factory()->create(['total_xp' => 9_000_000]);
+    $otherUser->assignRole('student');
+
+    $this->actingAs($currentUser)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.isCurrentUser', false) // otherUser is first
+            ->where('global_leaderboard.1.isCurrentUser', true)  // currentUser is second
+        );
+});
+
+test('completing daily task awards XP and updates leaderboard position', function () {
+    // Create user initially with lower XP
+    $user = User::factory()->create([
+        'total_xp' => 9_000_000,
+    ]);
+    $user->assignRole('student');
+
+    // Create competitor with slightly higher XP
+    $competitor = User::factory()->create([
+        'total_xp' => 9_000_100,
+    ]);
+    $competitor->assignRole('student');
+
+    // Use the same timezone as the dashboard controller
+    $taskTimezone = config('gamification.daily_tasks.timezone', 'Asia/Jakarta');
+    $taskToday = now($taskTimezone)->toDateString();
+
+    // Create a task worth enough XP to overtake competitor
+    $task = DailyTask::factory()->for($user)->create([
+        'is_completed' => false,
+        'xp_reward' => 200,
+        'due_date' => $taskToday,
+    ]);
+
+    $initialRank = User::where('total_xp', '>', $user->total_xp)->count() + 1;
+    expect($initialRank)->toBe(2);
+
+    // Complete the task
+    $this->actingAs($user)
+        ->patch(route('tasks.toggle', $task), ['completed' => true])
+        ->assertRedirect();
+
+    // Refresh user and verify XP was awarded (at least task XP, may include achievement bonuses)
+    $user->refresh();
+    expect($user->total_xp)->toBeGreaterThanOrEqual(9_000_200);
+
+    $updatedRank = User::where('total_xp', '>', $user->total_xp)->count() + 1;
+    expect($updatedRank)->toBe(1);
+
+    // Verify dashboard shows updated leaderboard with user at rank 1
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('global_leaderboard')
+            ->where('global_leaderboard.0.id', $user->id)
+            ->where('global_leaderboard.0.isCurrentUser', true)
+            ->where('current_user_rank', 1)
         );
 });

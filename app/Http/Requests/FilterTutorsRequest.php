@@ -16,7 +16,6 @@ class FilterTutorsRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:100'],
             'expertise' => ['nullable', 'string', 'max:50'],
-            'cohort_id' => ['nullable', 'exists:cohorts,id'],
         ];
     }
 }

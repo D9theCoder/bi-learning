@@ -29,26 +29,28 @@ export function AchievementBadge({
     return (
       <Card
         className={cn(
-          'flex flex-col items-center justify-center p-3 text-center transition-all hover:scale-105 hover:shadow-md aspect-square',
-          !unlocked && 'opacity-60 grayscale bg-muted/50',
+          'flex aspect-square flex-col items-center justify-center p-3 text-center transition-all hover:scale-105 hover:shadow-md',
+          !unlocked && 'bg-muted/50 opacity-60 grayscale',
           className,
         )}
       >
         <div
-            className={cn(
-              'mb-2 flex size-12 items-center justify-center rounded-full',
-              unlocked
-                ? 'bg-yellow-500/10 text-yellow-500 dark:bg-yellow-500/20'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
-            {unlocked ? (
-              <Award className="size-6" />
-            ) : (
-              <Lock className="size-6" />
-            )}
+          className={cn(
+            'mb-2 flex size-12 items-center justify-center rounded-full',
+            unlocked
+              ? 'bg-yellow-500/10 text-yellow-500 dark:bg-yellow-500/20'
+              : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {unlocked ? (
+            <Award className="size-6" />
+          ) : (
+            <Lock className="size-6" />
+          )}
         </div>
-        <h4 className="line-clamp-2 text-xs font-semibold leading-tight">{achievement.name}</h4>
+        <h4 className="line-clamp-2 text-xs leading-tight font-semibold">
+          {achievement.name}
+        </h4>
       </Card>
     );
   }

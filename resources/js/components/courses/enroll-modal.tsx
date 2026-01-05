@@ -23,7 +23,7 @@ export function EnrollModal({
   isOpen,
   onClose,
 }: EnrollModalProps) {
-  const { post, processing } = useForm();
+  const { post, processing } = useForm({});
 
   const handleEnroll = () => {
     post(`/courses/${courseId}/enroll`, {

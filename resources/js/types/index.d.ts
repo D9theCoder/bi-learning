@@ -3,6 +3,8 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
   user: User;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export interface BreadcrumbItem {
@@ -37,7 +39,6 @@ export interface User {
   avatar?: string;
   email_verified_at: string | null;
   two_factor_enabled?: boolean;
-  cohort_id?: number;
   total_xp?: number;
   level?: number;
   points_balance?: number;
@@ -56,6 +57,7 @@ export interface Course {
   duration_minutes?: number;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   category?: string;
+  is_published?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -67,9 +69,14 @@ export interface Lesson {
   description?: string;
   content?: string;
   contents?: CourseContent[];
-  duration_minutes: number;
-  order: number;
-  video_url?: string;
+  assessments?: Assessment[];
+  duration_minutes: number | null;
+  order: number | null;
+  video_url?: string | null;
+  meeting_url?: string | null;
+  meeting_start_time?: string | null;
+  meeting_end_time?: string | null;
+  has_attended?: boolean;
   is_completed?: boolean;
   created_at: string;
   updated_at: string;
@@ -147,12 +154,16 @@ export interface TutorMessage {
 
 export interface LearningStats {
   streak: number;
+  longest_streak?: number;
   xp_this_week: number;
   hours_learned: number;
   active_courses: number;
   total_xp: number;
   level: number;
   points_balance: number;
+  xp_in_level?: number;
+  xp_for_next_level?: number;
+  level_progress_percentage?: number;
 }
 
 export interface Reward {
@@ -183,15 +194,23 @@ export interface CourseContent {
   id: number;
   lesson_id: number;
   title: string;
-  type: 'file' | 'video' | 'link' | 'quiz' | 'attendance';
-  file_path?: string;
-  url?: string;
-  description?: string;
-  duration_minutes?: number;
+  type: 'file' | 'video' | 'link' | 'assessment' | 'attendance';
+  file_path?: string | null;
+  url?: string | null;
+  description?: string | null;
+  due_date?: string | null;
+  duration_minutes?: number | null;
   is_required: boolean;
-  order: number;
+  order: number | null;
   created_at: string;
   updated_at: string;
+  // Assessment-specific fields
+  assessment_id?: number | null;
+  assessment_type?: 'practice' | 'quiz' | 'final_exam' | null;
+  max_score?: number | null;
+  weight_percentage?: number | null;
+  allow_powerups?: boolean | null;
+  allowed_powerups?: Array<{ id: number; limit: number }> | null;
 }
 
 export interface Activity {
@@ -212,17 +231,157 @@ export interface Activity {
   created_at: string;
 }
 
-export interface Cohort {
+export interface Powerup {
   id: number;
   name: string;
-  description?: string;
-  created_at: string;
+  slug: string;
+  description?: string | null;
+  icon?: string | null;
+  default_limit?: number | null;
+  config?: Record<string, unknown> | null;
+  limit?: number | null;
+}
+
+export interface PowerupUsage {
+  id: number;
+  slug: string;
+  used_at?: string | null;
+  details?: Record<string, unknown> | null;
 }
 
 export interface WeeklyActivityDataPoint {
   day: string;
   minutes: number;
   xp: number;
+}
+
+export interface TutorDashboardCourse {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  student_count: number;
+  active_students: number;
+  next_meeting_date?: string | null;
+  next_meeting_time?: string | null;
+  is_published?: boolean;
+}
+
+export interface TutorDashboardChartPoint {
+  course: string;
+  attendance: number;
+  quiz: number;
+  students: number;
+}
+
+export interface TutorCalendarItem {
+  id: number;
+  title: string;
+  course_title: string;
+  due_date: string;
+  type: string;
+  category: 'meeting' | 'assessment';
+}
+
+export interface StudentCalendarItem {
+  id: number;
+  title: string;
+  course_title: string;
+  date: string;
+  time?: string | null;
+  type: string;
+  category: 'meeting' | 'assessment';
+}
+
+export interface TutorRosterEntry {
+  id: number;
+  name: string;
+  avatar?: string;
+  courses: number;
+  average_progress: number;
+}
+
+export interface Assessment {
+  id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  type: 'practice' | 'quiz' | 'final_exam';
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  max_score: number;
+  allow_retakes?: boolean;
+  time_limit_minutes?: number | null;
+  is_published?: boolean;
+  is_remedial?: boolean;
+  weight_percentage?: number | null;
+  created_at: string;
+  updated_at: string;
+  submissions?: AssessmentSubmission[];
+  questions?: AssessmentQuestion[];
+  powerups?: Powerup[];
+}
+
+export interface AssessmentSubmission {
+  id: number;
+  assessment_id: number;
+  user_id: number;
+  score?: number | null;
+  feedback?: string | null;
+  submitted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  assessment?: Assessment;
+}
+
+export interface FinalScore {
+  id: number;
+  user_id: number;
+  course_id: number;
+  quiz_score: number;
+  final_exam_score: number;
+  total_score: number;
+  is_remedial: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentWithSubmissions extends User {
+  submissions?: AssessmentSubmission[];
+  final_score?: FinalScore | null;
+}
+
+export interface AssessmentQuestion {
+  id: number;
+  assessment_id: number;
+  type: 'multiple_choice' | 'fill_blank' | 'essay';
+  question: string;
+  options?: string[] | null;
+  correct_answer?: string | null;
+  points: number;
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssessmentAttempt {
+  id: number;
+  assessment_id: number;
+  user_id: number;
+  answers?: Record<string, unknown> | null;
+  score?: number | null;
+  total_points: number;
+  started_at?: string | null;
+  time_extension?: number | null;
+  completed_at?: string | null;
+  is_graded: boolean;
+  is_remedial?: boolean;
+  points_awarded?: number;
+  remaining_time?: number | null;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  powerups?: PowerupUsage[];
 }
 
 // Page Props Interfaces
@@ -240,23 +399,26 @@ export interface AchievementsPageProps {
   };
 }
 
+export interface CalendarTask {
+  id: number;
+  title: string;
+  due_date: string;
+  completed: boolean;
+  xp_reward?: number;
+  course_title?: string;
+  type?: string;
+  category: 'task' | 'meeting' | 'assessment';
+  time?: string | null;
+}
+
 export interface CalendarPageProps extends SharedData {
-  tasksByDate: Record<
-    string,
-    Array<{
-      id: number;
-      title: string;
-      due_date: string;
-      completed: boolean;
-      xp_reward?: number;
-      course_title?: string;
-      type?: string;
-    }>
-  >;
+  tasksByDate: Record<string, CalendarTask[]>;
   stats: {
     total: number;
     completed: number;
     overdue: number;
+    meetings: number;
+    assessments: number;
   };
   currentDate: string;
   cursor?: {
@@ -267,6 +429,15 @@ export interface CalendarPageProps extends SharedData {
 }
 
 export interface CoursesPageProps {
+  enrolled_courses?: Array<
+    Course & {
+      lessons_count: number;
+      user_progress?: {
+        progress_percentage: number;
+        next_lesson?: Lesson;
+      };
+    }
+  >;
   filters: {
     search?: string;
     category?: string;
@@ -288,6 +459,47 @@ export interface CoursesPageProps {
     per_page: number;
     total: number;
   };
+}
+
+export interface ManageCoursesPageProps {
+  courses: {
+    data: Array<
+      Course & {
+        is_published: boolean;
+        updated_at?: string;
+        instructor?: {
+          id: number;
+          name: string;
+        } | null;
+      }
+    >;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  filters?: {
+    search?: string;
+  };
+}
+
+export interface EditCoursePageProps {
+  course:
+    | (Course & {
+        is_published?: boolean;
+        duration_minutes?: number | null;
+        instructor_id?: number | null;
+        lessons?: Lesson[];
+      })
+    | null;
+  mode: 'create' | 'edit';
+  categories: Array<{ value: string; label: string }>;
+  availablePowerups?: Powerup[];
 }
 
 export interface MessagesPageProps {
@@ -341,23 +553,48 @@ export interface RewardsPageProps {
   };
 }
 
+export interface TutorDashboardData {
+  courses: TutorDashboardCourse[];
+  chart: TutorDashboardChartPoint[];
+  calendar: TutorCalendarItem[];
+  roster: TutorRosterEntry[];
+  summary: {
+    course_count: number;
+    student_count: number;
+    average_progress: number;
+  };
+}
+
 export interface TutorsPageProps {
   filters: {
     search?: string;
     expertise?: string;
-    cohort_id?: number;
   };
   tutors: {
     data: Array<{
       id: number;
       name: string;
       avatar?: string;
-      cohort?: {
-        id: number;
-        name: string;
-      };
       expertise?: string[];
       rating?: number;
+    }>;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface StudentsPageProps {
+  filters: {
+    search?: string;
+  };
+  students: {
+    data: Array<{
+      id: number;
+      name: string;
+      email?: string;
+      avatar?: string;
     }>;
     current_page: number;
     last_page: number;

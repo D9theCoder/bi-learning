@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\CourseCategory;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Lesson;
@@ -28,17 +30,17 @@ class CourseContentSeeder extends Seeder
         }
 
         $courseDefinition = [
-            'title' => 'IT Research Methodology',
-            'description' => 'Learn the fundamentals of research methodology in Information Technology, from defining topics to preparing for defense.',
+            'title' => 'Advanced Physics Research',
+            'description' => 'Learn the fundamentals of physics research methodology, from defining topics to preparing for defense.',
             'thumbnail' => 'https://placehold.co/800x480/png?text=IT+Research',
             'duration_minutes' => 720,
             'difficulty' => 'intermediate',
-            'category' => 'Research',
+            'category' => CourseCategory::Physics->value,
             'is_published' => true,
             'lessons' => [
                 [
-                    'title' => 'Session 1: Research Foundations',
-                    'description' => 'Overview of the research lifecycle, expectations, and milestone planning.',
+                    'title' => 'Session 1: Physics Research Foundations',
+                    'description' => 'Overview of the physics research lifecycle, expectations, and milestone planning.',
                     'duration_minutes' => 90,
                     'contents' => [
                         ['title' => 'Wifi Attendance', 'type' => 'attendance', 'duration_minutes' => 10, 'is_required' => true],
@@ -75,7 +77,7 @@ class CourseContentSeeder extends Seeder
                     'contents' => [
                         ['title' => 'Research Onion Reading', 'type' => 'file', 'file_path' => '/materials/research-onion.pdf', 'duration_minutes' => 20],
                         ['title' => 'Instrument Draft', 'type' => 'file', 'file_path' => '/templates/instrument-draft.docx', 'duration_minutes' => 25],
-                        ['title' => 'Method Match Quiz', 'type' => 'quiz', 'duration_minutes' => 15],
+                        ['title' => 'Method Match Quiz', 'type' => 'assessment', 'assessment_type' => 'quiz', 'duration_minutes' => 15, 'max_score' => 100, 'allow_powerups' => true],
                     ],
                 ],
                 [
@@ -87,6 +89,14 @@ class CourseContentSeeder extends Seeder
                         ['title' => 'Consent Form Template', 'type' => 'file', 'file_path' => '/templates/consent-form.pdf', 'duration_minutes' => 10],
                         ['title' => 'Field Guide', 'type' => 'file', 'file_path' => '/materials/field-guide.pdf', 'duration_minutes' => 15],
                         ['title' => 'Pilot Dataset Upload', 'type' => 'link', 'url' => 'https://example.com/pilot-upload', 'duration_minutes' => 10],
+                    ],
+                ],
+                [
+                    'title' => 'Session 6: Final Examination',
+                    'description' => 'Comprehensive final exam covering all course material.',
+                    'duration_minutes' => 120,
+                    'contents' => [
+                        ['title' => 'Final Exam', 'type' => 'assessment', 'assessment_type' => 'final_exam', 'duration_minutes' => 120, 'max_score' => 100, 'allow_powerups' => false, 'is_required' => true],
                     ],
                 ],
             ],
@@ -121,6 +131,30 @@ class CourseContentSeeder extends Seeder
             ]);
 
             foreach ($lessonData['contents'] as $contentIndex => $contentData) {
+                if ($contentData['type'] === 'assessment') {
+                    $assessmentType = $contentData['assessment_type'] ?? 'quiz';
+                    $maxScore = in_array($assessmentType, ['practice', 'quiz'], true)
+                        ? 100
+                        : ($contentData['max_score'] ?? 100);
+                    $weightPercentage = $assessmentType === 'final_exam'
+                        ? ($contentData['weight_percentage'] ?? null)
+                        : null;
+
+                    Assessment::create([
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
+                        'type' => $assessmentType,
+                        'title' => $contentData['title'],
+                        'description' => $contentData['description'] ?? null,
+                        'due_date' => $contentData['due_date'] ?? null,
+                        'max_score' => $maxScore,
+                        'is_published' => false,
+                        'weight_percentage' => $weightPercentage,
+                    ]);
+
+                    continue;
+                }
+
                 CourseContent::create([
                     'lesson_id' => $lesson->id,
                     'title' => $contentData['title'],

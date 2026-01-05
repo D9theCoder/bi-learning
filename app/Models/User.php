@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -15,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -27,7 +26,6 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar',
-        'cohort_id',
         'total_xp',
         'level',
         'points_balance',
@@ -59,7 +57,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'cohort_id' => 'integer',
             'total_xp' => 'integer',
             'level' => 'integer',
             'points_balance' => 'integer',
@@ -67,11 +64,6 @@ class User extends Authenticatable
             'longest_streak' => 'integer',
             'last_activity_date' => 'date',
         ];
-    }
-
-    public function cohort(): BelongsTo
-    {
-        return $this->belongsTo(Cohort::class);
     }
 
     public function enrollments(): HasMany
@@ -86,7 +78,9 @@ class User extends Authenticatable
 
     public function achievements(): BelongsToMany
     {
-        return $this->belongsToMany(Achievement::class)->withTimestamps()->withPivot('earned_at');
+        return $this->belongsToMany(Achievement::class)
+            ->withTimestamps()
+            ->withPivot(['earned_at', 'progress']);
     }
 
     public function rewards(): BelongsToMany
@@ -114,6 +108,16 @@ class User extends Authenticatable
         return $this->hasMany(TutorMessage::class, 'tutor_id');
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function assessmentSubmissions(): HasMany
+    {
+        return $this->hasMany(AssessmentSubmission::class);
+    }
+
     // Helper methods for dashboard statistics
     public function currentStreak(): int
     {
@@ -125,9 +129,9 @@ class User extends Authenticatable
         $weekStart = now()->startOfWeek();
 
         return $this->activities()
-            ->where('type', 'lesson_completed')
             ->where('created_at', '>=', $weekStart)
-            ->count() * 50; // Assume 50 XP per lesson
+            ->whereIn('type', ['task_completed', 'lesson_completed', 'achievement_earned', 'streak_milestone'])
+            ->sum('xp_earned');
     }
 
     public function hoursThisWeek(): float
@@ -166,9 +170,9 @@ class User extends Authenticatable
                 ->sum('estimated_minutes');
 
             $xp = $this->activities()
-                ->where('type', 'lesson_completed')
+                ->whereIn('type', ['task_completed', 'lesson_completed', 'achievement_earned', 'streak_milestone'])
                 ->whereDate('created_at', $date)
-                ->count() * 50;
+                ->sum('xp_earned');
 
             $data[] = [
                 'day' => $dayName,
@@ -178,19 +182,6 @@ class User extends Authenticatable
         }
 
         return $data;
-    }
-
-    public function cohortRank(): ?int
-    {
-        if (! $this->cohort_id) {
-            return null;
-        }
-
-        $rank = User::where('cohort_id', $this->cohort_id)
-            ->where('total_xp', '>', $this->total_xp)
-            ->count() + 1;
-
-        return $rank;
     }
 
     public function nextLessonForEnrollment(Enrollment $enrollment): ?Lesson

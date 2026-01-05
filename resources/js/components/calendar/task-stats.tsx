@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { CheckCircle2, Clock } from 'lucide-react';
 
 interface TaskStatsProps {
@@ -7,10 +8,8 @@ interface TaskStatsProps {
     completed: number;
     overdue: number;
   };
-  className?: string; // Added className prop
+  className?: string;
 }
-
-import { cn } from '@/lib/utils'; // Import cn
 
 export function TaskStats({ stats, className }: TaskStatsProps) {
   return (

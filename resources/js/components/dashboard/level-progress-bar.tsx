@@ -25,7 +25,7 @@ export function LevelProgressBar({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border shadow-sm bg-gradient-to-br from-card to-card/50',
+        'relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card to-card/50 shadow-sm',
         className,
       )}
     >
@@ -37,43 +37,55 @@ export function LevelProgressBar({
               <TrendingUp className="size-6" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Level</p>
+              <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Current Level
+              </p>
               <div className="flex items-baseline gap-1">
-                 <span className="text-3xl font-black tracking-tight text-primary">{currentLevel}</span>
-                 <span className="text-xs text-muted-foreground font-medium">Lvl</span>
+                <span className="text-3xl font-black tracking-tight text-primary">
+                  {currentLevel}
+                </span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Lvl
+                </span>
               </div>
             </div>
           </div>
           <div className="text-right">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                <Zap className="size-3 fill-primary" />
-                XP Progress
+              <Zap className="size-3 fill-primary" />
+              XP Progress
             </div>
             <p className="mt-1 text-lg font-bold">
-              {currentXp.toLocaleString()} <span className="text-muted-foreground font-medium text-sm">/ {xpForNextLevel.toLocaleString()}</span>
+              {currentXp.toLocaleString()}{' '}
+              <span className="text-sm font-medium text-muted-foreground">
+                / {xpForNextLevel.toLocaleString()}
+              </span>
             </p>
           </div>
         </div>
 
         <div className="mt-5 space-y-2">
           <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/50">
-             <div 
-                className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-1000 ease-out" 
-                style={{ width: `${progress}%` }}
-             />
-             {/* Glow effect */}
-             <div 
-                className="absolute top-0 bottom-0 right-0 w-4 bg-white/30 blur-sm translate-x-full" 
-                style={{ left: `${progress}%`, transform: 'translateX(-50%)' }}
-             />
+            <div
+              className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-1000 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+            {/* Glow effect */}
+            <div
+              className="absolute top-0 right-0 bottom-0 w-4 translate-x-full bg-white/30 blur-sm"
+              style={{ left: `${progress}%`, transform: 'translateX(-50%)' }}
+            />
           </div>
-          
+
           <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>
               {xpRemaining.toLocaleString()} XP to Level {currentLevel + 1}
             </span>
             {totalXp !== undefined && (
-              <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+              <Badge
+                variant="outline"
+                className="border-primary/20 bg-primary/5 text-primary"
+              >
                 Total: {totalXp.toLocaleString()}
               </Badge>
             )}

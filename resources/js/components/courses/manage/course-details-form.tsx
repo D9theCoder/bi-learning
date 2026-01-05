@@ -1,0 +1,210 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Link, type InertiaFormProps } from '@inertiajs/react';
+import { Save } from 'lucide-react';
+
+const difficulties = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
+
+type CourseFormData = {
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  duration_minutes: number | '' | string;
+  thumbnail: string;
+  is_published: boolean;
+};
+
+interface CourseDetailsFormProps {
+  form: InertiaFormProps<CourseFormData>;
+  categories: Array<{ value: string; label: string }>;
+  isEdit: boolean;
+  onSubmit: () => void;
+}
+
+export function CourseDetailsForm({
+  form,
+  categories,
+  isEdit,
+  onSubmit,
+}: CourseDetailsFormProps) {
+  const fieldErrorKeys = [
+    'title',
+    'category',
+    'description',
+    'difficulty',
+    'duration_minutes',
+    'thumbnail',
+    'is_published',
+  ];
+
+  const generalErrors = Object.entries(form.errors ?? {})
+    .filter(
+      ([field, message]) => Boolean(message) && !fieldErrorKeys.includes(field),
+    )
+    .map(([, message]) => message as string);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Course details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={form.data.title}
+              onChange={(e) => form.setData('title', e.target.value)}
+              placeholder="Course title"
+              aria-invalid={Boolean(form.errors.title)}
+            />
+            {form.errors.title ? (
+              <p className="text-xs text-destructive">{form.errors.title}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <select
+              id="category"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
+              value={form.data.category}
+              onChange={(e) => form.setData('category', e.target.value)}
+              aria-invalid={Boolean(form.errors.category)}
+            >
+              <option value="">Select category</option>
+              {categories.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {form.errors.category ? (
+              <p className="text-xs text-destructive">{form.errors.category}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={form.data.description}
+            onChange={(e) => form.setData('description', e.target.value)}
+            placeholder="What will learners achieve?"
+            rows={5}
+            aria-invalid={Boolean(form.errors.description)}
+          />
+          {form.errors.description ? (
+            <p className="text-xs text-destructive">
+              {form.errors.description}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="difficulty">Difficulty</Label>
+            <select
+              id="difficulty"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
+              value={form.data.difficulty ?? ''}
+              onChange={(e) => form.setData('difficulty', e.target.value)}
+              aria-invalid={Boolean(form.errors.difficulty)}
+            >
+              <option value="">Select difficulty</option>
+              {difficulties.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {form.errors.difficulty ? (
+              <p className="text-xs text-destructive">
+                {form.errors.difficulty}
+              </p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+            <Input
+              id="duration_minutes"
+              type="number"
+              min={1}
+              value={form.data.duration_minutes ?? ''}
+              onChange={(e) =>
+                form.setData('duration_minutes', Number(e.target.value) || '')
+              }
+              placeholder="e.g. 120"
+              aria-invalid={Boolean(form.errors.duration_minutes)}
+            />
+            {form.errors.duration_minutes ? (
+              <p className="text-xs text-destructive">
+                {form.errors.duration_minutes}
+              </p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="thumbnail">Thumbnail URL</Label>
+            <Input
+              id="thumbnail"
+              value={form.data.thumbnail ?? ''}
+              onChange={(e) => form.setData('thumbnail', e.target.value)}
+              placeholder="https://..."
+              aria-invalid={Boolean(form.errors.thumbnail)}
+            />
+            {form.errors.thumbnail ? (
+              <p className="text-xs text-destructive">
+                {form.errors.thumbnail}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="is_published"
+            type="checkbox"
+            className="size-4 rounded border-border"
+            checked={form.data.is_published}
+            onChange={(e) => form.setData('is_published', e.target.checked)}
+            aria-invalid={Boolean(form.errors.is_published)}
+          />
+          <Label htmlFor="is_published" className="text-sm text-foreground">
+            Publish course
+          </Label>
+        </div>
+
+        {generalErrors.length > 0 ? (
+          <div className="space-y-1 text-sm text-destructive">
+            {generalErrors.map((message, idx) => (
+              <div key={`${message}-${idx}`}>{message}</div>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Link href="/courses/manage">
+            <Button variant="ghost">Cancel</Button>
+          </Link>
+          <Button
+            onClick={onSubmit}
+            disabled={form.processing}
+            className="inline-flex items-center gap-2"
+          >
+            <Save className="size-4" />
+            {isEdit ? 'Save changes' : 'Create course'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

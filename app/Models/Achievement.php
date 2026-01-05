@@ -18,8 +18,8 @@ class Achievement extends Model
         'rarity',
         'criteria',
         'xp_reward',
-        // 'category', // ! New field: Category of the achievement
-        // 'target',   // ! New field: Target value to reach (e.g., 100 for "Read 100 books")
+        'category',
+        'target',
     ];
 
     protected function casts(): array
@@ -27,6 +27,8 @@ class Achievement extends Model
         return [
             'rarity' => 'string',
             'xp_reward' => 'integer',
+            'target' => 'integer',
+            'criteria' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -36,6 +38,52 @@ class Achievement extends Model
     {
         return $this->belongsToMany(User::class)
             ->withTimestamps()
-            ->withPivot('earned_at' /*, 'progress' */);
+            ->withPivot(['earned_at', 'progress']);
+    }
+
+    /**
+     * Get parsed criteria as array.
+     *
+     * @return array{type: string, target: int}|null
+     */
+    public function parsedCriteria(): ?array
+    {
+        $criteria = $this->criteria;
+
+        if (is_array($criteria) && isset($criteria['type'])) {
+            return $criteria;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get human-readable criteria description.
+     */
+    public function criteriaDescription(): string
+    {
+        $criteria = $this->parsedCriteria();
+
+        if ($criteria === null) {
+            return $this->description;
+        }
+
+        $typeLabels = [
+            'lessons_completed' => 'Complete %d lessons',
+            'courses_completed' => 'Complete %d courses',
+            'courses_enrolled' => 'Enroll in %d courses',
+            'quizzes_completed' => 'Complete %d quizzes',
+            'perfect_quiz' => 'Get %d perfect quiz scores',
+            'streak_days' => 'Maintain a %d-day streak',
+            'total_xp_earned' => 'Earn %d total XP',
+            'level_reached' => 'Reach level %d',
+            'tasks_completed' => 'Complete %d daily tasks',
+            'daily_all_tasks' => 'Complete all daily tasks %d times',
+            'first_lesson' => 'Complete your first lesson',
+        ];
+
+        $template = $typeLabels[$criteria['type']] ?? 'Complete %d activities';
+
+        return sprintf($template, $this->target);
     }
 }

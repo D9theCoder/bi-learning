@@ -1,10 +1,13 @@
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Course, Lesson, User } from '@/types';
+import { AccessGateWarningCard } from '@/components/courses/shared';
 import {
-  AlertCircle,
-  CalendarCheck,
-} from 'lucide-react';
+  AttendanceSessionList,
+  AttendanceSummaryCards,
+  AttendanceTutorMatrix,
+} from '@/components/courses/tabs/attendance';
+import { Card, CardContent } from '@/components/ui/card';
+import { useRoles } from '@/hooks/use-roles';
+import { Course, Lesson, User } from '@/types';
+import { CalendarCheck } from 'lucide-react';
 
 interface AttendanceTabProps {
   course: Course & {
@@ -12,22 +15,32 @@ interface AttendanceTabProps {
     lessons: Lesson[];
   };
   isEnrolled: boolean;
+  isTutor?: boolean;
+  students?: any[];
 }
 
-export function AttendanceTab({ course, isEnrolled }: AttendanceTabProps) {
-  if (!isEnrolled) {
+export function AttendanceTab({
+  course,
+  isEnrolled,
+  isTutor = false,
+  students = [],
+}: AttendanceTabProps) {
+  const { isAdmin } = useRoles();
+  const canView = isEnrolled || isAdmin || isTutor;
+
+  if (!canView) {
     return (
-      <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/10">
-        <CardContent className="py-12 text-center">
-          <CalendarCheck className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
-          <h3 className="mb-2 text-lg font-semibold text-yellow-800 dark:text-yellow-400">
-            Attendance Not Available
-          </h3>
-          <p className="text-sm text-yellow-700 dark:text-yellow-500">
-            Enroll in this course to view your attendance records.
-          </p>
-        </CardContent>
-      </Card>
+      <AccessGateWarningCard
+        icon={CalendarCheck}
+        title="Attendance Not Available"
+        description="Enroll in this course to view your attendance records."
+      />
+    );
+  }
+
+  if (isTutor) {
+    return (
+      <AttendanceTutorMatrix lessons={course.lessons} students={students} />
     );
   }
 
@@ -41,44 +54,25 @@ export function AttendanceTab({ course, isEnrolled }: AttendanceTabProps) {
     );
   }
 
+  const totalSessions = course.lessons.length;
+  const attendedSessions = course.lessons.filter(
+    (lesson) => lesson.has_attended,
+  ).length;
+  const attendanceRate =
+    totalSessions > 0
+      ? Math.round((attendedSessions / totalSessions) * 100)
+      : 0;
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            <CalendarCheck className="h-5 w-5 text-yellow-600" />
-            Attendance
-          </CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Attendance tracking is not available for this course yet. Sessions
-            listed below are provided for reference.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {course.lessons.map((lesson, index) => (
-              <div
-                key={lesson.id}
-                className="flex items-center justify-between rounded-lg border p-3 dark:border-gray-700"
-              >
-                <div className="flex flex-col">
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    Session {index + 1}: {lesson.title}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {lesson.duration_minutes
-                      ? `${lesson.duration_minutes} mins`
-                      : 'Duration not set'}
-                  </p>
-                </div>
-                <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                  Not tracked
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {isEnrolled && (
+        <AttendanceSummaryCards
+          totalSessions={totalSessions}
+          attendedSessions={attendedSessions}
+          attendanceRate={attendanceRate}
+        />
+      )}
+      <AttendanceSessionList lessons={course.lessons} />
     </div>
   );
 }

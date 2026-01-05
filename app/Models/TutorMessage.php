@@ -14,6 +14,7 @@ class TutorMessage extends Model
     protected $fillable = [
         'tutor_id',
         'user_id',
+        'sender_id',
         'content',
         'is_read',
         'sent_at',

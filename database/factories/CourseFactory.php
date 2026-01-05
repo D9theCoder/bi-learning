@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\CourseCategory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,16 +19,16 @@ class CourseFactory extends Factory
     public function definition(): array
     {
         $titles = [
-            'Introduction to Python Programming',
-            'Advanced JavaScript Techniques',
-            'Data Science Fundamentals',
-            'Machine Learning Basics',
-            'Web Development with React',
-            'Database Design and SQL',
-            'Mobile App Development',
-            'Cloud Computing Essentials',
-            'Cybersecurity Fundamentals',
-            'AI and Deep Learning',
+            'Introduction to Algebra',
+            'Advanced Calculus Techniques',
+            'Quantum Physics Fundamentals',
+            'Organic Chemistry Basics',
+            'Molecular Biology',
+            'Linear Algebra and Matrices',
+            'Thermodynamics and Heat Transfer',
+            'Chemical Bonding and Reactions',
+            'Cell Biology and Genetics',
+            'Differential Equations',
         ];
 
         return [
@@ -37,7 +38,7 @@ class CourseFactory extends Factory
             'instructor_id' => User::factory(),
             'duration_minutes' => fake()->numberBetween(300, 3000),
             'difficulty' => fake()->randomElement(['beginner', 'intermediate', 'advanced']),
-            'category' => fake()->randomElement(['Programming', 'Data Science', 'Web Development', 'Mobile', 'Cloud', 'Security']),
+            'category' => fake()->randomElement(CourseCategory::values()),
             'is_published' => fake()->boolean(80),
         ];
     }

@@ -1,4 +1,3 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -10,22 +9,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useRoles } from '@/hooks/use-roles';
 import {
   achievements,
   calendar,
   courses,
   dashboard,
+  home,
   messages,
   rewards,
   tutors,
 } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
   BookOpen,
   Calendar as CalendarIcon,
   Folder,
   Gift,
+  GraduationCap,
   LayoutGrid,
   MessageSquare,
   Trophy,
@@ -33,7 +35,7 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const studentNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: dashboard().url,
@@ -71,27 +73,80 @@ const mainNavItems: NavItem[] = [
   },
 ];
 
-const footerNavItems: NavItem[] = [
+const tutorNavItems: NavItem[] = [
   {
-    title: 'Repository',
-    href: 'https://github.com/laravel/react-starter-kit',
-    icon: Folder,
+    title: 'Dashboard',
+    href: dashboard().url,
+    icon: LayoutGrid,
   },
   {
-    title: 'Documentation',
-    href: 'https://laravel.com/docs/starter-kits#react',
-    icon: BookOpen,
+    title: 'Students',
+    href: '/students',
+    icon: GraduationCap,
+  },
+  {
+    title: 'Calendar',
+    href: calendar().url,
+    icon: CalendarIcon,
+  },
+  {
+    title: 'Messages',
+    href: messages().url,
+    icon: MessageSquare,
   },
 ];
 
 export function AppSidebar() {
+  const { isAdmin, isStudent, isTutor } = useRoles();
+  const { url } = usePage();
+
+  const showStudentView = isStudent;
+  const baseNavItems = showStudentView ? studentNavItems : tutorNavItems;
+  const navItems: NavItem[] = [...baseNavItems];
+
+  if (isAdmin || isTutor) {
+    const manageLink: NavItem = {
+      title: 'Manage Courses',
+      href: '/courses/manage',
+      icon: Folder,
+    };
+
+    const insertIndex = navItems.findIndex(
+      (item) => item.title === 'My Courses',
+    );
+    if (insertIndex >= 0) {
+      navItems.splice(insertIndex + 1, 0, manageLink);
+    } else {
+      const dashboardIndex = navItems.findIndex(
+        (item) => item.title === 'Dashboard',
+      );
+      if (dashboardIndex >= 0) {
+        navItems.splice(dashboardIndex + 1, 0, manageLink);
+      } else {
+        navItems.unshift(manageLink);
+      }
+    }
+  }
+
+  // Fix active state for My Courses to avoid highlighting when in Manage Courses
+  const myCoursesIndex = navItems.findIndex(
+    (item) => item.title === 'My Courses',
+  );
+  if (myCoursesIndex >= 0) {
+    navItems[myCoursesIndex].isActive =
+      url === '/courses' ||
+      (url.startsWith('/courses/') && !url.startsWith('/courses/manage'));
+  }
+
+  const homeHref = navItems[0]?.href ?? home().url;
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard().url} prefetch>
+              <Link href={homeHref}>
                 <AppLogo />
               </Link>
             </SidebarMenuButton>
@@ -100,11 +155,10 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={mainNavItems} />
+        <NavMain items={navItems} />
       </SidebarContent>
 
       <SidebarFooter>
-        <NavFooter items={footerNavItems} className="mt-auto" />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

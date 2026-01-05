@@ -1,9 +1,9 @@
-import FeaturesBento from '@/components/landing/FeaturesBento';
-import HeroSection from '@/components/landing/HeroSection';
-import LiveProgressDashboard from '@/components/landing/LiveProgressDashboard';
-import TestimonialsMarquee from '@/components/landing/TestimonialsMarquee';
+import FeaturesBento from '@/components/landing/features-bento';
+import HeroSection from '@/components/landing/hero-section';
+import LiveProgressDashboard from '@/components/landing/live-progress-dashboard';
+import TestimonialsMarquee from '@/components/landing/testimonials-marquee';
 import { Button } from '@/components/ui/button';
-import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import RevealOnScroll from '@/components/ui/reveal-on-scroll';
 import { dashboard, login, register } from '@/routes';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -15,31 +15,6 @@ export default function Welcome() {
   const { auth } = usePage<SharedData>().props;
 
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    });
-
-    // Custom damping as requested
-    // Note: lenis v1 uses 'lerp' or 'duration'. Damping factor of 0.1 usually implies lerp = 0.1 in other libs,
-    // but in Lenis it's often configured via duration/easing.
-    // However, the user specifically asked for "damping factor of 0.1".
-    // Standard Lenis doesn't have a direct "damping" prop in the options interface shown commonly,
-    // but React-Lenis or specific smooth-scrollbar libs do.
-    // We'll stick to a smooth configuration.
-    // If strict "damping: 0.1" is needed (like basic lerp), we can try to set it if the lib supports it,
-    // but I'll stick to the "smooth" preset which is high quality.
-
-    // Wait, documentation says Lenis options include `lerp`.
-    // If `lerp` is defined, `duration` is ignored. `lerp: 0.1` is the damping.
-    // Let's use that.
-
-    // Creating a new instance with specific options
     const lenisInstance = new Lenis({
       lerp: 0.1,
       smoothWheel: true,
@@ -70,8 +45,12 @@ export default function Welcome() {
         <header className="fixed top-0 z-50 w-full border-b border-border/5 bg-background/60 backdrop-blur-md">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
             <div className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-              <div className="h-8 w-8 rounded-lg bg-emerald-600" />
-              Bi-Learning
+              <img
+                src="/bilearning-logo.png"
+                alt="Bi-Learning Logo"
+                className="h-12 w-auto"
+              />
+              <span className="hidden sm:inline">Bi-Learning</span>
             </div>
 
             <nav className="flex items-center gap-4">
@@ -155,8 +134,15 @@ export default function Welcome() {
         </main>
 
         <footer className="border-t border-border bg-muted/20 py-12">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>
+          <div className="container mx-auto px-4 text-center">
+            <div className="mb-4 flex justify-center">
+              <img
+                src="/bilearning-logo.png"
+                alt="Bi-Learning Logo"
+                className="h-16 w-auto"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} Bi-Learning. All rights
               reserved.
             </p>

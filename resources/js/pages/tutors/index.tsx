@@ -1,14 +1,14 @@
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { TutorCard } from '@/components/tutors/tutor-card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { tutors as tutorsRoute } from '@/routes';
 import type { BreadcrumbItem, TutorsPageProps } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Tutors', href: tutorsRoute().url },
@@ -18,7 +18,10 @@ export default function TutorsPage({ tutors, filters }: TutorsPageProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search ?? '');
 
   const handleFilterChange = useCallback(
-    (key: keyof TutorsPageProps['filters'], value: string | number | undefined) => {
+    (
+      key: keyof TutorsPageProps['filters'],
+      value: string | number | undefined,
+    ) => {
       router.get(
         tutorsRoute().url,
         { ...filters, [key]: value, page: 1 },
@@ -38,10 +41,7 @@ export default function TutorsPage({ tutors, filters }: TutorsPageProps) {
     return () => clearTimeout(timer);
   }, [filters.search, handleFilterChange, searchTerm]);
 
-  const hasPagination = useMemo(
-    () => tutors.last_page > 1,
-    [tutors.last_page],
-  );
+  const hasPagination = useMemo(() => tutors.last_page > 1, [tutors.last_page]);
 
   const goToPage = (page: number) => {
     router.get(

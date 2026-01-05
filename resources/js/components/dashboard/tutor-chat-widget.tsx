@@ -79,7 +79,7 @@ export function TutorChatWidget({
           </div>
         </ScrollArea>
         <Button asChild className="mt-4 w-full" variant="outline">
-          <Link href="/tutor" prefetch>
+          <Link href="/tutor">
             Open Full Chat
             <ExternalLink className="ml-2 size-4" />
           </Link>
