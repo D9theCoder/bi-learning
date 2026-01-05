@@ -1,224 +1,105 @@
-# Success Feedback Implementation for All Forms
+# Add Redirect Buttons to Schedule Items
 
-Implement consistent success feedback across all forms in the application by:
-
-- Using **success modals** (shadcn Dialog) for submission-type forms (claiming rewards, submitting assessments)
-- Using **success banners** (Alert component) for edit-type forms (course creation/editing, profile updates)
-
-This will significantly improve user experience by providing clear, consistent visual feedback for all form submissions.
+Add redirect buttons to each schedule item in the upcoming schedule widgets (dashboard) and calendar page for both student and tutor roles. The redirect buttons will navigate users to the appropriate course detail page or directly to the meeting URL if it's a meeting type.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Design Decisions Requiring Approval**
+> [!IMPORTANT] > **Navigation Behavior:**
 >
-> 1. **Success Modal Behavior**: After submission forms, the modal should: Require user to manually close
+> - For **meetings**, the button will either:
+>   - Navigate to the course detail page where the meeting info is displayed
+> - For **assessments**, the button will navigate to the course detail page
+>
+> Please confirm which behavior you prefer for meetings with URLs.
 
-> 2. **Success Banner Duration**: For edit forms, the banner should: Auto-dismiss after N seconds (e.g., 3 seconds)
-
-> 3. **Toast Alternative**: I prefer using shadcn Sonner instead of banners for edit forms
+> [!IMPORTANT] > **Button Design:**
+> The redirect button will be a small icon button (using an external link or arrow icon) placed next to the date badge in schedule items. This keeps the UI clean and doesn't disrupt the current layout.
+>
+> Please confirm if you prefer a different placement or style.
 
 ## Proposed Changes
 
-### Component Library
+### Type Definitions
 
-#### [NEW] [success-modal.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/ui/success-modal.tsx>)
+#### [MODIFY] [index.d.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/types/index.d.ts>)
 
-Create a reusable success modal component using shadcn Dialog that:
+Add `course_id` and optionally `meeting_url` fields to calendar item interfaces to enable navigation:
 
-- Displays a success icon (CheckCircle from lucide-react)
-- Shows a customizable title and message
-- Supports optional action buttons (e.g., "View Results", "Go to Dashboard")
-- Handles auto-dismissal if configured
-
-#### [NEW] [success-banner.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/ui/success-banner.tsx>)
-
-Create a reusable success banner component extending the existing Alert component:
-
-- Green/success variant styling
-- Displays success icon
-- Auto-dismisses after configurable duration
-- Animated entrance/exit transitions
-- Optional dismiss button
+- `StudentCalendarItem`: Add `course_id: number` and `meeting_url?: string | null`
+- `TutorCalendarItem`: Add `course_id: number` and `meeting_url?: string | null`
+- `CalendarTask`: Add `course_id?: number` and `meeting_url?: string | null`
 
 ---
 
-### Submission Forms (Modal Implementation)
+### Dashboard Schedule Widgets
 
-These forms will use the **SuccessModal** component:
+#### [MODIFY] [student-calendar-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/dashboard/sections/student-calendar-section.tsx>)
 
-#### [MODIFY] [reward-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/rewards/reward-card.tsx>)
+Add redirect button to each schedule item in the student dashboard's upcoming schedule widget. The button will:
 
-- Add success modal to reward redemption flow
-- Show "Reward Claimed!" message after successful redemption
-- Display updated points balance in modal
-- Optional: Add link to view rewards inventory
+- Import the `show` action from Wayfinder for `courses.show` route
+- Add an external link icon button next to the date badge
+- Navigate to the course detail page or open meeting URL on click
+- Use appropriate styling to match existing design
 
-#### [MODIFY] [take.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/quiz/take.tsx>)
+#### [MODIFY] [tutor-calendar-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/dashboard/sections/tutor-calendar-section.tsx>)
 
-- Add success modal after quiz/assessment submission
-- Show "Assessment Submitted!" message
-- Display score if available immediately
-- Include button to view results or return to course
-
-#### [MODIFY] [meeting-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/show/meeting-card.tsx>)
-
-- Add success modal for meeting attendance confirmation
-- Show "Attendance Confirmed!" message
-
-#### [MODIFY] [today-task-list.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/dashboard/today-task-list.tsx>)
-
-- Add success modal for task completion
-- Show "Task Completed!" message with XP earned
+Add redirect button to each schedule item in the tutor dashboard's upcoming schedule widget. Similar implementation to student section but adapted for tutor calendar item data structure.
 
 ---
 
-### Edit Forms (Banner Implementation)
+### Calendar Page
 
-These forms will use the **SuccessBanner** component with the Inertia `recentlySuccessful` state:
+#### [MODIFY] [task-date-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/task-date-card.tsx>)
 
-#### [MODIFY] [edit.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/manage/edit.tsx>)
+Add redirect button to each task item in the calendar page task list. The button will:
 
-- Add success banner to course creation/editing form
-- Show "Course saved successfully!" message
-- Display after form submission completes
-
-#### [MODIFY] [course-details-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/course-details-form.tsx>)
-
-- Accept `recentlySuccessful` prop from parent
-- Render success banner when `recentlySuccessful` is true
-- Position banner appropriately within the form card
-
-#### [MODIFY] [edit.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/quiz/edit.tsx>)
-
-- Add success banner to assessment editing
-- Show "Assessment updated successfully!" message
-
-#### [MODIFY] [new-question-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/quiz/new-question-form.tsx>)
-
-- Add success banner after question creation
-- Show "Question added successfully!" message
-
-#### [MODIFY] [question-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/quiz/question-card.tsx>)
-
-- Add success banner after question updates
-- Show "Question updated successfully!" message
-
-#### [MODIFY] [new-content-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/new-content-form.tsx>)
-
-- Add success banner after content creation
-- Show "Content added successfully!" message
-
-#### [MODIFY] [content-row.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/content-row.tsx>)
-
-- Add success banner after content updates
-- Show "Content updated successfully!" message
-
-#### [MODIFY] [lesson-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/lesson-card.tsx>)
-
-- Add success banner after lesson updates
-- Show "Lesson updated successfully!" message
-
-#### [MODIFY] [lessons-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/lessons-section.tsx>)
-
-- Add success banner after lesson creation
-- Show "Lesson added successfully!" message
-
-#### [MODIFY] [profile.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/profile.tsx>)
-
-- Replace existing "Saved" text with success banner component
-- Show "Profile updated successfully!" message
-
-#### [MODIFY] [password.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/password.tsx>)
-
-- Add success banner after password change
-- Show "Password changed successfully!" message
-
-#### [MODIFY] [two-factor.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/two-factor.tsx>)
-
-- Add success banner for 2FA enable/disable
-- Show "Two-factor authentication enabled/disabled successfully!" message
-
-#### [MODIFY] [message-thread.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/messages/message-thread.tsx>)
-
-- Add success banner after sending message
-- Show "Message sent successfully!" message
+- Import the `show` action from Wayfinder for `courses.show` route
+- Add an external link icon button inline with the task title
+- Handle cases where `course_id` might not be available (e.g., for tasks not linked to courses)
+- Navigate to course detail page or open meeting URL on click
 
 ---
 
-### Authentication Forms
+### Backend Data Updates
 
-Since these are authentication flows, we'll keep them as-is unless you want to add feedback:
+The backend controllers that provide calendar data will need to include `course_id` and `meeting_url` when preparing schedule items:
 
-- [login.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/login.tsx>) - Redirects on success
-- [register.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/register.tsx>) - Redirects on success
-- [forgot-password.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/forgot-password.tsx>) - Shows success message already
-- Other auth forms - Generally redirect on success
+- `DashboardController@index` - Update to include `course_id` and `meeting_url` in student and tutor calendar data
+- `CalendarController@index` - Update to include `course_id` and `meeting_url` in tasks by date
 
 ## Verification Plan
 
 ### Automated Tests
 
-1. **Unit Tests for New Components**
-
-   ```bash
-   # Create new Pest browser tests
-   php artisan test tests/Browser/SuccessFeedbackTest.php
-   ```
-
-   - Test SuccessModal renders correctly
-   - Test SuccessBanner renders and dismisses
-   - Test modal auto-dismiss behavior
-   - Test banner animations
-
-2. **Integration Tests for Forms**
-
-   ```bash
-   # Run existing form tests to ensure no regressions
-   php artisan test tests/Feature/CourseManagementTest.php
-   php artisan test tests/Feature/QuizTest.php
-   php artisan test tests/Feature/RewardsTest.php
-   php artisan test tests/Feature/Settings/ProfileUpdateTest.php
-   php artisan test tests/Feature/Settings/PasswordUpdateTest.php
-   ```
-
-3. **Browser Tests for User Flows**
-   ```bash
-   # Create comprehensive browser tests for success feedback
-   php artisan test tests/Browser/FormSuccessFeedbackTest.php
-   ```
-   - Test reward redemption shows modal
-   - Test quiz submission shows modal
-   - Test course editing shows banner
-   - Test profile update shows banner
-   - Verify banner auto-dismissal timing
-   - Verify modal behavior (dismiss/redirect)
+No existing automated tests cover the schedule widget components. Manual browser testing will be used to verify the changes.
 
 ### Manual Verification
 
-1. **Submission Forms (Modal Testing)**:
+1. **Student Dashboard - Upcoming Schedule Widget:**
 
-   - Navigate to `/rewards`
-   - Redeem a reward → Verify success modal appears
-   - Take a quiz/assessment → Submit → Verify success modal appears
-   - Mark attendance for a meeting → Verify success modal appears
-   - Complete a daily task → Verify success modal appears
+   - Log in as a student role
+   - Navigate to `/dashboard`
+   - Verify redirect buttons appear next to each schedule item's date
+   - Click redirect button for a meeting - confirm it navigates to course page or opens meeting URL
+   - Click redirect button for an assessment - confirm it navigates to the course detail page
 
-2. **Edit Forms (Banner Testing)**:
+2. **Tutor Dashboard - Upcoming Schedule Widget:**
 
-   - Navigate to `/courses/manage` → Create/edit a course → Save → Verify green success banner appears
-   - Edit an assessment → Save → Verify success banner
-   - Add/edit a quiz question → Save → Verify success banner
-   - Navigate to `/settings/profile` → Update profile → Save → Verify success banner
-   - Navigate to `/settings/password` → Change password → Verify success banner
-   - Enable/disable 2FA → Verify success banner
+   - Log in as a tutor role
+   - Navigate to `/dashboard`
+   - Verify redirect buttons appear next to each schedule item's date
+   - Click redirect buttons - confirm navigation works correctly
 
-3. **Cross-browser Testing**:
+3. **Calendar Page - Task List:**
 
-   - Test on Chrome, Firefox, Safari
-   - Verify animations work smoothly
-   - Verify mobile responsiveness
+   - Log in as either student or tutor
+   - Navigate to `/calendar`
+   - Verify redirect buttons appear inline with each task in the schedule list
+   - Click redirect buttons - confirm navigation works correctly
+   - Test edge cases: tasks without course_id should not show redirect button
 
-4. **Dark Mode Testing**:
-   - Switch to dark mode
-   - Verify success colors are appropriate and accessible
-   - Verify contrast ratios meet WCAG standards
+4. **Visual Regression:**
+   - Ensure the redirect button integrates seamlessly with existing design
+   - Check dark mode compatibility
+   - Verify responsive behavior on mobile/tablet

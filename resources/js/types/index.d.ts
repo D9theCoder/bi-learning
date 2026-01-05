@@ -275,19 +275,25 @@ export interface TutorDashboardChartPoint {
 
 export interface TutorCalendarItem {
   id: number;
+  course_id: number;
+  lesson_id?: number | null;
   title: string;
   course_title: string;
   due_date: string;
+  meeting_url?: string | null;
   type: string;
   category: 'meeting' | 'assessment';
 }
 
 export interface StudentCalendarItem {
   id: number;
+  course_id: number;
+  lesson_id?: number | null;
   title: string;
   course_title: string;
   date: string;
   time?: string | null;
+  meeting_url?: string | null;
   type: string;
   category: 'meeting' | 'assessment';
 }
@@ -401,6 +407,8 @@ export interface AchievementsPageProps {
 
 export interface CalendarTask {
   id: number;
+  course_id?: number;
+  lesson_id?: number | null;
   title: string;
   due_date: string;
   completed: boolean;
@@ -409,6 +417,7 @@ export interface CalendarTask {
   type?: string;
   category: 'task' | 'meeting' | 'assessment';
   time?: string | null;
+  meeting_url?: string | null;
 }
 
 export interface CalendarPageProps extends SharedData {

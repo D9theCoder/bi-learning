@@ -42,12 +42,15 @@ class CalendarController extends Controller
                     ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
                     ->map(fn (Lesson $lesson) => [
                         'id' => $lesson->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
                         'title' => $lesson->title,
                         'due_date' => $lesson->meeting_start_time->format('Y-m-d'),
                         'time' => $lesson->meeting_start_time->format('H:i'),
                         'completed' => $lesson->meeting_start_time->isPast(),
                         'course_title' => $course->title,
                         'type' => 'meeting',
+                        'meeting_url' => $lesson->meeting_url,
                         'category' => 'meeting',
                     ]);
 
@@ -59,12 +62,15 @@ class CalendarController extends Controller
                     ->filter(fn (Assessment $assessment) => $assessment->due_date->between($start, $end))
                     ->map(fn (Assessment $assessment) => [
                         'id' => $assessment->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $assessment->lesson_id,
                         'title' => $assessment->title,
                         'due_date' => $assessment->due_date->format('Y-m-d'),
                         'time' => $assessment->due_date->format('H:i'),
                         'completed' => $assessment->due_date->isPast(),
                         'course_title' => $course->title,
                         'type' => $assessment->type,
+                        'meeting_url' => null,
                         'category' => 'assessment',
                     ]);
 
@@ -86,12 +92,15 @@ class CalendarController extends Controller
                     ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
                     ->map(fn (Lesson $lesson) => [
                         'id' => $lesson->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
                         'title' => $lesson->title,
                         'due_date' => $lesson->meeting_start_time->format('Y-m-d'),
                         'time' => $lesson->meeting_start_time->format('H:i'),
                         'completed' => $lesson->meeting_start_time->isPast(),
                         'course_title' => $course->title,
                         'type' => 'meeting',
+                        'meeting_url' => $lesson->meeting_url,
                         'category' => 'meeting',
                     ]);
 
@@ -103,12 +112,15 @@ class CalendarController extends Controller
                     ->filter(fn (Assessment $assessment) => $assessment->due_date->between($start, $end))
                     ->map(fn (Assessment $assessment) => [
                         'id' => $assessment->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $assessment->lesson_id,
                         'title' => $assessment->title,
                         'due_date' => $assessment->due_date->format('Y-m-d'),
                         'time' => $assessment->due_date->format('H:i'),
                         'completed' => $assessment->due_date->isPast(),
                         'course_title' => $course->title,
                         'type' => $assessment->type,
+                        'meeting_url' => null,
                         'category' => 'assessment',
                     ]);
 
@@ -122,6 +134,8 @@ class CalendarController extends Controller
                 ->get()
                 ->map(fn ($task) => [
                     'id' => $task->id,
+                    'course_id' => $task->lesson?->course_id,
+                    'lesson_id' => $task->lesson_id,
                     'title' => $task->title,
                     'due_date' => $task->due_date->format('Y-m-d'),
                     'time' => null,
@@ -129,6 +143,7 @@ class CalendarController extends Controller
                     'xp_reward' => $task->xp_reward,
                     'course_title' => $task->lesson?->course?->title ?? 'General',
                     'type' => 'task',
+                    'meeting_url' => null,
                     'category' => 'task',
                 ]);
 

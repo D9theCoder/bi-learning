@@ -67,11 +67,14 @@ class DashboardController extends Controller
                 ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
                 ->map(fn ($lesson) => [
                     'id' => $lesson->id,
+                    'course_id' => $course->id,
+                    'lesson_id' => $lesson->id,
                     'title' => $lesson->title,
                     'course_title' => $course->title,
                     'date' => $lesson->meeting_start_time?->toDateString(),
                     'time' => $lesson->meeting_start_time?->format('H:i'),
                     'type' => 'meeting',
+                    'meeting_url' => $lesson->meeting_url,
                     'category' => 'meeting',
                 ]);
 
@@ -82,11 +85,14 @@ class DashboardController extends Controller
                 ->filter(fn ($assessment) => $assessment->due_date !== null && $assessment->due_date->isFuture() && $assessment->is_published)
                 ->map(fn ($assessment) => [
                     'id' => $assessment->id,
+                    'course_id' => $course->id,
+                    'lesson_id' => $assessment->lesson_id,
                     'title' => $assessment->title,
                     'course_title' => $course->title,
                     'date' => $assessment->due_date?->toDateString(),
                     'time' => $assessment->due_date?->format('H:i'),
                     'type' => $assessment->type,
+                    'meeting_url' => null,
                     'category' => 'assessment',
                 ]);
 
@@ -229,11 +235,14 @@ class DashboardController extends Controller
                     ->sortBy('meeting_start_time')
                     ->map(fn ($lesson) => [
                         'id' => $lesson->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
                         'title' => $lesson->title,
                         'course_title' => $course->title,
                         'due_date' => $lesson->meeting_start_time?->toDateString(),
                         'time' => $lesson->meeting_start_time?->format('H:i'),
                         'type' => 'meeting',
+                        'meeting_url' => $lesson->meeting_url,
                         'category' => 'meeting',
                     ]);
 
@@ -245,11 +254,14 @@ class DashboardController extends Controller
                     ->sortBy('due_date')
                     ->map(fn ($assessment) => [
                         'id' => $assessment->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $assessment->lesson_id,
                         'title' => $assessment->title,
                         'course_title' => $course->title,
                         'due_date' => $assessment->due_date?->toDateString(),
                         'time' => $assessment->due_date?->format('H:i'),
                         'type' => $assessment->type,
+                        'meeting_url' => null,
                         'category' => 'assessment',
                     ]);
 

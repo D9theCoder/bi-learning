@@ -37,7 +37,7 @@ test('authenticated users can visit the dashboard', function () {
         ->get(route('dashboard'))
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('dashboard')
                 ->has('stats')
                 ->has('today_tasks')
@@ -54,7 +54,7 @@ test('tutors can visit the dashboard', function () {
         ->get(route('dashboard'))
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('dashboard')
         );
 });
@@ -71,7 +71,7 @@ test('dashboard displays user statistics', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->where('stats.streak', 5)
                 ->where('stats.level', 8)
                 ->where('stats.points_balance', 850)
@@ -95,9 +95,36 @@ test('dashboard shows enrolled courses', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('enrolled_courses', 1)
                 ->where('enrolled_courses.0.progress_percentage', 45)
+        );
+});
+
+test('dashboard student calendar exposes course metadata', function () {
+    $user = User::factory()->create();
+    $user->assignRole('student');
+
+    $course = Course::factory()->create();
+    Enrollment::factory()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $lesson = Lesson::factory()->create([
+        'course_id' => $course->id,
+        'meeting_start_time' => now()->addDay(),
+        'meeting_url' => 'https://example.com/session',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('student_calendar.0.course_id', $course->id)
+                ->where('student_calendar.0.lesson_id', $lesson->id)
+                ->where('student_calendar.0.meeting_url', $lesson->meeting_url)
         );
 });
 
@@ -117,7 +144,7 @@ test('dashboard displays today tasks', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('today_tasks', 1)
         );
 });
@@ -135,7 +162,7 @@ test('dashboard shows global leaderboard', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('global_leaderboard')
                 ->has('current_user_rank')
         );
@@ -150,7 +177,7 @@ test('dashboard shows recent achievements', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('recent_achievements', 1)
         );
 });
@@ -169,6 +196,8 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
     $lesson = Lesson::factory()->create([
         'course_id' => $course->id,
         'order' => 1,
+        'meeting_start_time' => now()->addDay(),
+        'meeting_url' => 'https://example.com/meet',
     ]);
 
     // Create assessments with future due dates for the calendar
@@ -196,12 +225,15 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
     $this->actingAs($tutor)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('tutor_dashboard')
                 ->where('tutor_dashboard.summary.course_count', 1)
                 ->has('tutor_dashboard.chart', 1)
-                ->has('tutor_dashboard.calendar', 2)
+                ->has('tutor_dashboard.calendar', 3)
                 ->has('tutor_dashboard.courses', 1)
+                ->where('tutor_dashboard.calendar.0.lesson_id', $lesson->id)
+                ->where('tutor_dashboard.calendar.0.course_id', $course->id)
+                ->where('tutor_dashboard.calendar.0.meeting_url', $lesson->meeting_url)
         );
 });
 
@@ -219,7 +251,7 @@ test('leaderboard is sorted by XP descending', function () {
     $this->actingAs($user1)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('global_leaderboard')
                 ->where('global_leaderboard.0.xp', 9_000_000) // user2 is first
                 ->where('global_leaderboard.0.rank', 1)
@@ -240,7 +272,7 @@ test('leaderboard shows correct current user indicator', function () {
     $this->actingAs($currentUser)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('global_leaderboard')
                 ->where('global_leaderboard.0.isCurrentUser', false) // otherUser is first
                 ->where('global_leaderboard.1.isCurrentUser', true)  // currentUser is second
@@ -290,7 +322,7 @@ test('completing daily task awards XP and updates leaderboard position', functio
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->has('global_leaderboard')
                 ->where('global_leaderboard.0.id', $user->id)
                 ->where('global_leaderboard.0.isCurrentUser', true)
