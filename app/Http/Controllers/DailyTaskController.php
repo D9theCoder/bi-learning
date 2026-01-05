@@ -111,7 +111,7 @@ class DailyTaskController extends Controller
         $completedLessons = $user->dailyTasks()
             ->where('type', 'lesson')
             ->where('is_completed', true)
-            ->whereHas('lesson', fn ($q) => $q->where('course_id', $course->id))
+            ->whereHas('lesson', fn($q) => $q->where('course_id', $course->id))
             ->count();
 
         $progressPercentage = $totalLessons > 0
@@ -158,7 +158,7 @@ class DailyTaskController extends Controller
             return;
         }
 
-        $allCompleted = $todayTasks->every(fn ($task) => $task->is_completed);
+        $allCompleted = $todayTasks->every(fn($task) => $task->is_completed);
 
         if ($allCompleted) {
             $this->achievementService->trackProgress($user, 'daily_all_tasks', 1);
@@ -195,13 +195,12 @@ class DailyTaskController extends Controller
 
         $deleted = $user->dailyTasks()
             ->whereDate('due_date', $taskDate)
-            ->where('is_completed', false)
             ->delete();
 
         $generatedTasks = $this->taskGeneratorService->generateForUser($user);
         $count = $generatedTasks->count();
 
-        session()->flash('success', "Regenerated {$count} daily tasks! ({$deleted} incomplete tasks removed)");
+        session()->flash('success', "Regenerated {$count} daily tasks! ({$deleted} old tasks removed)");
 
         return back();
     }

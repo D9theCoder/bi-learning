@@ -55,7 +55,7 @@ export function TodayTaskList({
   const handleForceRegenerate = () => {
     if (
       !confirm(
-        'This will delete incomplete tasks and generate new ones. Continue?',
+        "This will delete all of today's quests and generate new ones. Continue?",
       )
     ) {
       return;
@@ -107,11 +107,16 @@ export function TodayTaskList({
                       disabled={isGenerating}
                     >
                       <Sparkles
-                        className={cn('size-4', isGenerating && 'animate-pulse')}
+                        className={cn(
+                          'size-4',
+                          isGenerating && 'animate-pulse',
+                        )}
                       />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Generate tasks (if none exist)</TooltipContent>
+                  <TooltipContent>
+                    Generate tasks (if none exist)
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -205,8 +210,8 @@ export function TodayTaskList({
                                 variant="secondary"
                                 className="border-none bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
                               >
-                                <Zap className="mr-1 size-3 fill-yellow-700" /> +
-                                {task.xp_reward} XP
+                                <Zap className="mr-1 size-3 fill-yellow-700" />{' '}
+                                +{task.xp_reward} XP
                               </Badge>
                             </div>
                           )}
