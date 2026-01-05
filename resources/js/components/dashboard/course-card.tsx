@@ -41,63 +41,62 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
         </div>
 
         {/* Course Info */}
-        <div className="flex flex-1 flex-col justify-center gap-2 py-3 pr-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              {course.category && (
-                <Badge
-                  variant="outline"
-                  className="h-5 shrink-0 px-1.5 py-0 text-[10px]"
-                >
-                  {course.category}
-                </Badge>
-              )}
-              <h3 className="line-clamp-1 text-sm leading-none font-bold tracking-tight">
-                {course.title || 'Untitled Course'}
-              </h3>
-            </div>
-            {/* Progress bar on the right */}
-            <div className="flex shrink-0 items-center gap-2">
-              <Progress value={progress_percentage} className="h-1.5 w-16" />
-              <span className="text-xs font-medium text-muted-foreground">
-                {progress_percentage}%
-              </span>
-            </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 py-3 pr-4">
+          <div className="space-y-2">
+            <h3 className="line-clamp-2 text-sm font-bold tracking-tight text-foreground">
+              {course.title || 'Untitled Course'}
+            </h3>
+            {course.category && (
+              <Badge
+                variant="outline"
+                className="h-5 w-fit px-1.5 py-0 text-[10px]"
+              >
+                {course.category}
+              </Badge>
+            )}
+
+            {next_lesson?.title && (
+              <p className="line-clamp-1 text-xs text-muted-foreground">
+                Next:{' '}
+                <span className="font-medium text-foreground">
+                  {next_lesson.title}
+                </span>
+              </p>
+            )}
+
+            {next_lesson?.meeting_start_time && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <CalendarIcon className="size-3.5" />
+                  <span>
+                    {new Date(
+                      next_lesson.meeting_start_time,
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="size-3.5" />
+                  <span>
+                    {new Date(next_lesson.meeting_start_time).toLocaleTimeString(
+                      [],
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      },
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {next_lesson?.title && (
-            <p className="line-clamp-1 text-xs text-muted-foreground">
-              Next:{' '}
-              <span className="font-medium text-foreground">
-                {next_lesson.title}
-              </span>
-            </p>
-          )}
-
-          {next_lesson?.meeting_start_time && (
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <CalendarIcon className="size-3.5" />
-                <span>
-                  {new Date(
-                    next_lesson.meeting_start_time,
-                  ).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="size-3.5" />
-                <span>
-                  {new Date(next_lesson.meeting_start_time).toLocaleTimeString(
-                    [],
-                    {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    },
-                  )}
-                </span>
-              </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Progress</span>
+              <span className="font-medium">{progress_percentage}%</span>
             </div>
-          )}
+            <Progress value={progress_percentage} className="h-2 w-full" />
+          </div>
         </div>
       </CardContent>
 
