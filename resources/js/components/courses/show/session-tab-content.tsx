@@ -37,8 +37,17 @@ export function SessionTabContent({
   isTutor,
   onEnrollClick,
 }: SessionTabContentProps) {
+  const sessionContentCount = activeSession
+    ? activeSession.contents.filter((content) => content.type !== 'assessment')
+        .length
+    : 0;
+  const sessionAssessmentCount = activeSession
+    ? assessments.filter((assessment) => assessment.lesson_id === activeSession.id)
+        .length
+    : 0;
+
   return (
-    <>
+    <div className="space-y-6">
       <SessionSelector
         lessons={lessons}
         activeSessionId={activeSessionId}
@@ -46,9 +55,13 @@ export function SessionTabContent({
       />
 
       {activeSession ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <SessionDetails session={activeSession} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
+            <SessionDetails
+              session={activeSession}
+              contentCount={sessionContentCount}
+              assessmentCount={sessionAssessmentCount}
+            />
 
             {activeSession.meeting_url && (
               <MeetingCard
@@ -63,7 +76,7 @@ export function SessionTabContent({
             )}
           </div>
 
-          <div>
+          <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
             {canManageCourse ? (
               <ManageCourseCard courseId={courseId} />
             ) : !isEnrolled ? (
@@ -84,6 +97,6 @@ export function SessionTabContent({
           No sessions available for this course.
         </div>
       )}
-    </>
+    </div>
   );
 }
