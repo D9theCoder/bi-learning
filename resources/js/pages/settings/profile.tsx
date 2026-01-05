@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/profile';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -42,12 +43,13 @@ export default function Profile({
 
           <Form
             {...ProfileController.update.form()}
+            onSuccess={() => toast.success('Profile updated successfully!')}
             options={{
               preserveScroll: true,
             }}
             className="space-y-6"
           >
-            {({ processing, recentlySuccessful, errors }) => (
+            {({ processing, errors }) => (
               <>
                 <div className="grid gap-2">
                   <Label htmlFor="name">Name</Label>
@@ -111,12 +113,6 @@ export default function Profile({
                   >
                     Save
                   </Button>
-
-                  {recentlySuccessful && (
-                    <p className="text-sm text-neutral-600 transition-opacity">
-                      Saved
-                    </p>
-                  )}
                 </div>
               </>
             )}

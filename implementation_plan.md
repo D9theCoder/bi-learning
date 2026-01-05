@@ -1,180 +1,224 @@
-# Add Assessment-to-Session Assignment in Quiz Editor
+# Success Feedback Implementation for All Forms
 
-## Overview
+Implement consistent success feedback across all forms in the application by:
 
-This plan implements the ability to assign assessments to specific lesson sessions directly from the quiz editor (`/courses/{course}/quiz/{assessment}/edit`). Currently, assessments can only be assigned to sessions when creating them as course content in the course management page (`/courses/manage/{course}/edit`). This enhancement will:
+- Using **success modals** (shadcn Dialog) for submission-type forms (claiming rewards, submitting assessments)
+- Using **success banners** (Alert component) for edit-type forms (course creation/editing, profile updates)
 
-1. Add a session selector dropdown in the quiz settings card
-2. Ensure the assignment logic matches the course management page
-3. Display assessments as actionable items in the session todo list on the show page
-4. Maintain bidirectional consistency between quiz edit and course manage pages
-
-## Current State Analysis
-
-### Backend
-
-- **Database**: The `assessments` table already has a `lesson_id` foreign key column that links assessments to lessons
-- **Quiz Controller**: The `edit()` method passes the assessment to the frontend but doesn't include lesson data
-- **Quiz Controller**: The `update()` method accepts and validates lesson assignment but the frontend doesn't provide this field yet
-- **Course Management**: When creating assessment-type content, it automatically creates an Assessment record with `lesson_id` set to the parent lesson
-
-### Frontend
-
-- **Quiz Edit Page** (`resources/js/pages/courses/quiz/edit.tsx`): Displays quiz settings but lacks lesson session selection
-- **Quiz Settings Card** (`resources/js/components/courses/quiz/quiz-settings-card.tsx`): Form includes `lesson_id` in the form data (line 23, 31) but doesn't render a UI control for it
-- **Course Manage Page** (`resources/js/pages/courses/manage/edit.tsx`): Lessons are displayed with their contents, including assessments
-- **Session Todo List** (`resources/js/components/courses/show/session-todo-list.tsx`): Currently displays course contents but assessments are shown via the Assessment tab, not as todo items in sessions
-
-## Proposed Changes
-
-### Backend Changes
-
-#### [MODIFY] [QuizController.php](file:///c:/Users/kevin/Herd/web-skripsi/app/Http/Controllers/QuizController.php#L119-L151)
-
-Update the `edit()` method to pass course lessons data to the frontend so tutors can select which session to assign the assessment to:
-
-- Load the course's lessons relationship
-- Pass lessons data in the Inertia response alongside the existing course and assessment data
-- Format lessons to include `id`, `title`, and `order` for the dropdown
-
----
-
-### Frontend Changes
-
-#### [MODIFY] [quiz-settings-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/quiz/quiz-settings-card.tsx)
-
-Add a lesson session selector dropdown to the quiz settings form:
-
-- Import and use the Select component (already imported)
-- Add a new form field between "Description" and "Due Date" sections
-- Display a dropdown populated with available lessons from the course
-- Show lesson titles with their order numbers (e.g., "Session 1: Introduction")
-- Handle the `lesson_id` field which is already in the form data structure
-- Include proper validation error display for `lesson_id`
-- Add label "Assign to Session" with optional help text
-- Allow "None" or empty selection to unassign from sessions
-
-**Props Changes:**
-
-- Add `lessons` prop to `QuizSettingsCardProps` interface with type `Array<{id: number, title: string, order: number}>`
-
-#### [MODIFY] [edit.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/quiz/edit.tsx)
-
-Update the quiz edit page to:
-
-- Receive and destructure `lessons` from props in `QuizEditProps` interface
-- Pass `lessons` prop to the `QuizSettingsCard` component
-
-#### [MODIFY] [session-todo-list.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/show/session-todo-list.tsx)
-
-Update to display assessments assigned to the current session:
-
-- Assessments are already passed to the show page via props
-- Filter assessments by `lesson_id` matching the active session
-- Add assessment items to the todo list with appropriate icon (use existing `CheckCircle` or quiz icon)
-- Make assessment items clickable to navigate to the take/show page (e.g., `/courses/{courseId}/quiz/{assessmentId}`)
-- Display assessment type badge (Practice/Quiz/Final Exam)
-- Show due date if available
-
-**Props Changes:**
-
-- Add `assessments` prop to `SessionTodoListProps` interface
-- Add `currentLessonId` prop to filter assessments
-- Add `courseId` prop for navigation links
-
-#### [MODIFY] [session-tab-content.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/courses/show/session-tab-content.tsx)
-
-Update to pass assessments and related props to SessionTodoList:
-
-- Filter `assessments` by the active session's lesson ID
-- Pass filtered assessments, courseId, and currentLessonId to `SessionTodoList` component
-
-**Props Changes:**
-
-- Add `assessments` prop to `SessionTabContentProps` interface
-- Add `courseId` prop (already available, needs to be passed down)
-
-#### [MODIFY] [show.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/courses/show.tsx)
-
-Ensure assessments are passed to SessionTabContent:
-
-- The `assessments` prop is already received in component props
-- Pass `assessments` prop to `SessionTabContent` component
-- Pass `courseId` prop to `SessionTabContent`
-
----
+This will significantly improve user experience by providing clear, consistent visual feedback for all form submissions.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Session Assignment Behavior**
+> [!IMPORTANT] > **Design Decisions Requiring Approval**
 >
-> When an assessment is assigned to a specific lesson session:
->
-> - It will appear in the "Things to do in this session" card on that specific session tab
-> - It will still appear in the "Assessment" tab (global list of all assessments)
-> - Clicking the assessment in the todo list will navigate to the assessment taking/viewing page
->
-> **Unassigned Assessments**
->
-> - Assessments with no `lesson_id` will only appear in the Assessment tab
-> - They won't appear in any session's todo list
->
-> **Backward Compatibility**
->
-> - Existing assessments without a `lesson_id` will continue to work as before
-> - The lesson selector in quiz edit will allow clearing the session assignment
+> 1. **Success Modal Behavior**: After submission forms, the modal should: Require user to manually close
+
+> 2. **Success Banner Duration**: For edit forms, the banner should: Auto-dismiss after N seconds (e.g., 3 seconds)
+
+> 3. **Toast Alternative**: I prefer using shadcn Sonner instead of banners for edit forms
+
+## Proposed Changes
+
+### Component Library
+
+#### [NEW] [success-modal.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/ui/success-modal.tsx>)
+
+Create a reusable success modal component using shadcn Dialog that:
+
+- Displays a success icon (CheckCircle from lucide-react)
+- Shows a customizable title and message
+- Supports optional action buttons (e.g., "View Results", "Go to Dashboard")
+- Handles auto-dismissal if configured
+
+#### [NEW] [success-banner.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/ui/success-banner.tsx>)
+
+Create a reusable success banner component extending the existing Alert component:
+
+- Green/success variant styling
+- Displays success icon
+- Auto-dismisses after configurable duration
+- Animated entrance/exit transitions
+- Optional dismiss button
+
+---
+
+### Submission Forms (Modal Implementation)
+
+These forms will use the **SuccessModal** component:
+
+#### [MODIFY] [reward-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/rewards/reward-card.tsx>)
+
+- Add success modal to reward redemption flow
+- Show "Reward Claimed!" message after successful redemption
+- Display updated points balance in modal
+- Optional: Add link to view rewards inventory
+
+#### [MODIFY] [take.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/quiz/take.tsx>)
+
+- Add success modal after quiz/assessment submission
+- Show "Assessment Submitted!" message
+- Display score if available immediately
+- Include button to view results or return to course
+
+#### [MODIFY] [meeting-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/show/meeting-card.tsx>)
+
+- Add success modal for meeting attendance confirmation
+- Show "Attendance Confirmed!" message
+
+#### [MODIFY] [today-task-list.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/dashboard/today-task-list.tsx>)
+
+- Add success modal for task completion
+- Show "Task Completed!" message with XP earned
+
+---
+
+### Edit Forms (Banner Implementation)
+
+These forms will use the **SuccessBanner** component with the Inertia `recentlySuccessful` state:
+
+#### [MODIFY] [edit.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/manage/edit.tsx>)
+
+- Add success banner to course creation/editing form
+- Show "Course saved successfully!" message
+- Display after form submission completes
+
+#### [MODIFY] [course-details-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/course-details-form.tsx>)
+
+- Accept `recentlySuccessful` prop from parent
+- Render success banner when `recentlySuccessful` is true
+- Position banner appropriately within the form card
+
+#### [MODIFY] [edit.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/courses/quiz/edit.tsx>)
+
+- Add success banner to assessment editing
+- Show "Assessment updated successfully!" message
+
+#### [MODIFY] [new-question-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/quiz/new-question-form.tsx>)
+
+- Add success banner after question creation
+- Show "Question added successfully!" message
+
+#### [MODIFY] [question-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/quiz/question-card.tsx>)
+
+- Add success banner after question updates
+- Show "Question updated successfully!" message
+
+#### [MODIFY] [new-content-form.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/new-content-form.tsx>)
+
+- Add success banner after content creation
+- Show "Content added successfully!" message
+
+#### [MODIFY] [content-row.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/content-row.tsx>)
+
+- Add success banner after content updates
+- Show "Content updated successfully!" message
+
+#### [MODIFY] [lesson-card.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/lesson-card.tsx>)
+
+- Add success banner after lesson updates
+- Show "Lesson updated successfully!" message
+
+#### [MODIFY] [lessons-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/courses/manage/lessons-section.tsx>)
+
+- Add success banner after lesson creation
+- Show "Lesson added successfully!" message
+
+#### [MODIFY] [profile.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/profile.tsx>)
+
+- Replace existing "Saved" text with success banner component
+- Show "Profile updated successfully!" message
+
+#### [MODIFY] [password.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/password.tsx>)
+
+- Add success banner after password change
+- Show "Password changed successfully!" message
+
+#### [MODIFY] [two-factor.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/settings/two-factor.tsx>)
+
+- Add success banner for 2FA enable/disable
+- Show "Two-factor authentication enabled/disabled successfully!" message
+
+#### [MODIFY] [message-thread.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/messages/message-thread.tsx>)
+
+- Add success banner after sending message
+- Show "Message sent successfully!" message
+
+---
+
+### Authentication Forms
+
+Since these are authentication flows, we'll keep them as-is unless you want to add feedback:
+
+- [login.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/login.tsx>) - Redirects on success
+- [register.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/register.tsx>) - Redirects on success
+- [forgot-password.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/auth/forgot-password.tsx>) - Shows success message already
+- Other auth forms - Generally redirect on success
 
 ## Verification Plan
 
 ### Automated Tests
 
-No existing automated tests cover this UI functionality. Manual browser testing is required.
+1. **Unit Tests for New Components**
+
+   ```bash
+   # Create new Pest browser tests
+   php artisan test tests/Browser/SuccessFeedbackTest.php
+   ```
+
+   - Test SuccessModal renders correctly
+   - Test SuccessBanner renders and dismisses
+   - Test modal auto-dismiss behavior
+   - Test banner animations
+
+2. **Integration Tests for Forms**
+
+   ```bash
+   # Run existing form tests to ensure no regressions
+   php artisan test tests/Feature/CourseManagementTest.php
+   php artisan test tests/Feature/QuizTest.php
+   php artisan test tests/Feature/RewardsTest.php
+   php artisan test tests/Feature/Settings/ProfileUpdateTest.php
+   php artisan test tests/Feature/Settings/PasswordUpdateTest.php
+   ```
+
+3. **Browser Tests for User Flows**
+   ```bash
+   # Create comprehensive browser tests for success feedback
+   php artisan test tests/Browser/FormSuccessFeedbackTest.php
+   ```
+   - Test reward redemption shows modal
+   - Test quiz submission shows modal
+   - Test course editing shows banner
+   - Test profile update shows banner
+   - Verify banner auto-dismissal timing
+   - Verify modal behavior (dismiss/redirect)
 
 ### Manual Verification
 
-1. **Test Session Assignment in Quiz Editor**
+1. **Submission Forms (Modal Testing)**:
 
-   - Navigate to `/courses/manage` and select an existing course
-   - Go to the "Assessment" tab and click "Edit" on any assessment
-   - Verify a "Assign to Session" dropdown appears in the settings card
-   - Select a session from the dropdown
-   - Click "Save Settings"
-   - Verify the session selection persists after page reload
+   - Navigate to `/rewards`
+   - Redeem a reward → Verify success modal appears
+   - Take a quiz/assessment → Submit → Verify success modal appears
+   - Mark attendance for a meeting → Verify success modal appears
+   - Complete a daily task → Verify success modal appears
 
-2. **Test Bidirectional Consistency**
+2. **Edit Forms (Banner Testing)**:
 
-   - After assigning an assessment to a session (above), navigate to `/courses/manage/{courseId}/edit`
-   - Expand the lesson that was assigned
-   - Verify the assessment appears in that lesson's contents list
-   - Change the assessment's session assignment from the manage page by editing the content
-   - Go back to the quiz edit page (`/courses/{courseId}/quiz/{assessmentId}/edit`)
-   - Verify the session dropdown reflects the change made in the manage page
+   - Navigate to `/courses/manage` → Create/edit a course → Save → Verify green success banner appears
+   - Edit an assessment → Save → Verify success banner
+   - Add/edit a quiz question → Save → Verify success banner
+   - Navigate to `/settings/profile` → Update profile → Save → Verify success banner
+   - Navigate to `/settings/password` → Change password → Verify success banner
+   - Enable/disable 2FA → Verify success banner
 
-3. **Test Assessment Display in Session Todo List**
+3. **Cross-browser Testing**:
 
-   - Navigate to `/courses/{courseId}` (course show page)
-   - Click on the "Sessions" tab
-   - Select the session that has the assigned assessment
-   - Verify the assessment appears in the "Things to do in this session" yellow card
-   - Verify the assessment shows:
-     - Appropriate icon (CheckCircle)
-     - Assessment title
-     - Assessment type badge (Quiz/Practice/Final Exam)
-     - Due date (if set)
-   - Click on the assessment item
-   - Verify it navigates to the assessment taking/viewing page
+   - Test on Chrome, Firefox, Safari
+   - Verify animations work smoothly
+   - Verify mobile responsiveness
 
-4. **Test Unassigned Assessments**
-
-   - Edit an assessment and clear the session assignment (select "None" or empty value)
-   - Save the settings
-   - Navigate to the course show page
-   - Verify the assessment does NOT appear in any session's todo list
-   - Verify the assessment still appears in the "Assessment" tab
-
-5. **Test with Newly Created Assessment**
-   - From the course management page, create a new assessment via the lesson content form
-   - Note which session it was created under
-   - Navigate to that assessment's edit page
-   - Verify the session selector shows the correct session pre-selected
-   - Navigate to the course show page and verify the assessment appears in the correct session's todo list
+4. **Dark Mode Testing**:
+   - Switch to dark mode
+   - Verify success colors are appropriate and accessible
+   - Verify contrast ratios meet WCAG standards

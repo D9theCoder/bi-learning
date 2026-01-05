@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const contentTypes = [
   { value: 'file', label: 'File' },
@@ -111,6 +112,7 @@ export function ContentRow({
       `/courses/manage/${courseId}/lessons/${lessonId}/contents/${content.id}`,
       {
         preserveScroll: true,
+        onSuccess: () => toast.success('Content updated successfully!'),
       },
     );
   };

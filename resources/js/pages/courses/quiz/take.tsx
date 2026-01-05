@@ -4,6 +4,7 @@ import {
   QuizSubmitDialog,
   QuizTakeSidebar,
 } from '@/components/courses/quiz';
+import { SuccessModal } from '@/components/ui/success-modal';
 import { useQuizPowerups } from '@/hooks/use-quiz-powerups';
 import { useQuizTimer } from '@/hooks/use-quiz-timer';
 import AppLayout from '@/layouts/app-layout';
@@ -54,6 +55,7 @@ export default function QuizTake({
     attempt.answers ?? {},
   );
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).filter(
@@ -62,9 +64,19 @@ export default function QuizTake({
   ).length;
 
   const handleSubmit = useCallback(() => {
-    router.post(`/courses/${course.id}/quiz/${assessment.id}/submit`, {
-      answers,
-    });
+    router.post(
+      `/courses/${course.id}/quiz/${assessment.id}/submit`,
+      {
+        answers,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setShowSubmitConfirm(false);
+          setShowSuccessModal(true);
+        },
+      },
+    );
   }, [answers, course.id, assessment.id]);
 
   const { remainingTime, isSaving, setRemainingTime } = useQuizTimer({
@@ -223,6 +235,13 @@ export default function QuizTake({
               onCancel={() => setShowSubmitConfirm(false)}
             />
           )}
+
+          <SuccessModal
+            open={showSuccessModal}
+            onOpenChange={setShowSuccessModal}
+            title="Assessment submitted!"
+            description="Your answers are in. We will update your results shortly."
+          />
         </div>
       </div>
     </AppLayout>

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/user-password';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -39,6 +40,7 @@ export default function Password() {
             options={{
               preserveScroll: true,
             }}
+            onSuccess={() => toast.success('Password changed successfully!')}
             resetOnError={[
               'password',
               'password_confirmation',
@@ -56,7 +58,7 @@ export default function Password() {
             }}
             className="space-y-6"
           >
-            {({ errors, processing, recentlySuccessful }) => (
+            {({ errors, processing }) => (
               <>
                 <div className="grid gap-2">
                   <Label htmlFor="current_password">Current password</Label>
@@ -114,12 +116,6 @@ export default function Password() {
                   >
                     Save password
                   </Button>
-
-                  {recentlySuccessful && (
-                    <p className="text-sm text-neutral-600 transition-opacity">
-                      Saved
-                    </p>
-                  )}
                 </div>
               </>
             )}

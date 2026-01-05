@@ -15,6 +15,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const questionTypes = [
   {
@@ -86,7 +87,10 @@ export function QuestionCard({
       `/courses/${courseId}/quiz/${assessmentId}/questions/${question.id}`,
       {
         preserveScroll: true,
-        onSuccess: () => setIsEditing(false),
+        onSuccess: () => {
+          setIsEditing(false);
+          toast.success('Question updated successfully!');
+        },
       },
     );
   };

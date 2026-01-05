@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { SuccessModal } from '@/components/ui/success-modal';
 import type { Reward } from '@/types';
 import { Form } from '@inertiajs/react';
 import { Coins } from 'lucide-react';
@@ -39,6 +40,7 @@ interface RewardCardProps {
 
 export function RewardCard({ reward }: RewardCardProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = React.useState(false);
   const canRedeem = reward.can_redeem;
   const stockText =
     reward.remaining_stock !== undefined && reward.remaining_stock !== null
@@ -99,18 +101,31 @@ export function RewardCard({ reward }: RewardCardProps) {
             action={`/rewards/${reward.id}/redeem`}
             method="post"
             className="w-full sm:w-auto"
+            onSuccess={() => {
+              setIsDialogOpen(false);
+              setIsSuccessOpen(true);
+            }}
           >
-            <Button
-              type="submit"
-              size="sm"
-              className="w-full sm:w-auto"
-              onClick={() => setIsDialogOpen(false)}
-            >
-              Confirm Redeem
-            </Button>
+            {({ processing }) => (
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={processing}
+              >
+                Confirm Redeem
+              </Button>
+            )}
           </Form>
         </DialogFooter>
       </DialogContent>
+
+      <SuccessModal
+        open={isSuccessOpen}
+        onOpenChange={setIsSuccessOpen}
+        title="Reward claimed!"
+        description={`You redeemed ${reward.name}. Enjoy your reward.`}
+      />
     </Dialog>
   );
 }

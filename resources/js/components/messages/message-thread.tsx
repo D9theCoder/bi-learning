@@ -6,6 +6,7 @@ import { messages as messagesRoute } from '@/routes';
 import { useForm } from '@inertiajs/react';
 import { Send } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import type {
   ActiveThread,
   AdminActiveThread,
@@ -53,7 +54,10 @@ export function MessageThread({
 
     post(messagesRoute().url, {
       preserveScroll: true,
-      onSuccess: () => reset('content'),
+      onSuccess: () => {
+        reset('content');
+        toast.success('Message sent successfully!');
+      },
     });
   };
 
