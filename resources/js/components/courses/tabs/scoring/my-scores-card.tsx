@@ -1,8 +1,8 @@
+import { QuizAnswerReviewDialog } from '@/components/courses/quiz/quiz-answer-review-dialog';
 import { DashedEmptyState } from '@/components/courses/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QuizAnswerReviewDialog } from '@/components/courses/quiz/quiz-answer-review-dialog';
 import { Assessment, AssessmentAttempt, AssessmentSubmission } from '@/types';
 import { useState } from 'react';
 
@@ -12,10 +12,19 @@ interface MyScoresCardProps {
 }
 
 export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [reviewAttempt, setReviewAttempt] = useState<{
     assessment: Assessment;
     attempt: AssessmentAttempt;
   } | null>(null);
+
+  const handleOpenReview = (
+    assessment: Assessment,
+    attempt: AssessmentAttempt,
+  ) => {
+    setReviewAttempt({ assessment, attempt });
+    setIsOpen(true);
+  };
 
   return (
     <Card className="overflow-hidden py-4">
@@ -84,10 +93,7 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
                             variant="outline"
                             className="mt-2"
                             onClick={() =>
-                              setReviewAttempt({
-                                assessment,
-                                attempt,
-                              })
+                              handleOpenReview(assessment, attempt)
                             }
                           >
                             View Answers
@@ -110,12 +116,8 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
         <QuizAnswerReviewDialog
           assessment={reviewAttempt.assessment}
           attempt={reviewAttempt.attempt}
-          isOpen={Boolean(reviewAttempt)}
-          onOpenChange={(open) => {
-            if (!open) {
-              setReviewAttempt(null);
-            }
-          }}
+          isOpen={isOpen}
+          onOpenChange={setIsOpen}
         />
       )}
     </Card>
