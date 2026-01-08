@@ -1,4 +1,4 @@
-# Database Guide
+# Database Information
 
 ## Scope
 
