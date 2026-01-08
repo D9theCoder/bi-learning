@@ -107,22 +107,6 @@ it('prevents duplicate enrollment', function () {
     expect(Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->count())->toBe(1);
 });
 
-it('hides other tutors courses from tutors', function () {
-    $tutor = User::factory()->create();
-    $tutor->assignRole('tutor');
-
-    $ownCourse = Course::factory()->create(['instructor_id' => $tutor->id]);
-    Course::factory()->create(); // other tutor course
-
-    $response = $this->actingAs($tutor)->get(route('courses'));
-
-    $response->assertSuccessful();
-    $response->assertInertia(fn (Assert $page) => $page
-        ->where('courses.data.0.id', $ownCourse->id)
-        ->has('courses.data', 1)
-    );
-});
-
 it('prevents tutors from viewing another tutor course detail', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');

@@ -75,17 +75,16 @@ class QuizController extends Controller
 
             if ($question->type === 'fill_blank') {
                 $normalizedAnswer = strtolower(trim((string) $answer));
-                $correctAnswers = $question->options ?? [];
+                $correctAnswers = is_array($question->options) ? $question->options : [];
 
-                // Fallback to correct_answer if options is empty
-                if (empty($correctAnswers) && $question->correct_answer) {
-                    $correctAnswers = [$question->correct_answer];
+                if ($question->correct_answer !== null && $question->correct_answer !== '') {
+                    $correctAnswers[] = $question->correct_answer;
                 }
 
                 // Normalize all correct answers and check if student answer matches any
                 $normalizedCorrectAnswers = array_map(
                     fn ($ans) => strtolower(trim((string) $ans)),
-                    $correctAnswers
+                    array_filter($correctAnswers, fn ($ans) => $ans !== null && $ans !== '')
                 );
 
                 if (in_array($normalizedAnswer, $normalizedCorrectAnswers, true)) {
