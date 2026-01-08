@@ -23,9 +23,9 @@ export function QuizSubmitDialog({
         <CardContent className="pt-6">
           <div className="mb-4 flex items-start gap-3">
             {!allAnswered ? (
-              <AlertTriangle className="h-6 w-6 flex-shrink-0 text-yellow-500" />
+              <AlertTriangle className="h-6 w-6 shrink-0 text-yellow-500" />
             ) : (
-              <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-500" />
+              <CheckCircle className="h-6 w-6 shrink-0 text-green-500" />
             )}
             <div>
               <h3 className="font-semibold">Submit Quiz?</h3>
