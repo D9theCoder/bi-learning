@@ -8,7 +8,7 @@ import { SuccessModal } from '@/components/ui/success-modal';
 import { useQuizPowerups } from '@/hooks/use-quiz-powerups';
 import { useQuizTimer } from '@/hooks/use-quiz-timer';
 import AppLayout from '@/layouts/app-layout';
-import type { Course, Powerup, PowerupUsage } from '@/types';
+import type { AnswerConfig, Course, Powerup, PowerupUsage } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -16,7 +16,7 @@ interface QuizQuestion {
   id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
   question: string;
-  options?: string[] | null;
+  answer_config: AnswerConfig;
   points: number;
   order: number;
 }

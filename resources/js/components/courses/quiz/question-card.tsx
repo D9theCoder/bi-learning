@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { AssessmentQuestion } from '@/types';
+import type { AnswerConfig, AssessmentQuestion } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import { AnimatePresence, Reorder, motion, useDragControls } from 'framer-motion';
 import {
@@ -44,11 +44,24 @@ function normalizeFillBlank(value: unknown): string {
     .toLowerCase();
 }
 
+function isMultipleChoiceConfig(
+  config: AnswerConfig,
+): config is { type: 'multiple_choice'; options: string[]; correct_index: number } {
+  return config.type === 'multiple_choice';
+}
+
+function isFillBlankConfig(
+  config: AnswerConfig,
+): config is { type: 'fill_blank'; accepted_answers: string[] } {
+  return config.type === 'fill_blank';
+}
+
 function getFillBlankAnswerDisplayList(question: AssessmentQuestion): string[] {
-  const raw = [
-    question.correct_answer ?? null,
-    ...(question.options ?? []),
-  ].filter(Boolean);
+  if (!isFillBlankConfig(question.answer_config)) {
+    return [];
+  }
+
+  const raw = question.answer_config.accepted_answers;
 
   const seen = new Set<string>();
   const unique: string[] = [];
@@ -82,19 +95,26 @@ export function QuestionCard({
 }: QuestionCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const dragControls = useDragControls();
+  const answerConfig = question.answer_config;
+  const multipleChoiceConfig = isMultipleChoiceConfig(answerConfig)
+    ? answerConfig
+    : null;
+  const fillBlankConfig = isFillBlankConfig(answerConfig) ? answerConfig : null;
 
   const form = useForm({
     type: question.type,
     question: question.question,
     options:
       question.type === 'fill_blank'
-        ? question.options && question.options.length > 0
-          ? question.options
-          : question.correct_answer
-            ? [question.correct_answer]
-            : ['']
-        : (question.options ?? ['', '', '', '']),
-    correct_answer: question.correct_answer ?? '',
+        ? fillBlankConfig && fillBlankConfig.accepted_answers.length > 0
+          ? fillBlankConfig.accepted_answers
+          : ['']
+        : multipleChoiceConfig && multipleChoiceConfig.options.length > 0
+          ? multipleChoiceConfig.options
+          : ['', '', '', ''],
+    correct_answer: multipleChoiceConfig
+      ? String(multipleChoiceConfig.correct_index)
+      : '',
     points: question.points,
   });
 
@@ -356,18 +376,19 @@ export function QuestionCard({
                   </div>
                   <p className="mt-2 whitespace-pre-wrap">{question.question}</p>
 
-                  {question.type === 'multiple_choice' && question.options && (
+                  {question.type === 'multiple_choice' &&
+                    multipleChoiceConfig && (
                     <div className="mt-2 space-y-1">
-                      {question.options.map((option, idx) => (
+                      {multipleChoiceConfig.options.map((option, idx) => (
                         <div
                           key={idx}
                           className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${
-                            question.correct_answer === String(idx)
+                            multipleChoiceConfig.correct_index === idx
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                               : 'text-muted-foreground'
                           }`}
                         >
-                          {question.correct_answer === String(idx) ? (
+                          {multipleChoiceConfig.correct_index === idx ? (
                             <CheckCircle className="h-4 w-4" />
                           ) : (
                             <span className="h-4 w-4" />

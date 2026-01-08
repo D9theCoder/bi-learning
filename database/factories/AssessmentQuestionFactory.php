@@ -24,8 +24,11 @@ class AssessmentQuestionFactory extends Factory
             'assessment_id' => Assessment::factory(),
             'type' => 'multiple_choice',
             'question' => fake()->sentence().'?',
-            'options' => ['Option A', 'Option B', 'Option C', 'Option D'],
-            'correct_answer' => 'Option A',
+            'answer_config' => [
+                'type' => 'multiple_choice',
+                'options' => ['Option A', 'Option B', 'Option C', 'Option D'],
+                'correct_index' => 0,
+            ],
             'points' => fake()->numberBetween(5, 20),
             'order' => 1,
         ];
@@ -35,8 +38,11 @@ class AssessmentQuestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'multiple_choice',
-            'options' => ['Option A', 'Option B', 'Option C', 'Option D'],
-            'correct_answer' => 'Option A',
+            'answer_config' => [
+                'type' => 'multiple_choice',
+                'options' => ['Option A', 'Option B', 'Option C', 'Option D'],
+                'correct_index' => 0,
+            ],
         ]);
     }
 
@@ -44,8 +50,10 @@ class AssessmentQuestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'fill_blank',
-            'options' => null,
-            'correct_answer' => fake()->word(),
+            'answer_config' => [
+                'type' => 'fill_blank',
+                'accepted_answers' => [fake()->word()],
+            ],
         ]);
     }
 
@@ -53,8 +61,9 @@ class AssessmentQuestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'essay',
-            'options' => null,
-            'correct_answer' => null,
+            'answer_config' => [
+                'type' => 'essay',
+            ],
         ]);
     }
 }

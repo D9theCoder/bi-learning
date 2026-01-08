@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Assessment, AssessmentAttempt, AssessmentQuestion } from '@/types';
+import type { AnswerConfig, Assessment, AssessmentAttempt, AssessmentQuestion } from '@/types';
 
 interface QuizAnswerReviewDialogProps {
   assessment: Assessment;
@@ -23,6 +23,18 @@ function normalizeFillBlank(value: unknown): string {
   return String(value ?? '')
     .trim()
     .toLowerCase();
+}
+
+function isMultipleChoiceConfig(
+  config: AnswerConfig,
+): config is { type: 'multiple_choice'; options: string[]; correct_index: number } {
+  return config.type === 'multiple_choice';
+}
+
+function isFillBlankConfig(
+  config: AnswerConfig,
+): config is { type: 'fill_blank'; accepted_answers: string[] } {
+  return config.type === 'fill_blank';
 }
 
 function getAnswer(answers: AttemptAnswers, questionId: number): unknown {
@@ -61,28 +73,34 @@ function getMultipleChoiceLabel(
     return '';
   }
 
+  if (!isMultipleChoiceConfig(question.answer_config)) {
+    return String(value);
+  }
+
   const index = Number(value);
   const option = Number.isFinite(index)
-    ? question.options?.[index]
+    ? question.answer_config.options[index]
     : undefined;
 
   return option ?? String(value);
 }
 
 function getFillBlankAnswerKey(question: AssessmentQuestion): string[] {
-  const raw = [
-    question.correct_answer ?? null,
-    ...(question.options ?? []),
-  ].filter(Boolean);
+  if (!isFillBlankConfig(question.answer_config)) {
+    return [];
+  }
+
+  const raw = question.answer_config.accepted_answers;
 
   return raw.map((answer) => normalizeFillBlank(answer));
 }
 
 function getFillBlankAnswerDisplayList(question: AssessmentQuestion): string[] {
-  const raw = [
-    question.correct_answer ?? null,
-    ...(question.options ?? []),
-  ].filter(Boolean);
+  if (!isFillBlankConfig(question.answer_config)) {
+    return [];
+  }
+
+  const raw = question.answer_config.accepted_answers;
 
   const seen = new Set<string>();
   const unique: string[] = [];
@@ -107,7 +125,11 @@ function computeAutoPoints(question: AssessmentQuestion, answer: unknown): numbe
   }
 
   if (question.type === 'multiple_choice') {
-    return String(answer) === String(question.correct_answer ?? '')
+    if (!isMultipleChoiceConfig(question.answer_config)) {
+      return 0;
+    }
+
+    return Number(answer) === question.answer_config.correct_index
       ? question.points
       : 0;
   }
@@ -164,7 +186,8 @@ export function QuizAnswerReviewDialog({
 
                 const isCorrect =
                   question.type === 'multiple_choice'
-                    ? String(answer) === String(question.correct_answer ?? '')
+                    ? isMultipleChoiceConfig(question.answer_config) &&
+                      Number(answer) === question.answer_config.correct_index
                     : question.type === 'fill_blank'
                       ? getFillBlankAnswerKey(question).includes(
                           normalizeFillBlank(answer),
@@ -213,15 +236,14 @@ export function QuizAnswerReviewDialog({
                         <span>•</span>
                         <span>Points: {question.points}</span>
                         {question.type === 'multiple_choice' &&
-                          question.correct_answer !== null &&
-                          question.correct_answer !== undefined && (
+                          isMultipleChoiceConfig(question.answer_config) && (
                             <>
                               <span>•</span>
                               <span>
                                 Answer key:{' '}
                                 {getMultipleChoiceLabel(
                                   question,
-                                  question.correct_answer,
+                                  question.answer_config.correct_index,
                                 )}
                               </span>
                             </>

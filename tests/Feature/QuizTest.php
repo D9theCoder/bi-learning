@@ -128,7 +128,7 @@ it('allows tutor to add a multiple choice question', function () {
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
         'options' => ['1', '2', '3', '4'],
-        'correct_answer' => '4',
+        'correct_answer' => '3',
         'points' => 10,
     ]);
 
@@ -138,7 +138,11 @@ it('allows tutor to add a multiple choice question', function () {
     expect($question)->toMatchArray([
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
-        'correct_answer' => '4',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['1', '2', '3', '4'],
+            'correct_index' => 3,
+        ],
         'points' => 10,
     ]);
 });
@@ -161,7 +165,10 @@ it('allows tutor to add a fill in the blank question', function () {
     expect($question)->toMatchArray([
         'type' => 'fill_blank',
         'question' => 'The capital of France is ___.',
-        'correct_answer' => 'Paris',
+        'answer_config' => [
+            'type' => 'fill_blank',
+            'accepted_answers' => ['Paris'],
+        ],
     ]);
 });
 
@@ -226,7 +233,10 @@ it('allows student to view published quiz', function () {
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'fill_blank',
         'question' => 'The capital of France is ___.',
-        'correct_answer' => 'Paris',
+        'answer_config' => [
+            'type' => 'fill_blank',
+            'accepted_answers' => ['Paris'],
+        ],
         'points' => 5,
     ]);
     $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -272,8 +282,11 @@ it('allows student to start a quiz attempt', function () {
     AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'Test question',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'A',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
     ]);
 
     $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/start");
@@ -310,8 +323,11 @@ it('auto-grades multiple choice questions correctly', function () {
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
-        'options' => ['1', '2', '3', '4'],
-        'correct_answer' => '4',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['1', '2', '3', '4'],
+            'correct_index' => 3,
+        ],
         'points' => 10,
     ]);
     $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -320,7 +336,7 @@ it('auto-grades multiple choice questions correctly', function () {
     ]);
 
     $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
-        'answers' => [$question->id => '4'],
+        'answers' => [$question->id => '3'],
     ]);
 
     $response->assertRedirect();
@@ -338,7 +354,10 @@ it('auto-grades fill in the blank questions case-insensitively', function () {
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'fill_blank',
         'question' => 'The capital of France is ___.',
-        'correct_answer' => 'Paris',
+        'answer_config' => [
+            'type' => 'fill_blank',
+            'accepted_answers' => ['Paris'],
+        ],
         'points' => 5,
     ]);
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -364,8 +383,10 @@ it('auto-grades fill in the blank questions with optional answers', function () 
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'fill_blank',
         'question' => 'The capital of France is ___.',
-        'correct_answer' => 'Paris',
-        'options' => ['paris', 'City of Paris'],
+        'answer_config' => [
+            'type' => 'fill_blank',
+            'accepted_answers' => ['Paris', 'paris', 'City of Paris'],
+        ],
         'points' => 5,
     ]);
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -469,8 +490,11 @@ it('allows tutor to manually grade objective questions per-question', function (
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
         'question' => 'What is 2 + 2?',
-        'options' => ['1', '2', '3', '4'],
-        'correct_answer' => '4',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['1', '2', '3', '4'],
+            'correct_index' => 3,
+        ],
         'points' => 10,
     ]);
 
@@ -525,8 +549,11 @@ it('keeps highest score when retakes are allowed', function () {
     ]);
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'A',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
         'points' => 10,
     ]);
 
@@ -534,7 +561,7 @@ it('keeps highest score when retakes are allowed', function () {
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now()->subHour(),
         'completed_at' => now()->subHour(),
-        'answers' => [$question->id => 'B'],
+        'answers' => [$question->id => '1'],
         'score' => 0,
         'total_points' => 10,
         'is_graded' => true,
@@ -544,7 +571,7 @@ it('keeps highest score when retakes are allowed', function () {
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
         'started_at' => now(),
         'completed_at' => now(),
-        'answers' => [$question->id => 'A'],
+        'answers' => [$question->id => '0'],
         'score' => 10,
         'total_points' => 10,
         'is_graded' => true,
@@ -644,8 +671,11 @@ it('awards 150 points for completing practice assessment', function () {
     ]);
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'A',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
         'points' => 10,
     ]);
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -654,7 +684,7 @@ it('awards 150 points for completing practice assessment', function () {
     ]);
 
     $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
-        'answers' => [$question->id => 'A'],
+        'answers' => [$question->id => '0'],
     ]);
 
     $response->assertRedirect();
@@ -713,8 +743,11 @@ it('hides final exam scores until reviewed', function () {
     ]);
     $question = AssessmentQuestion::factory()->for($assessment)->create([
         'type' => 'multiple_choice',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'A',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
         'points' => 10,
     ]);
     AssessmentAttempt::factory()->for($student)->for($assessment)->create([
@@ -723,7 +756,7 @@ it('hides final exam scores until reviewed', function () {
     ]);
 
     $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
-        'answers' => [$question->id => 'A'],
+        'answers' => [$question->id => '0'],
     ])->assertRedirect();
 
     $attempt = AssessmentAttempt::where('user_id', $student->id)->first();
@@ -751,14 +784,20 @@ it('weights final exam using configured percentage', function () {
     ]);
     $quizQuestionOne = AssessmentQuestion::factory()->for($quiz)->create([
         'type' => 'multiple_choice',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'A',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
         'points' => 10,
     ]);
     $quizQuestionTwo = AssessmentQuestion::factory()->for($quiz)->create([
         'type' => 'multiple_choice',
-        'options' => ['A', 'B', 'C', 'D'],
-        'correct_answer' => 'B',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 1,
+        ],
         'points' => 10,
     ]);
     AssessmentAttempt::factory()->for($student)->for($quiz)->create([
@@ -768,8 +807,8 @@ it('weights final exam using configured percentage', function () {
 
     $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$quiz->id}/submit", [
         'answers' => [
-            $quizQuestionOne->id => 'A',
-            $quizQuestionTwo->id => 'C',
+            $quizQuestionOne->id => '0',
+            $quizQuestionTwo->id => '2',
         ],
     ])->assertRedirect();
 

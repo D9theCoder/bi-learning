@@ -358,13 +358,17 @@ export interface StudentWithSubmissions extends User {
   final_score?: FinalScore | null;
 }
 
+export type AnswerConfig =
+  | { type: 'multiple_choice'; options: string[]; correct_index: number }
+  | { type: 'fill_blank'; accepted_answers: string[] }
+  | { type: 'essay' };
+
 export interface AssessmentQuestion {
   id: number;
   assessment_id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
   question: string;
-  options?: string[] | null;
-  correct_answer?: string | null;
+  answer_config: AnswerConfig;
   points: number;
   order: number;
   created_at: string;

@@ -1,10 +1,11 @@
+import type { AnswerConfig } from '@/types';
 import { Clock } from 'lucide-react';
 
 interface QuizQuestion {
   id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
   question: string;
-  options?: string[] | null;
+  answer_config: AnswerConfig;
   points: number;
   order: number;
 }

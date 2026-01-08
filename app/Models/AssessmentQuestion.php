@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AnswerConfigCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,8 +16,7 @@ class AssessmentQuestion extends Model
         'assessment_id',
         'type',
         'question',
-        'options',
-        'correct_answer',
+        'answer_config',
         'points',
         'order',
     ];
@@ -27,7 +27,7 @@ class AssessmentQuestion extends Model
     protected function casts(): array
     {
         return [
-            'options' => 'array',
+            'answer_config' => AnswerConfigCast::class,
         ];
     }
 
