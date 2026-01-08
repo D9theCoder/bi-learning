@@ -4,9 +4,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { messages as messagesRoute } from '@/routes';
 import { useForm } from '@inertiajs/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Send } from 'lucide-react';
-import React, { useEffect, useMemo } from 'react';
-import { toast } from 'sonner';
+import React, { useEffect, useMemo, useRef } from 'react';
 import type {
   ActiveThread,
   AdminActiveThread,
@@ -34,6 +34,7 @@ export function MessageThread({
   isAdmin,
   currentUserId,
 }: MessageThreadProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { data, setData, post, processing, reset } = useForm({
     partner_id: isParticipantThread(activeThread) ? activeThread.partner.id : 0,
     content: '',
@@ -48,6 +49,48 @@ export function MessageThread({
     }
   }, [activeThread, setData]);
 
+  const prevMessageCountRef = useRef(activeThread?.messages.data.length ?? 0);
+  const isNearBottomRef = useRef(true);
+
+  // Track if user is near bottom of scroll
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      // Consider "near bottom" if within 100px of the bottom
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    }
+  };
+
+  // Scroll to bottom only when new messages arrive and user is near bottom
+  useEffect(() => {
+    const currentCount = activeThread?.messages.data.length ?? 0;
+    const prevCount = prevMessageCountRef.current;
+
+    if (scrollRef.current && currentCount > prevCount) {
+      // New message(s) arrived - scroll to bottom if user was near bottom
+      if (isNearBottomRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }
+
+    prevMessageCountRef.current = currentCount;
+  }, [activeThread?.messages.data.length]);
+
+  // Compute a stable key to detect thread changes
+  const threadKey = isParticipantThread(activeThread)
+    ? activeThread.partner.id
+    : isAdminThread(activeThread)
+      ? `${activeThread.tutor.id}-${activeThread.student.id}`
+      : null;
+
+  // Scroll to bottom on initial load or thread change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      isNearBottomRef.current = true;
+    }
+  }, [threadKey]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isParticipantThread(activeThread) || isAdmin) return;
@@ -56,7 +99,6 @@ export function MessageThread({
       preserveScroll: true,
       onSuccess: () => {
         reset('content');
-        toast.success('Message sent successfully!');
       },
     });
   };
@@ -127,68 +169,90 @@ export function MessageThread({
       <CardContent>
         {activeThread ? (
           <div className="space-y-4">
-            <div className="max-h-96 space-y-3 overflow-y-auto">
-              {activeThread.messages.data.map((message) => {
-                const participantThread = isParticipantThread(activeThread);
-                const adminThread = isAdminThread(activeThread);
-                const isTutorMessage = adminThread
-                  ? message.sender_id !== undefined &&
-                    message.sender_id !== null
-                    ? message.sender_id === activeThread.tutor.id
-                    : message.tutor_id === activeThread.tutor.id
-                  : false;
-                const isMine =
-                  !isAdmin && participantThread && isMyMessage(message);
-                const timestamp = message.sent_at ?? message.created_at ?? '';
-                const formattedTimestamp =
-                  timestamp && !Number.isNaN(new Date(timestamp).valueOf())
-                    ? new Date(timestamp).toLocaleString()
-                    : '';
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="max-h-[500px] space-y-3 overflow-y-auto scroll-smooth p-1"
+            >
+              <AnimatePresence initial={false}>
+                {activeThread.messages.data.map((message) => {
+                  const participantThread = isParticipantThread(activeThread);
+                  const adminThread = isAdminThread(activeThread);
+                  const isTutorMessage = adminThread
+                    ? message.sender_id !== undefined &&
+                      message.sender_id !== null
+                      ? message.sender_id === activeThread.tutor.id
+                      : message.tutor_id === activeThread.tutor.id
+                    : false;
+                  const isMine =
+                    !isAdmin && participantThread && isMyMessage(message);
+                  const timestamp = message.sent_at ?? message.created_at ?? '';
+                  const formattedTimestamp =
+                    timestamp && !Number.isNaN(new Date(timestamp).valueOf())
+                      ? new Date(timestamp).toLocaleString()
+                      : '';
 
-                return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      'max-w-[80%] rounded-lg p-3',
-                      adminThread
-                        ? isTutorMessage
-                          ? 'ml-auto bg-primary text-primary-foreground'
-                          : 'mr-auto bg-muted text-foreground'
-                        : isMine
-                          ? 'ml-auto bg-primary text-primary-foreground'
-                          : 'mr-auto bg-muted text-foreground',
-                    )}
-                  >
-                    {isAdmin && adminThread && (
-                      <p
-                        className={cn(
-                          'mb-1 text-xs font-semibold',
-                          isTutorMessage
-                            ? 'text-primary-foreground'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        {isTutorMessage ? 'Tutor' : 'Student'}
-                      </p>
-                    )}
-                    <p>{message.content ?? message.body ?? ''}</p>
-                    <p
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 400,
+                        damping: 25,
+                        mass: 0.8,
+                        layout: {
+                          type: 'spring',
+                          stiffness: 300,
+                          damping: 25,
+                        },
+                      }}
+                      layout="position"
                       className={cn(
-                        'mt-1 text-xs',
+                        'max-w-[80%] rounded-2xl p-3 shadow-sm',
                         adminThread
                           ? isTutorMessage
-                            ? 'text-primary-foreground/70'
-                            : 'text-muted-foreground'
+                            ? 'ml-auto rounded-tr-none bg-primary text-primary-foreground'
+                            : 'mr-auto rounded-tl-none bg-muted text-foreground'
                           : isMine
-                            ? 'text-primary-foreground/70'
-                            : 'text-muted-foreground',
+                            ? 'ml-auto rounded-tr-none bg-primary text-primary-foreground'
+                            : 'mr-auto rounded-tl-none bg-muted text-foreground',
                       )}
                     >
-                      {formattedTimestamp}
-                    </p>
-                  </div>
-                );
-              })}
+                      {isAdmin && adminThread && (
+                        <p
+                          className={cn(
+                            'mb-1 text-xs font-semibold',
+                            isTutorMessage
+                              ? 'text-primary-foreground'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          {isTutorMessage ? 'Tutor' : 'Student'}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-wrap">
+                        {message.content ?? message.body ?? ''}
+                      </p>
+                      <p
+                        className={cn(
+                          'mt-1 text-xs',
+                          adminThread
+                            ? isTutorMessage
+                              ? 'text-primary-foreground/70'
+                              : 'text-muted-foreground'
+                            : isMine
+                              ? 'text-primary-foreground/70'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        {formattedTimestamp}
+                      </p>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
             {canSend ? (
               <form onSubmit={handleSubmit}>
