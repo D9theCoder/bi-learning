@@ -28,7 +28,6 @@ Enhance the rewards page with gamified elements including product images, improv
   - Item cost
   - Remaining balance after purchase (calculated: `balance - cost`)
 - Improve visual hierarchy with better spacing and typography
-- Add hover animations using framer-motion for card interactivity
 
 ---
 
@@ -91,14 +90,12 @@ Enhance the rewards page with gamified elements including product images, improv
 
 #### Card Interactions
 
-- Add hover scale effect (scale to 1.02)
 - Add subtle shadow transition on hover
 - Smooth transitions using framer-motion
 
 #### Rarity Badge Styling
 
 - Add glow effect matching rarity color
-- Subtle animation on hover
 - Better contrast for text visibility
 
 #### Mobile Optimizations
@@ -161,10 +158,6 @@ Currently, this project doesn't have frontend tests. Consider adding tests in th
    - Verify modals are readable and functional
    - Verify images scale appropriately
 
-6. **Test hover interactions** (desktop only):
-   - Hover over reward cards → should see subtle scale and shadow effects
-   - Hover over rarity badges → should see glow effect
-
 ### Manual Verification Steps
 
 > [!TIP] > **Testing with Insufficient Points**: To test the "Insufficient Points" state, you can temporarily reduce your points balance in the database, or test with a reward that costs more points than you have.
@@ -177,7 +170,6 @@ Currently, this project doesn't have frontend tests. Consider adding tests in th
 - [ ] Confetti fires on successful redemption
 - [ ] Confetti colors match reward rarity
 - [ ] Points balance updates correctly in UI after redemption
-- [ ] Hover effects work smoothly on desktop
 - [ ] Layout is responsive on mobile devices
 - [ ] Modal is accessible (can be closed with Esc key)
 - [ ] No console errors in browser dev tools
