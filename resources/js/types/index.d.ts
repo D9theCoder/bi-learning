@@ -172,6 +172,7 @@ export interface Reward {
   description: string;
   cost: number;
   icon: string;
+  image_url?: string;
   category?: string;
   rarity?: 'common' | 'rare' | 'epic' | 'legendary';
   is_active: boolean;
