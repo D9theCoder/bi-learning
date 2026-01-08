@@ -3,8 +3,6 @@
 use App\Models\AssessmentQuestion;
 use Tests\TestCase;
 
-uses(TestCase::class);
-
 it('converts essay questions correctly', function () {
     $question = AssessmentQuestion::factory()->create([
         'type' => 'essay',

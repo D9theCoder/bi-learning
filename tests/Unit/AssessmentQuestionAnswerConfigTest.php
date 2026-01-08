@@ -1,10 +1,7 @@
 <?php
 
 use App\Models\AssessmentQuestion;
-use InvalidArgumentException;
 use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('validates multiple choice answer config structure', function () {
     $question = AssessmentQuestion::factory()->create([
@@ -56,22 +53,22 @@ it('validates essay answer config structure', function () {
 });
 
 it('rejects invalid correct_index for multiple choice', function () {
-    expect(fn () => AssessmentQuestion::factory()->create([
+    expect(fn() => AssessmentQuestion::factory()->create([
         'type' => 'multiple_choice',
         'answer_config' => [
             'type' => 'multiple_choice',
             'options' => ['A', 'B'],
             'correct_index' => 4,
         ],
-    ]))->toThrow(InvalidArgumentException::class);
+    ]))->toThrow(\InvalidArgumentException::class);
 });
 
 it('rejects empty accepted_answers for fill blank', function () {
-    expect(fn () => AssessmentQuestion::factory()->create([
+    expect(fn() => AssessmentQuestion::factory()->create([
         'type' => 'fill_blank',
         'answer_config' => [
             'type' => 'fill_blank',
             'accepted_answers' => [],
         ],
-    ]))->toThrow(InvalidArgumentException::class);
+    ]))->toThrow(\InvalidArgumentException::class);
 });
