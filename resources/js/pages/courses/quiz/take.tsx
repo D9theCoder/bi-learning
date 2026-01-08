@@ -10,7 +10,8 @@ import { useQuizTimer } from '@/hooks/use-quiz-timer';
 import AppLayout from '@/layouts/app-layout';
 import type { AnswerConfig, Course, Powerup, PowerupUsage } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useMemo, useState } from 'react';
+import { Clock, ListMinus, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface QuizQuestion {
   id: number;
@@ -56,6 +57,12 @@ export default function QuizTake({
   );
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [powerupCelebration, setPowerupCelebration] = useState<{
+    key: number;
+    name: string;
+    slug: string;
+  } | null>(null);
+  const powerupTimeoutRef = useRef<number | null>(null);
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).filter(
@@ -136,15 +143,36 @@ export default function QuizTake({
   const hiddenOptionsForCurrent =
     hiddenOptionsByQuestion.get(currentQuestion.id) ?? [];
 
+  const triggerPowerupCelebration = useCallback((powerup: Powerup) => {
+    if (powerupTimeoutRef.current) {
+      window.clearTimeout(powerupTimeoutRef.current);
+    }
+
+    setPowerupCelebration({
+      key: Date.now(),
+      name: powerup.name,
+      slug: powerup.slug,
+    });
+
+    powerupTimeoutRef.current = window.setTimeout(() => {
+      setPowerupCelebration(null);
+      powerupTimeoutRef.current = null;
+    }, 950);
+  }, []);
+
   const handleUsePowerup = useCallback(
     async (powerup: Powerup, questionId?: number) => {
       const response = await applyPowerup(powerup.id, questionId);
+
+      if (response) {
+        triggerPowerupCelebration(powerup);
+      }
 
       if (response?.remaining_time !== undefined) {
         setRemainingTime(response.remaining_time ?? null);
       }
     },
-    [applyPowerup, setRemainingTime],
+    [applyPowerup, setRemainingTime, triggerPowerupCelebration],
   );
 
   const handleAnswerChange = (questionId: number, value: string) => {
@@ -164,6 +192,55 @@ export default function QuizTake({
         ? 'Practice'
         : 'Quiz';
 
+  const powerupTheme = useMemo(() => {
+    if (!powerupCelebration) {
+      return {
+        icon: Sparkles,
+        glow: 'from-amber-400 via-yellow-300 to-orange-500',
+        chip: 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100',
+        badge:
+          'bg-white/90 text-slate-900 shadow-[0_20px_60px_rgba(251,191,36,0.35)] dark:bg-slate-900/90 dark:text-white',
+      };
+    }
+
+    switch (powerupCelebration.slug) {
+      case '50-50':
+        return {
+          icon: ListMinus,
+          glow: 'from-cyan-400 via-sky-300 to-indigo-400',
+          chip: 'bg-cyan-100 text-cyan-900 dark:bg-cyan-500/20 dark:text-cyan-100',
+          badge:
+            'bg-white/90 text-slate-900 shadow-[0_20px_60px_rgba(56,189,248,0.35)] dark:bg-slate-900/90 dark:text-white',
+        };
+      case 'extra-time':
+        return {
+          icon: Clock,
+          glow: 'from-amber-400 via-orange-300 to-rose-400',
+          chip: 'bg-orange-100 text-orange-900 dark:bg-orange-500/20 dark:text-orange-100',
+          badge:
+            'bg-white/90 text-slate-900 shadow-[0_20px_60px_rgba(251,146,60,0.35)] dark:bg-slate-900/90 dark:text-white',
+        };
+      default:
+        return {
+          icon: Sparkles,
+          glow: 'from-lime-400 via-emerald-300 to-teal-400',
+          chip: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-100',
+          badge:
+            'bg-white/90 text-slate-900 shadow-[0_20px_60px_rgba(16,185,129,0.35)] dark:bg-slate-900/90 dark:text-white',
+        };
+    }
+  }, [powerupCelebration]);
+
+  useEffect(() => {
+    return () => {
+      if (powerupTimeoutRef.current) {
+        window.clearTimeout(powerupTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const PowerupIcon = powerupTheme.icon;
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -173,6 +250,64 @@ export default function QuizTake({
       ]}
     >
       <Head title={`Taking ${titleLabel} - ${assessment.title}`} />
+
+      {powerupCelebration ? (
+        <div
+          key={powerupCelebration.key}
+          className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="absolute inset-0 animate-[powerup-burst_600ms_ease-out] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.65)_0%,transparent_60%)] opacity-80 [animation-fill-mode:forwards] dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12)_0%,transparent_70%)]" />
+          <div className="absolute inset-0 animate-[powerup-glow_900ms_ease-out] bg-[conic-gradient(from_120deg,transparent,rgba(255,255,255,0.75),transparent)] mix-blend-screen [animation-fill-mode:forwards]" />
+          <div className="absolute inset-0">
+            {[
+              'left-[12%] top-[20%] rotate-12',
+              'left-[80%] top-[18%] -rotate-12',
+              'left-[18%] top-[70%] -rotate-6',
+              'left-[78%] top-[72%] rotate-6',
+              'left-[45%] top-[10%] -rotate-3',
+              'left-[52%] top-[85%] rotate-3',
+            ].map((position) => (
+              <div
+                key={position}
+                className={`absolute h-3 w-8 ${position} animate-[powerup-confetti_850ms_ease-out] rounded-full bg-gradient-to-r ${powerupTheme.glow} [animation-fill-mode:forwards]`}
+              />
+            ))}
+          </div>
+          <div className="absolute inset-0">
+            {[
+              'left-[20%] top-[30%]',
+              'left-[70%] top-[25%]',
+              'left-[30%] top-[75%]',
+              'left-[65%] top-[70%]',
+              'left-[50%] top-[50%]',
+            ].map((position) => (
+              <div
+                key={position}
+                className={`absolute h-3 w-3 ${position} animate-[powerup-spark_700ms_ease-out] rounded-full bg-white/80 shadow-[0_0_20px_rgba(255,255,255,0.9)] [animation-fill-mode:forwards]`}
+              />
+            ))}
+          </div>
+          <div
+            className={`relative flex max-w-[90vw] items-center gap-4 rounded-full border border-white/70 px-6 py-4 ${powerupTheme.badge} animate-[powerup-pop_900ms_cubic-bezier(0.2,0.8,0.2,1.1)] [animation-fill-mode:forwards]`}
+          >
+            <span
+              className={`flex h-12 w-12 items-center justify-center rounded-full ${powerupTheme.chip}`}
+            >
+              <PowerupIcon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-slate-500 dark:text-slate-300">
+                Powerup Activated
+              </p>
+              <p className="truncate text-2xl font-semibold">
+                {powerupCelebration.name}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex min-h-[calc(100vh-4rem)] flex-col lg:flex-row">
         <QuizTakeSidebar

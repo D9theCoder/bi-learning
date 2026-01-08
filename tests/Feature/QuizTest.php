@@ -314,6 +314,52 @@ it('prevents student from starting quiz when retakes not allowed and has complet
     $response->assertSessionHasErrors('error');
 });
 
+it('renders quiz take screen with powerups for an active attempt', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create([
+        'is_published' => true,
+        'time_limit_minutes' => 15,
+    ]);
+    AssessmentQuestion::factory()->for($assessment)->create([
+        'type' => 'multiple_choice',
+        'question' => 'Test question',
+        'answer_config' => [
+            'type' => 'multiple_choice',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ],
+    ]);
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'answers' => [],
+    ]);
+    $powerup = Powerup::query()->updateOrCreate(
+        ['slug' => 'extra-time'],
+        [
+            'name' => 'Extra Time',
+            'description' => 'Adds extra time to an assessment.',
+            'icon' => 'power',
+            'default_limit' => 1,
+            'config' => ['extra_time_seconds' => 60],
+        ]
+    );
+    $assessment->powerups()->attach($powerup->id, ['limit' => 2]);
+
+    $response = $this->actingAs($student)->get("/courses/{$course->id}/quiz/{$assessment->id}/take");
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('courses/quiz/take')
+        ->has('assessment.powerups', 1)
+        ->has('questions', 1)
+        ->where('attempt.id', $attempt->id)
+        ->where('assessment.powerups.0.slug', 'extra-time')
+    );
+});
+
 it('auto-grades multiple choice questions correctly', function () {
     $student = User::factory()->create();
     $student->assignRole('student');
