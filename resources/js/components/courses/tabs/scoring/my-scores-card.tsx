@@ -1,7 +1,10 @@
 import { DashedEmptyState } from '@/components/courses/shared';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Assessment, AssessmentSubmission } from '@/types';
+import { QuizAnswerReviewDialog } from '@/components/courses/quiz/quiz-answer-review-dialog';
+import { Assessment, AssessmentAttempt, AssessmentSubmission } from '@/types';
+import { useState } from 'react';
 
 interface MyScoresCardProps {
   assessments: Assessment[];
@@ -9,6 +12,11 @@ interface MyScoresCardProps {
 }
 
 export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
+  const [reviewAttempt, setReviewAttempt] = useState<{
+    assessment: Assessment;
+    attempt: AssessmentAttempt;
+  } | null>(null);
+
   return (
     <Card className="overflow-hidden py-4">
       <CardHeader>
@@ -26,10 +34,15 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
               const submission = submissions.find(
                 (s) => s.assessment_id === assessment.id,
               );
+              const attempt = submission?.attempt ?? null;
               const isPendingReview =
                 assessment.type === 'final_exam' &&
                 submission &&
                 submission.score === null;
+              const canViewAnswers =
+                submission &&
+                attempt &&
+                ['practice', 'quiz'].includes(assessment.type);
               return (
                 <div
                   key={assessment.id}
@@ -65,6 +78,21 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
                             "{submission.feedback}"
                           </p>
                         )}
+                        {canViewAnswers && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2"
+                            onClick={() =>
+                              setReviewAttempt({
+                                assessment,
+                                attempt,
+                              })
+                            }
+                          >
+                            View Answers
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <Badge variant="outline">Pending</Badge>
@@ -78,6 +106,18 @@ export function MyScoresCard({ assessments, submissions }: MyScoresCardProps) {
           <DashedEmptyState message="No assessments published yet." />
         )}
       </CardContent>
+      {reviewAttempt && (
+        <QuizAnswerReviewDialog
+          assessment={reviewAttempt.assessment}
+          attempt={reviewAttempt.attempt}
+          isOpen={Boolean(reviewAttempt)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setReviewAttempt(null);
+            }
+          }}
+        />
+      )}
     </Card>
   );
 }

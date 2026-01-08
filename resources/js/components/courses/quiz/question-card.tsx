@@ -38,6 +38,35 @@ const questionTypes = [
   },
 ] as const;
 
+function normalizeFillBlank(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function getFillBlankAnswerDisplayList(question: AssessmentQuestion): string[] {
+  const raw = [
+    question.correct_answer ?? null,
+    ...(question.options ?? []),
+  ].filter(Boolean);
+
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const answer of raw) {
+    const normalized = normalizeFillBlank(answer);
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    unique.push(String(answer));
+  }
+
+  return unique;
+}
+
 interface QuestionCardProps {
   question: AssessmentQuestion;
   index: number;
@@ -354,10 +383,8 @@ export function QuestionCard({
                       <p className="text-xs font-medium text-muted-foreground">
                         Valid Answers:
                       </p>
-                      {(question.options && question.options.length > 0
-                        ? question.options
-                        : [question.correct_answer]
-                      ).map((answer, idx) => (
+                      {getFillBlankAnswerDisplayList(question).map(
+                        (answer, idx) => (
                         <p key={idx} className="text-sm text-muted-foreground">
                           • {answer}
                         </p>

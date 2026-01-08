@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Assessment } from '@/types';
+import { Assessment, AssessmentAttempt } from '@/types';
 import { router } from '@inertiajs/react';
 import { Award, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -11,21 +11,7 @@ type StudentForQuizGrading = {
   name: string;
   email?: string;
   avatar?: string;
-  assessment_attempts?: Array<{
-    id: number;
-    assessment_id: number;
-    user_id: number;
-    answers?: Record<string, unknown> | null;
-    score?: number | null;
-    total_points: number;
-    started_at?: string | null;
-    completed_at?: string | null;
-    is_graded: boolean;
-    created_at: string;
-    updated_at: string;
-    is_remedial?: boolean;
-    points_awarded?: number;
-  }>;
+  assessment_attempts?: AssessmentAttempt[];
   [key: string]: unknown;
 };
 
@@ -88,11 +74,12 @@ export function QuizGradingAssessmentCard({
           <div className="space-y-4">
             {students.length > 0 ? (
               students.map((student) => {
-                const attempt = student.assessment_attempts?.find(
-                  (a) => a.assessment_id === assessment.id,
-                );
+                const attempts =
+                  student.assessment_attempts?.filter(
+                    (attempt) => attempt.assessment_id === assessment.id,
+                  ) ?? [];
 
-                if (!attempt) {
+                if (attempts.length === 0) {
                   return (
                     <div
                       key={student.id}
@@ -101,35 +88,47 @@ export function QuizGradingAssessmentCard({
                       <span className="font-medium text-gray-900 dark:text-gray-100">
                         {student.name}
                       </span>{' '}
-                      — No attempt yet.
+                      — No attempts yet.
                     </div>
                   );
                 }
 
+                const sortedAttempts = attempts
+                  .slice()
+                  .sort((a, b) => {
+                    const aTime = a.completed_at ?? a.created_at;
+                    const bTime = b.completed_at ?? b.created_at;
+                    return new Date(bTime).getTime() - new Date(aTime).getTime();
+                  });
+
                 return (
-                  <QuizGradingStudentRow
-                    key={student.id}
-                    student={student}
-                    assessment={assessment}
-                    attempt={attempt}
-                    questions={questions}
-                    grades={grades}
-                    onGradeChange={(key, value) =>
-                      setGrades((prev) => ({ ...prev, [key]: value }))
-                    }
-                    onSave={(payload, options) => {
-                      router.post(
-                        `/courses/${courseId}/quiz/${assessment.id}/attempts/${attempt.id}/grade-essay`,
-                        { grades: payload },
-                        {
-                          preserveScroll: true,
-                          onSuccess: () => options.onSuccess(),
-                          onError: () => options.onError?.(),
-                          onFinish: () => options.onFinish?.(),
-                        },
-                      );
-                    }}
-                  />
+                  <div key={student.id} className="space-y-3">
+                    {sortedAttempts.map((attempt) => (
+                      <QuizGradingStudentRow
+                        key={attempt.id}
+                        student={student}
+                        assessment={assessment}
+                        attempt={attempt}
+                        questions={questions}
+                        grades={grades}
+                        onGradeChange={(key, value) =>
+                          setGrades((prev) => ({ ...prev, [key]: value }))
+                        }
+                        onSave={(payload, options) => {
+                          router.post(
+                            `/courses/${courseId}/quiz/${assessment.id}/attempts/${attempt.id}/grade-essay`,
+                            { grades: payload },
+                            {
+                              preserveScroll: true,
+                              onSuccess: () => options.onSuccess(),
+                              onError: () => options.onError?.(),
+                              onFinish: () => options.onFinish?.(),
+                            },
+                          );
+                        }}
+                      />
+                    ))}
+                  </div>
                 );
               })
             ) : (

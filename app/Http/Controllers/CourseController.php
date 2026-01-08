@@ -194,20 +194,33 @@ class CourseController extends Controller
                 if ($assessmentIdsWithAttempts->isNotEmpty() && $students instanceof \Illuminate\Support\Collection && $students->isNotEmpty()) {
                     $studentIds = $students->pluck('id')->values();
 
-                    $latestAttemptsByKey = AssessmentAttempt::query()
+                    $formatAttempt = function (AssessmentAttempt $attempt): array {
+                        return [
+                            'id' => $attempt->id,
+                            'assessment_id' => $attempt->assessment_id,
+                            'user_id' => $attempt->user_id,
+                            'answers' => $attempt->answers,
+                            'score' => $attempt->score,
+                            'total_points' => $attempt->total_points,
+                            'started_at' => $attempt->started_at?->toIsoString(),
+                            'completed_at' => $attempt->completed_at?->toIsoString(),
+                            'is_graded' => (bool) $attempt->is_graded,
+                            'is_remedial' => (bool) $attempt->is_remedial,
+                            'points_awarded' => (int) $attempt->points_awarded,
+                            'created_at' => $attempt->created_at?->toIsoString(),
+                            'updated_at' => $attempt->updated_at?->toIsoString(),
+                        ];
+                    };
+
+                    $attemptsByStudent = AssessmentAttempt::query()
                         ->whereIn('assessment_id', $assessmentIdsWithAttempts)
                         ->whereIn('user_id', $studentIds)
                         ->orderByDesc('completed_at')
                         ->orderByDesc('created_at')
                         ->get()
-                        ->groupBy(function (AssessmentAttempt $attempt) {
-                            return $attempt->assessment_id . '-' . $attempt->user_id;
-                        })
-                        ->map(function ($attempts) {
-                            return $attempts->first();
-                        });
+                        ->groupBy('user_id');
 
-                    $students = $students->map(function (array $student) use ($assessmentIdsWithAttempts, $latestAttemptsByKey) {
+                    $students = $students->map(function (array $student) use ($attemptsByStudent, $formatAttempt) {
                         $studentId = $student['id'] ?? null;
 
                         if (! $studentId) {
@@ -216,31 +229,10 @@ class CourseController extends Controller
                             return $student;
                         }
 
-                        $student['assessment_attempts'] = $assessmentIdsWithAttempts
-                            ->map(function (int $assessmentId) use ($studentId, $latestAttemptsByKey) {
-                                $attempt = $latestAttemptsByKey[$assessmentId . '-' . $studentId] ?? null;
+                        $attempts = $attemptsByStudent->get($studentId, collect());
 
-                                if (! $attempt) {
-                                    return null;
-                                }
-
-                                return [
-                                    'id' => $attempt->id,
-                                    'assessment_id' => $attempt->assessment_id,
-                                    'user_id' => $attempt->user_id,
-                                    'answers' => $attempt->answers,
-                                    'score' => $attempt->score,
-                                    'total_points' => $attempt->total_points,
-                                    'started_at' => $attempt->started_at?->toIsoString(),
-                                    'completed_at' => $attempt->completed_at?->toIsoString(),
-                                    'is_graded' => (bool) $attempt->is_graded,
-                                    'is_remedial' => (bool) $attempt->is_remedial,
-                                    'points_awarded' => (int) $attempt->points_awarded,
-                                    'created_at' => $attempt->created_at?->toIsoString(),
-                                    'updated_at' => $attempt->updated_at?->toIsoString(),
-                                ];
-                            })
-                            ->filter()
+                        $student['assessment_attempts'] = $attempts
+                            ->map(fn (AssessmentAttempt $attempt) => $formatAttempt($attempt))
                             ->values();
 
                         return $student;
@@ -271,10 +263,64 @@ class CourseController extends Controller
                 });
 
                 if ($isEnrolled) {
-                    $assessments = Assessment::where('course_id', $course->id)->get();
+                    $assessments = Assessment::where('course_id', $course->id)
+                        ->with('questions')
+                        ->get();
                     $submissions = AssessmentSubmission::whereIn('assessment_id', $assessments->pluck('id'))
                         ->where('user_id', $user->id)
                         ->get();
+
+                    $attemptsByAssessment = AssessmentAttempt::query()
+                        ->whereIn('assessment_id', $assessments->pluck('id'))
+                        ->where('user_id', $user->id)
+                        ->whereNotNull('completed_at')
+                        ->orderByDesc('completed_at')
+                        ->orderByDesc('created_at')
+                        ->get()
+                        ->groupBy('assessment_id');
+
+                    $assessmentsById = $assessments->keyBy('id');
+
+                    $formatAttempt = function (AssessmentAttempt $attempt): array {
+                        return [
+                            'id' => $attempt->id,
+                            'assessment_id' => $attempt->assessment_id,
+                            'user_id' => $attempt->user_id,
+                            'answers' => $attempt->answers,
+                            'score' => $attempt->score,
+                            'total_points' => $attempt->total_points,
+                            'started_at' => $attempt->started_at?->toIsoString(),
+                            'completed_at' => $attempt->completed_at?->toIsoString(),
+                            'is_graded' => (bool) $attempt->is_graded,
+                            'is_remedial' => (bool) $attempt->is_remedial,
+                            'points_awarded' => (int) $attempt->points_awarded,
+                            'created_at' => $attempt->created_at?->toIsoString(),
+                            'updated_at' => $attempt->updated_at?->toIsoString(),
+                        ];
+                    };
+
+                    $submissions = $submissions->map(function (AssessmentSubmission $submission) use ($assessmentsById, $attemptsByAssessment, $formatAttempt) {
+                        $assessment = $assessmentsById->get($submission->assessment_id);
+                        $attemptCandidates = $attemptsByAssessment->get($submission->assessment_id, collect());
+                        $attempt = null;
+
+                        if ($assessment) {
+                            if ($assessment->allow_retakes) {
+                                $attempt = $attemptCandidates
+                                    ->sortByDesc(fn (AssessmentAttempt $candidate) => $candidate->score ?? -1)
+                                    ->first();
+                            } else {
+                                $attempt = $attemptCandidates
+                                    ->sortByDesc('completed_at')
+                                    ->first();
+                            }
+                        }
+
+                        return [
+                            ...$submission->toArray(),
+                            'attempt' => $attempt ? $formatAttempt($attempt) : null,
+                        ];
+                    });
                 }
             }
         }
@@ -333,7 +379,7 @@ class CourseController extends Controller
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'score' => 'required|integer|min:0|max:' . $assessment->max_score,
+            'score' => 'required|integer|min:0|max:'.$assessment->max_score,
             'feedback' => 'nullable|string',
         ]);
 

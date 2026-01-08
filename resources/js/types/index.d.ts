@@ -338,6 +338,7 @@ export interface AssessmentSubmission {
   updated_at: string;
   user?: User;
   assessment?: Assessment;
+  attempt?: AssessmentAttempt | null;
 }
 
 export interface FinalScore {

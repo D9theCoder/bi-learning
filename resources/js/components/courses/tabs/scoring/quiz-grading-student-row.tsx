@@ -22,6 +22,54 @@ function normalizeFillBlank(value: unknown): string {
     .toLowerCase();
 }
 
+function getMultipleChoiceLabel(
+  question: AssessmentQuestion,
+  value: unknown,
+): string {
+  if (value === null || value === undefined || String(value) === '') {
+    return '';
+  }
+
+  const index = Number(value);
+  const option = Number.isFinite(index)
+    ? question.options?.[index]
+    : undefined;
+
+  return option ?? String(value);
+}
+
+function getFillBlankAnswerKey(question: AssessmentQuestion): string[] {
+  const raw = [
+    question.correct_answer ?? null,
+    ...(question.options ?? []),
+  ].filter(Boolean);
+
+  return raw.map((answer) => normalizeFillBlank(answer));
+}
+
+function getFillBlankAnswerDisplayList(question: AssessmentQuestion): string[] {
+  const raw = [
+    question.correct_answer ?? null,
+    ...(question.options ?? []),
+  ].filter(Boolean);
+
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const answer of raw) {
+    const normalized = normalizeFillBlank(answer);
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    unique.push(String(answer));
+  }
+
+  return unique;
+}
+
 function computeAutoPoints(question: AssessmentQuestion, answer: unknown): number {
   if (answer === null || answer === undefined || String(answer) === '') {
     return 0;
@@ -34,10 +82,10 @@ function computeAutoPoints(question: AssessmentQuestion, answer: unknown): numbe
   }
 
   if (question.type === 'fill_blank') {
-    return normalizeFillBlank(answer) ===
-      normalizeFillBlank(question.correct_answer)
-      ? question.points
-      : 0;
+    const normalizedAnswer = normalizeFillBlank(answer);
+    const correctAnswers = getFillBlankAnswerKey(question);
+
+    return correctAnswers.includes(normalizedAnswer) ? question.points : 0;
   }
 
   return 0;
@@ -175,6 +223,11 @@ export function QuizGradingStudentRow({
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                 /{assessment.max_score}
               </span>
+              {attempt.completed_at && !attempt.is_graded && (
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                  Preliminary
+                </span>
+              )}
             </p>
             {attempt.completed_at && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -218,16 +271,29 @@ export function QuizGradingStudentRow({
                         <span>Type: {question.type.replace('_', ' ')}</span>
                         <span>•</span>
                         <span>Max: {question.points}</span>
-                        {question.type !== 'essay' &&
+                        {question.type === 'multiple_choice' &&
                           question.correct_answer !== null &&
                           question.correct_answer !== undefined && (
                             <>
                               <span>•</span>
                               <span>
-                                Answer key: {String(question.correct_answer)}
+                                Answer key:{' '}
+                                {getMultipleChoiceLabel(
+                                  question,
+                                  question.correct_answer,
+                                )}
                               </span>
                             </>
                           )}
+                        {question.type === 'fill_blank' && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              Valid answers:{' '}
+                              {getFillBlankAnswerDisplayList(question).join(', ')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -242,7 +308,11 @@ export function QuizGradingStudentRow({
                           />
                         ) : (
                           <Input
-                            value={String(answer ?? '')}
+                            value={
+                              question.type === 'multiple_choice'
+                                ? getMultipleChoiceLabel(question, answer)
+                                : String(answer ?? '')
+                            }
                             readOnly
                             className="mt-1"
                           />

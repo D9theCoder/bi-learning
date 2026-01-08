@@ -223,12 +223,29 @@ it('allows student to view published quiz', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($student)->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
+        'type' => 'fill_blank',
+        'question' => 'The capital of France is ___.',
+        'correct_answer' => 'Paris',
+        'points' => 5,
+    ]);
+    $attempt = AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'answers' => [(string) $question->id => 'Paris'],
+        'score' => 5,
+        'completed_at' => now(),
+        'is_graded' => true,
+    ]);
 
     $response = $this->actingAs($student)->get("/courses/{$course->id}/quiz/{$assessment->id}");
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('courses/quiz/show')
+        ->has('bestAttempt')
+        ->has('existingAttempt')
+        ->where('bestAttempt.id', $attempt->id)
+        ->where('existingAttempt.id', $attempt->id)
+        ->where('bestAttempt.answers', [(string) $question->id => 'Paris'])
     );
 });
 
@@ -331,6 +348,33 @@ it('auto-grades fill in the blank questions case-insensitively', function () {
 
     $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
         'answers' => [$question->id => 'paris'], // lowercase
+    ]);
+
+    $response->assertRedirect();
+    $attempt = AssessmentAttempt::where('user_id', $student->id)->first();
+    expect($attempt->score)->toBe(5);
+});
+
+it('auto-grades fill in the blank questions with optional answers', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+    $course = Course::factory()->create();
+    Enrollment::factory()->for($student)->for($course)->create();
+    $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
+    $question = AssessmentQuestion::factory()->for($assessment)->create([
+        'type' => 'fill_blank',
+        'question' => 'The capital of France is ___.',
+        'correct_answer' => 'Paris',
+        'options' => ['paris', 'City of Paris'],
+        'points' => 5,
+    ]);
+    AssessmentAttempt::factory()->for($student)->for($assessment)->create([
+        'started_at' => now(),
+        'answers' => [],
+    ]);
+
+    $response = $this->actingAs($student)->post("/courses/{$course->id}/quiz/{$assessment->id}/submit", [
+        'answers' => [$question->id => 'City of Paris'],
     ]);
 
     $response->assertRedirect();
