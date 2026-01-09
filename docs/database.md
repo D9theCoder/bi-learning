@@ -136,8 +136,7 @@ erDiagram
 		bigint assessment_id FK
 		enum type
 		text question
-		json options
-		text correct_answer
+		json answer_config
 		int points
 		int order
 		timestamp created_at
@@ -566,8 +565,7 @@ Columns:
 - `assessment_id` (bigint unsigned, not null)
 - `type` (enum('multiple_choice','fill_blank','essay'), not null)
 - `question` (text, not null)
-- `options` (json, null)
-- `correct_answer` (text, null)
+- `answer_config` (json, null) - Stores answer configuration including options and correct answers. Structure varies by question type.
 - `points` (int, not null)
 - `order` (int, not null)
 - `created_at` (timestamp, null)
