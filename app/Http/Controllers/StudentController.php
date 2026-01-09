@@ -30,10 +30,10 @@ class StudentController extends Controller
 
         $query = User::query();
 
-        if ($studentIds->isNotEmpty()) {
-            $query->whereIn('id', $studentIds);
-        } else {
+        if ($user->hasRole('admin')) {
             $query->role('student');
+        } else {
+            $query->whereIn('id', $studentIds);
         }
 
         if (! empty($filters['search'])) {
