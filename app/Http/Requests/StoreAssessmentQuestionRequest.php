@@ -71,9 +71,11 @@ class StoreAssessmentQuestionRequest extends FormRequest
         return [
             'type' => 'required|in:multiple_choice,fill_blank,essay',
             'question' => 'required|string',
-            'options' => $type === 'fill_blank'
-                ? 'nullable|array|max:20'
-                : 'required|array|min:2|max:4',
+            'options' => match ($type) {
+                'fill_blank' => 'nullable|array|max:20',
+                'essay' => 'nullable|array',
+                default => 'required|array|min:2|max:4',
+            },
             'options.*' => 'nullable|string',
             'correct_answer' => $type === 'multiple_choice' ? 'required|string' : 'nullable|string',
             'points' => 'required|integer|min:1',
