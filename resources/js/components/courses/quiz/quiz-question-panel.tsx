@@ -10,12 +10,13 @@ import {
   PenLine,
   Send,
 } from 'lucide-react';
+import type { AnswerConfig } from '@/types';
 
 interface QuizQuestion {
   id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
   question: string;
-  options?: string[] | null;
+  answer_config: AnswerConfig;
   points: number;
   order: number;
 }
@@ -72,6 +73,10 @@ export function QuizQuestionPanel({
   const isFirstQuestion = questionIndex === 0;
   const isLastQuestion = questionIndex === totalQuestions - 1;
   const hiddenOptions = new Set(hiddenOptionIndexes ?? []);
+  const multipleChoiceOptions =
+    question.answer_config.type === 'multiple_choice'
+      ? question.answer_config.options ?? []
+      : [];
 
   return (
     <Card className="mx-auto max-w-3xl">
@@ -99,9 +104,10 @@ export function QuizQuestionPanel({
 
         {/* Answer Input */}
         <div className="mb-6">
-          {question.type === 'multiple_choice' && question.options && (
+          {question.type === 'multiple_choice' &&
+            question.answer_config.type === 'multiple_choice' && (
             <div className="space-y-2">
-              {question.options.map((option, idx) => {
+              {multipleChoiceOptions.map((option, idx) => {
                 if (hiddenOptions.has(idx)) {
                   return null;
                 }

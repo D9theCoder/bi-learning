@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Assessment, CourseContent, Lesson, Powerup } from '@/types';
 import { Link, router, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { ContentRow } from './content-row';
 import { NewContentForm } from './new-content-form';
 
@@ -50,6 +51,7 @@ export function LessonCard({
   const saveLesson = () => {
     lessonForm.put(`/courses/manage/${courseId}/lessons/${lesson.id}`, {
       preserveScroll: true,
+      onSuccess: () => toast.success('Lesson updated successfully!'),
     });
   };
 

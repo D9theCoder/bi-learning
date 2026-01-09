@@ -1,5 +1,7 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Assessment, CourseContent } from '@/types';
 import { Link } from '@inertiajs/react';
 import axios from 'axios';
@@ -73,6 +75,7 @@ export function SessionTodoList({
     ? assessments.filter((assessment) => assessment.lesson_id === currentLessonId)
     : [];
   const hasItems = sessionContents.length > 0 || sessionAssessments.length > 0;
+  const totalItems = sessionContents.length + sessionAssessments.length;
 
   const handleContentClick = async (content: CourseContent) => {
     if (!canViewContent) {
@@ -99,125 +102,157 @@ export function SessionTodoList({
   };
 
   return (
-    <Card className="border-none bg-yellow-600 text-white">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium">
-          Things to do in this session
-        </CardTitle>
+    <Card className="border-border/60 bg-white shadow-sm dark:bg-slate-950">
+      <CardHeader className="pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            Session checklist
+          </CardTitle>
+          <Badge variant="secondary">{totalItems} items</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Everything you need to complete for this session.
+        </p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {hasItems ? (
           <>
-            {sessionContents.map((content) => {
-              const isCompleted = completedIds.has(content.id);
-              return (
-                <div
-                  key={`content-${content.id}`}
-                  onClick={() => handleContentClick(content)}
-                  className={`flex items-center justify-between rounded-lg p-3 ${
-                    canViewContent
-                      ? 'cursor-pointer bg-white/10 hover:bg-white/20'
-                      : 'cursor-not-allowed bg-white/5 opacity-70'
-                  } transition-colors`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`rounded-md p-2 ${isCompleted ? 'bg-green-500 text-white' : 'bg-white text-yellow-600'}`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle className="h-5 w-5" />
-                      ) : (
-                        getIconForType(content.type)
-                      )}
-                    </div>
-                    <div>
-                      <p
-                        className={`text-sm font-medium ${isCompleted ? 'line-through opacity-80' : ''}`}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span>Materials</span>
+                <Badge variant="outline">{sessionContents.length}</Badge>
+              </div>
+              {sessionContents.map((content) => {
+                const isCompleted = completedIds.has(content.id);
+                return (
+                  <div
+                    key={`content-${content.id}`}
+                    onClick={() => handleContentClick(content)}
+                    className={`flex items-center justify-between rounded-lg border p-3 ${
+                      canViewContent
+                        ? 'cursor-pointer border-border/60 bg-white hover:border-yellow-200 hover:bg-yellow-50 dark:bg-slate-900/60 dark:hover:bg-yellow-900/10'
+                        : 'cursor-not-allowed border-border/40 bg-muted/40 opacity-70'
+                    } transition`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`rounded-md p-2 ${
+                          isCompleted
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200'
+                        }`}
                       >
-                        {content.title}
-                      </p>
-                      <p className="text-xs opacity-80">
-                        {content.duration_minutes
-                          ? `• ${content.duration_minutes}m`
-                          : ''}
-                        {isCompleted && ' • Completed'}
-                      </p>
-                    </div>
-                  </div>
-                  {canViewContent && (content.file_path || content.url) && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleContentClick(content);
-                      }}
-                    >
-                      {content.type === 'file' ? (
-                        <Download className="h-4 w-4" />
-                      ) : (
-                        <LinkIcon className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-            {sessionAssessments.map((assessment) => {
-              const typeLabel = getAssessmentTypeLabel(assessment.type);
-              const dueDate = assessment.due_date
-                ? new Date(assessment.due_date).toLocaleDateString()
-                : null;
-              const containerClass = `flex items-center justify-between rounded-lg p-3 ${
-                canViewContent
-                  ? 'cursor-pointer bg-white/10 hover:bg-white/20'
-                  : 'cursor-not-allowed bg-white/5 opacity-70'
-              } transition-colors`;
-
-              const content = (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-md bg-white p-2 text-yellow-600">
-                      {getAssessmentIcon(assessment.type)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{assessment.title}</p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs opacity-80">
-                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">
-                          {typeLabel}
-                        </span>
-                        {dueDate ? <span>Due {dueDate}</span> : null}
+                        {isCompleted ? (
+                          <CheckCircle className="h-5 w-5" />
+                        ) : (
+                          getIconForType(content.type)
+                        )}
+                      </div>
+                      <div>
+                        <p
+                          className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${
+                            isCompleted ? 'line-through opacity-70' : ''
+                          }`}
+                        >
+                          {content.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {content.duration_minutes
+                            ? `${content.duration_minutes}m`
+                            : 'Self-paced'}
+                          {isCompleted ? ' • Completed' : ''}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  {canViewContent ? (
-                    <span className="text-xs opacity-80">View</span>
-                  ) : null}
-                </>
-              );
-
-              if (!canViewContent) {
-                return (
-                  <div key={`assessment-${assessment.id}`} className={containerClass}>
-                    {content}
+                    {canViewContent && (content.file_path || content.url) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-yellow-700 dark:hover:text-yellow-200"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContentClick(content);
+                        }}
+                      >
+                        {content.type === 'file' ? (
+                          <Download className="h-4 w-4" />
+                        ) : (
+                          <LinkIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 );
-              }
+              })}
+            </div>
 
-              return (
-                <Link
-                  key={`assessment-${assessment.id}`}
-                  href={`/courses/${courseId}/quiz/${assessment.id}`}
-                  className={containerClass}
-                >
-                  {content}
-                </Link>
-              );
-            })}
+            {sessionAssessments.length > 0 && <Separator />}
+
+            {sessionAssessments.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span>Assessments</span>
+                  <Badge variant="outline">{sessionAssessments.length}</Badge>
+                </div>
+                {sessionAssessments.map((assessment) => {
+                  const typeLabel = getAssessmentTypeLabel(assessment.type);
+                  const dueDate = assessment.due_date
+                    ? new Date(assessment.due_date).toLocaleDateString()
+                    : null;
+                  const containerClass = `flex items-center justify-between rounded-lg border p-3 ${
+                    canViewContent
+                      ? 'cursor-pointer border-border/60 bg-white hover:border-yellow-200 hover:bg-yellow-50 dark:bg-slate-900/60 dark:hover:bg-yellow-900/10'
+                      : 'cursor-not-allowed border-border/40 bg-muted/40 opacity-70'
+                  } transition`;
+
+                  const content = (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-md bg-blue-100 p-2 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                          {getAssessmentIcon(assessment.type)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {assessment.title}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="secondary">{typeLabel}</Badge>
+                            {dueDate ? <span>Due {dueDate}</span> : null}
+                          </div>
+                        </div>
+                      </div>
+                      {canViewContent ? (
+                        <span className="text-xs text-muted-foreground">View</span>
+                      ) : null}
+                    </>
+                  );
+
+                  if (!canViewContent) {
+                    return (
+                      <div
+                        key={`assessment-${assessment.id}`}
+                        className={containerClass}
+                      >
+                        {content}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={`assessment-${assessment.id}`}
+                      href={`/courses/${courseId}/quiz/${assessment.id}`}
+                      className={containerClass}
+                    >
+                      {content}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </>
         ) : (
-          <p className="text-sm italic opacity-80">
+          <p className="text-sm italic text-muted-foreground">
             No materials listed for this session.
           </p>
         )}

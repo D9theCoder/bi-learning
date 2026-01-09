@@ -6,6 +6,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import type { Assessment, AssessmentQuestion, Course, Powerup } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 
 interface QuizEditProps {
   course: Course;
@@ -45,6 +46,7 @@ export default function QuizEdit({
   const saveSettings = () => {
     settingsForm.put(`/courses/${course.id}/quiz/${assessment.id}`, {
       preserveScroll: true,
+      onSuccess: () => toast.success('Assessment updated successfully!'),
     });
   };
 

@@ -1,7 +1,10 @@
+import { show } from '@/actions/App/Http/Controllers/CourseController';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { CalendarTask } from '@/types';
-import { Clock, FileText, Video } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ArrowUpRight, Clock, FileText, Video } from 'lucide-react';
 
 interface TaskDateCardProps {
   date: string;
@@ -35,6 +38,21 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
     }
   };
 
+  const getRedirectHref = (task: CalendarTask) => {
+    const sessionId = task.lesson_id ?? task.id;
+
+    if (task.course_id) {
+      return show.url(task.course_id, {
+        query: {
+          tab: task.category === 'assessment' ? 'assessment' : 'session',
+          session: task.category === 'task' ? undefined : sessionId,
+        },
+      });
+    }
+
+    return task.meeting_url ?? null;
+  };
+
   return (
     <div className={cn('space-y-0.5', isPast && 'opacity-60')}>
       <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
@@ -50,30 +68,49 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
         )}
       </div>
       <div className="space-y-0.5">
-        {tasks.map((task) => (
-          <div
-            key={`${task.category}-${task.id}`}
-            className={cn(
-              'flex items-center gap-1.5 border-l-2 bg-muted/10 px-1.5 py-1 text-sm',
-              getCategoryColor(task.category),
-            )}
-          >
-            {getCategoryIcon(task.category)}
-            <span
+        {tasks.map((task) => {
+          const redirectHref = getRedirectHref(task);
+
+          return (
+            <div
+              key={`${task.category}-${task.id}`}
               className={cn(
-                'flex-1 truncate',
-                task.completed && 'text-muted-foreground line-through',
+                'flex items-center gap-1.5 border-l-2 bg-muted/10 px-1.5 py-1 text-sm',
+                getCategoryColor(task.category),
               )}
             >
-              {task.title}
-            </span>
-            {task.time && (
-              <span className="text-[11px] text-muted-foreground">
-                {task.time}
-              </span>
-            )}
-          </div>
-        ))}
+              {getCategoryIcon(task.category)}
+              <div className="flex flex-1 items-center gap-1.5">
+                <span
+                  className={cn(
+                    'flex-1 truncate',
+                    task.completed && 'text-muted-foreground line-through',
+                  )}
+                >
+                  {task.title}
+                </span>
+                {redirectHref && (
+                  <Button
+                    asChild
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 text-muted-foreground hover:text-foreground"
+                    aria-label="Open course details"
+                  >
+                    <Link href={redirectHref}>
+                      <ArrowUpRight className="size-4" />
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              {task.time && (
+                <span className="text-[11px] text-muted-foreground">
+                  {task.time}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

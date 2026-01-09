@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Lesson, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { LessonCard } from './lesson-card';
 
 type LessonWithContents = Lesson & { contents?: CourseContent[] };
@@ -39,7 +40,10 @@ export function LessonsSection({
 
     lessonForm.post(`/courses/manage/${courseId}/lessons`, {
       preserveScroll: true,
-      onSuccess: () => lessonForm.reset(),
+      onSuccess: () => {
+        lessonForm.reset();
+        toast.success('Lesson added successfully!');
+      },
       onFinish: () => lessonForm.transform((data) => data),
     });
   };

@@ -1,6 +1,6 @@
 import { AchievementBadge } from '@/components/dashboard/achievement-badge';
-import { Leaderboard } from '@/components/dashboard/leaderboard';
 import { DashboardErrorBoundary } from '@/components/dashboard/dashboard-error-boundary';
+import { Leaderboard } from '@/components/dashboard/leaderboard';
 import { LevelProgressBar } from '@/components/dashboard/level-progress-bar';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity-feed';
 import { TutorChatWidget } from '@/components/dashboard/tutor-chat-widget';
@@ -70,6 +70,7 @@ export const DashboardSidebar = memo(
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-3 gap-2">
                     <TooltipProvider>
+                      {/* Achievement Items */}
                       {recentAchievements.map((achievement) => {
                         const hasProgress =
                           !achievement.earned_at &&
@@ -87,7 +88,7 @@ export const DashboardSidebar = memo(
                         return (
                           <Tooltip key={achievement.id}>
                             <TooltipTrigger asChild>
-                              <div className="relative">
+                              <div className="flex flex-col gap-2">
                                 <AchievementBadge
                                   achievement={achievement}
                                   unlocked={!!achievement.earned_at}
@@ -97,13 +98,13 @@ export const DashboardSidebar = memo(
                                     hasProgress ? 'border-primary/50' : ''
                                   }
                                 />
-                                {hasProgress && (
-                                  <div className="absolute right-1 bottom-1 left-1">
-                                    <Progress
-                                      value={progressPercent}
-                                      className="h-1"
-                                    />
-                                  </div>
+                                {hasProgress ? (
+                                  <Progress
+                                    value={progressPercent}
+                                    className="h-1 w-full"
+                                  />
+                                ) : (
+                                  <div className="h-1 w-full" />
                                 )}
                               </div>
                             </TooltipTrigger>
@@ -132,13 +133,15 @@ export const DashboardSidebar = memo(
                           </Tooltip>
                         );
                       })}
+
+                      {/* Next Milestone Item */}
                       {nextMilestone &&
                         !recentAchievements.some(
                           (a) => a.id === nextMilestone.id,
                         ) && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="relative">
+                              <div className="flex flex-col gap-2">
                                 <AchievementBadge
                                   achievement={nextMilestone}
                                   unlocked={false}
@@ -146,19 +149,19 @@ export const DashboardSidebar = memo(
                                   className="border-dashed"
                                 />
                                 {nextMilestone.progress !== undefined &&
-                                  nextMilestone.target !== undefined && (
-                                    <div className="absolute right-1 bottom-1 left-1">
-                                      <Progress
-                                        value={Math.min(
-                                          100,
-                                          ((nextMilestone.progress ?? 0) /
-                                            (nextMilestone.target ?? 1)) *
-                                            100,
-                                        )}
-                                        className="h-1"
-                                      />
-                                    </div>
-                                  )}
+                                nextMilestone.target !== undefined ? (
+                                  <Progress
+                                    value={Math.min(
+                                      100,
+                                      ((nextMilestone.progress ?? 0) /
+                                        (nextMilestone.target ?? 1)) *
+                                        100,
+                                    )}
+                                    className="h-1 w-full"
+                                  />
+                                ) : (
+                                  <div className="h-1 w-full" />
+                                )}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>

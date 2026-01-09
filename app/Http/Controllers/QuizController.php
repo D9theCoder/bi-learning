@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAssessmentQuestionRequest;
 use App\Http\Requests\StoreQuizRequest;
+use App\Http\Requests\UpdateAssessmentQuestionRequest;
 use App\Http\Requests\UpdateQuizRequest;
 use App\Http\Requests\UseQuizPowerupRequest;
 use App\Models\Assessment;
@@ -66,7 +68,12 @@ class QuizController extends Controller
             }
 
             if ($question->type === 'multiple_choice') {
-                if ((string) $answer === (string) $question->correct_answer) {
+                $config = $question->answer_config;
+                $correctIndex = is_array($config) && ($config['type'] ?? null) === 'multiple_choice'
+                    ? ($config['correct_index'] ?? -1)
+                    : -1;
+
+                if ((int) $answer === (int) $correctIndex) {
                     $score += (int) $question->points;
                 }
 
@@ -75,17 +82,15 @@ class QuizController extends Controller
 
             if ($question->type === 'fill_blank') {
                 $normalizedAnswer = strtolower(trim((string) $answer));
-                $correctAnswers = $question->options ?? [];
-
-                // Fallback to correct_answer if options is empty
-                if (empty($correctAnswers) && $question->correct_answer) {
-                    $correctAnswers = [$question->correct_answer];
-                }
+                $config = $question->answer_config;
+                $correctAnswers = is_array($config) && ($config['type'] ?? null) === 'fill_blank'
+                    ? ($config['accepted_answers'] ?? [])
+                    : [];
 
                 // Normalize all correct answers and check if student answer matches any
                 $normalizedCorrectAnswers = array_map(
                     fn ($ans) => strtolower(trim((string) $ans)),
-                    $correctAnswers
+                    array_filter($correctAnswers, fn ($ans) => $ans !== null && $ans !== '')
                 );
 
                 if (in_array($normalizedAnswer, $normalizedCorrectAnswers, true)) {
@@ -236,7 +241,7 @@ class QuizController extends Controller
     /**
      * Store a new question.
      */
-    public function storeQuestion(Request $request, Course $course, Assessment $assessment): RedirectResponse
+    public function storeQuestion(StoreAssessmentQuestionRequest $request, Course $course, Assessment $assessment): RedirectResponse
     {
         $user = auth()->user();
 
@@ -244,16 +249,7 @@ class QuizController extends Controller
             abort(403);
         }
 
-        $type = $request->input('type');
-
-        $validated = $request->validate([
-            'type' => 'required|in:multiple_choice,fill_blank,essay',
-            'question' => 'required|string',
-            'options' => $type === 'fill_blank' ? 'nullable|array|max:20' : 'nullable|array|max:4',
-            'options.*' => 'nullable|string',
-            'correct_answer' => 'nullable|string',
-            'points' => 'required|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         $maxOrder = $assessment->questions()->max('order') ?? 0;
 
@@ -270,7 +266,7 @@ class QuizController extends Controller
     /**
      * Update a question.
      */
-    public function updateQuestion(Request $request, Course $course, Assessment $assessment, AssessmentQuestion $question): RedirectResponse
+    public function updateQuestion(UpdateAssessmentQuestionRequest $request, Course $course, Assessment $assessment, AssessmentQuestion $question): RedirectResponse
     {
         $user = auth()->user();
 
@@ -278,17 +274,7 @@ class QuizController extends Controller
             abort(403);
         }
 
-        $type = $request->input('type');
-
-        $validated = $request->validate([
-            'type' => 'required|in:multiple_choice,fill_blank,essay',
-            'question' => 'required|string',
-            'options' => $type === 'fill_blank' ? 'nullable|array|max:20' : 'nullable|array|max:4',
-            'options.*' => 'nullable|string',
-            'correct_answer' => 'nullable|string',
-            'points' => 'required|integer|min:1',
-            'order' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $question->update($validated);
 
@@ -542,7 +528,7 @@ class QuizController extends Controller
                 'id' => $question->id,
                 'type' => $question->type,
                 'question' => $question->question,
-                'options' => $question->options,
+                'answer_config' => $question->answer_config,
                 'points' => $question->points,
                 'order' => $question->order,
             ];
@@ -704,17 +690,20 @@ class QuizController extends Controller
                 ->whereKey($questionId)
                 ->first();
 
-            if (! $question || $question->type !== 'multiple_choice' || ! $question->options) {
+            $config = $question?->answer_config;
+            $options = is_array($config) ? ($config['options'] ?? null) : null;
+
+            if (! $question || $question->type !== 'multiple_choice' || ! is_array($options)) {
                 return response()->json(['message' => 'This powerup can only be used on multiple choice questions.'], 422);
             }
 
-            $correctAnswer = (string) ($question->correct_answer ?? '');
-            $optionIndexes = array_keys($question->options);
-            $wrongIndexes = array_values(array_filter($optionIndexes, function ($index) use ($correctAnswer) {
-                return (string) $index !== $correctAnswer;
+            $correctIndex = is_array($config) ? ($config['correct_index'] ?? -1) : -1;
+            $optionIndexes = array_keys($options);
+            $wrongIndexes = array_values(array_filter($optionIndexes, function ($index) use ($correctIndex) {
+                return $index !== $correctIndex;
             }));
 
-            if ($correctAnswer === '' || count($wrongIndexes) === 0) {
+            if ($correctIndex === -1 || count($wrongIndexes) === 0) {
                 return response()->json(['message' => 'No incorrect options available to remove.'], 422);
             }
 

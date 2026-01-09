@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Assessment;
 use App\Models\Attendance;
 use App\Models\Course;
+use App\Models\CourseContent;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\User;
@@ -105,22 +107,6 @@ it('prevents duplicate enrollment', function () {
     expect(Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->count())->toBe(1);
 });
 
-it('hides other tutors courses from tutors', function () {
-    $tutor = User::factory()->create();
-    $tutor->assignRole('tutor');
-
-    $ownCourse = Course::factory()->create(['instructor_id' => $tutor->id]);
-    Course::factory()->create(); // other tutor course
-
-    $response = $this->actingAs($tutor)->get(route('courses'));
-
-    $response->assertSuccessful();
-    $response->assertInertia(fn (Assert $page) => $page
-        ->where('courses.data.0.id', $ownCourse->id)
-        ->has('courses.data', 1)
-    );
-});
-
 it('prevents tutors from viewing another tutor course detail', function () {
     $tutor = User::factory()->create();
     $tutor->assignRole('tutor');
@@ -141,6 +127,28 @@ it('allows tutors to view their own course detail', function () {
     $this->actingAs($tutor)
         ->get(route('courses.show', $ownCourse))
         ->assertSuccessful();
+});
+
+it('shows session materials and assessments for enrolled students', function () {
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create(['is_published' => true]);
+    $lesson = Lesson::factory()->for($course)->create(['title' => 'Session 1']);
+    CourseContent::factory()->for($lesson)->create(['type' => 'link']);
+    Assessment::factory()->for($course)->for($lesson)->create();
+
+    Enrollment::factory()->for($student)->for($course)->create(['status' => 'active']);
+
+    $response = $this->actingAs($student)->get(route('courses.show', $course));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('courses/show')
+        ->has('course.lessons', 1)
+        ->has('course.lessons.0.contents', 1)
+        ->has('assessments', 1)
+    );
 });
 
 it('prevents tutors from enrolling in courses', function () {

@@ -172,6 +172,7 @@ export interface Reward {
   description: string;
   cost: number;
   icon: string;
+  image_url?: string;
   category?: string;
   rarity?: 'common' | 'rare' | 'epic' | 'legendary';
   is_active: boolean;
@@ -275,19 +276,25 @@ export interface TutorDashboardChartPoint {
 
 export interface TutorCalendarItem {
   id: number;
+  course_id: number;
+  lesson_id?: number | null;
   title: string;
   course_title: string;
   due_date: string;
+  meeting_url?: string | null;
   type: string;
   category: 'meeting' | 'assessment';
 }
 
 export interface StudentCalendarItem {
   id: number;
+  course_id: number;
+  lesson_id?: number | null;
   title: string;
   course_title: string;
   date: string;
   time?: string | null;
+  meeting_url?: string | null;
   type: string;
   category: 'meeting' | 'assessment';
 }
@@ -332,6 +339,7 @@ export interface AssessmentSubmission {
   updated_at: string;
   user?: User;
   assessment?: Assessment;
+  attempt?: AssessmentAttempt | null;
 }
 
 export interface FinalScore {
@@ -351,13 +359,17 @@ export interface StudentWithSubmissions extends User {
   final_score?: FinalScore | null;
 }
 
+export type AnswerConfig =
+  | { type: 'multiple_choice'; options: string[]; correct_index: number }
+  | { type: 'fill_blank'; accepted_answers: string[] }
+  | { type: 'essay' };
+
 export interface AssessmentQuestion {
   id: number;
   assessment_id: number;
   type: 'multiple_choice' | 'fill_blank' | 'essay';
   question: string;
-  options?: string[] | null;
-  correct_answer?: string | null;
+  answer_config: AnswerConfig;
   points: number;
   order: number;
   created_at: string;
@@ -401,6 +413,8 @@ export interface AchievementsPageProps {
 
 export interface CalendarTask {
   id: number;
+  course_id?: number;
+  lesson_id?: number | null;
   title: string;
   due_date: string;
   completed: boolean;
@@ -409,6 +423,7 @@ export interface CalendarTask {
   type?: string;
   category: 'task' | 'meeting' | 'assessment';
   time?: string | null;
+  meeting_url?: string | null;
 }
 
 export interface CalendarPageProps extends SharedData {

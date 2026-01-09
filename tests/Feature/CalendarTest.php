@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\Assessment;
+use App\Models\Course;
 use App\Models\DailyTask;
+use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -52,6 +56,44 @@ it('groups tasks by date', function () {
     $response->assertInertia(fn (Assert $page) => $page
         ->has('tasksByDate.'.today()->format('Y-m-d'), 3)
         ->has('tasksByDate.'.today()->addDay()->format('Y-m-d'), 2)
+    );
+});
+
+it('includes course metadata for meetings and assessments', function () {
+    $user = User::factory()->create();
+    $user->assignRole('student');
+
+    $course = Course::factory()->create();
+
+    Enrollment::factory()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $meetingDate = now()->addDay();
+    $assessmentDate = now()->addDays(2);
+
+    $lesson = Lesson::factory()->create([
+        'course_id' => $course->id,
+        'meeting_start_time' => $meetingDate,
+        'meeting_url' => 'https://example.com/meet',
+    ]);
+
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'due_date' => $assessmentDate,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('calendar'));
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.course_id', $course->id)
+        ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.lesson_id', $lesson->id)
+        ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.meeting_url', $lesson->meeting_url)
+        ->where('tasksByDate.'.$assessmentDate->format('Y-m-d').'.0.course_id', $course->id)
+        ->where('tasksByDate.'.$assessmentDate->format('Y-m-d').'.0.lesson_id', $lesson->id)
     );
 });
 

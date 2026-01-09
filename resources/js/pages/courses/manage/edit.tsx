@@ -5,6 +5,7 @@ import AppLayout from '@/layouts/app-layout';
 import type { EditCoursePageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function EditCourse({
   course,
@@ -25,9 +26,15 @@ export default function EditCourse({
 
   const submitCourse = () => {
     if (isEdit && course) {
-      form.put(`/courses/manage/${course.id}`);
+      form.put(`/courses/manage/${course.id}`, {
+        preserveScroll: true,
+        onSuccess: () => toast.success('Course saved successfully!'),
+      });
     } else {
-      form.post('/courses/manage');
+      form.post('/courses/manage', {
+        preserveScroll: true,
+        onSuccess: () => toast.success('Course saved successfully!'),
+      });
     }
   };
 

@@ -11,6 +11,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Form, Head } from '@inertiajs/react';
 import { ShieldBan, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface TwoFactorProps {
   requiresConfirmation?: boolean;
@@ -65,7 +66,14 @@ export default function TwoFactor({
               />
 
               <div className="relative inline">
-                <Form {...disable.form()}>
+                <Form
+                  {...disable.form()}
+                  onSuccess={() =>
+                    toast.success(
+                      'Two-factor authentication disabled successfully!',
+                    )
+                  }
+                >
                   {({ processing }) => (
                     <Button
                       variant="destructive"
@@ -96,7 +104,12 @@ export default function TwoFactor({
                 ) : (
                   <Form
                     {...enable.form()}
-                    onSuccess={() => setShowSetupModal(true)}
+                    onSuccess={() => {
+                      setShowSetupModal(true);
+                      toast.success(
+                        'Two-factor authentication enabled successfully!',
+                      );
+                    }}
                   >
                     {({ processing }) => (
                       <Button type="submit" disabled={processing}>

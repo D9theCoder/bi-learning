@@ -75,6 +75,9 @@ export default function Dashboard({
     total_xp: stats?.total_xp ?? 0,
     level: stats?.level ?? 1,
     points_balance: stats?.points_balance ?? 0,
+    xp_in_level: stats?.xp_in_level ?? 0,
+    xp_for_next_level: stats?.xp_for_next_level ?? 75,
+    level_progress_percentage: stats?.level_progress_percentage ?? 0,
   };
 
   const todayTasks = today_tasks ?? [];
@@ -102,7 +105,7 @@ export default function Dashboard({
   const assignmentAverage =
     tutorChart.length > 0
       ? Math.round(
-          tutorChart.reduce((sum, entry) => sum + entry.assignments, 0) /
+          tutorChart.reduce((sum, entry) => sum + entry.quiz, 0) /
             tutorChart.length,
         )
       : 0;

@@ -1,9 +1,11 @@
 import {
   QuizActionPanel,
+  QuizAnswerReviewDialog,
   QuizInfoCard,
   QuizInstructionsCard,
 } from '@/components/courses/quiz';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import type {
   Assessment,
@@ -14,6 +16,7 @@ import type {
 } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 
 interface QuizShowProps {
   course: Course;
@@ -37,6 +40,7 @@ export default function QuizShow({
   canStartRemedial = false,
   shouldHideScores = false,
 }: QuizShowProps) {
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const handleStartQuiz = () => {
     router.post(`/courses/${course.id}/quiz/${assessment.id}/start`);
   };
@@ -55,6 +59,11 @@ export default function QuizShow({
 
   const hasEssayQuestions =
     assessment.questions?.some((q) => q.type === 'essay') ?? false;
+  const summaryAttempt = bestAttempt ?? existingAttempt ?? null;
+  const canReviewAnswers =
+    !isTutor &&
+    ['practice', 'quiz'].includes(assessment.type) &&
+    Boolean(summaryAttempt?.completed_at);
 
   const typeLabel =
     assessment.type === 'practice'
@@ -104,6 +113,59 @@ export default function QuizShow({
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <QuizInfoCard assessment={assessment} />
+            {!isTutor && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>Score Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {summaryAttempt ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {summaryAttempt.completed_at
+                            ? summaryAttempt.is_graded
+                              ? 'Graded'
+                              : 'Pending review'
+                            : 'In progress'}
+                        </p>
+                        {summaryAttempt.completed_at && (
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(
+                              summaryAttempt.completed_at,
+                            ).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      {shouldHideScores ? (
+                        <p className="text-lg font-semibold">
+                          Score pending review
+                        </p>
+                      ) : (
+                        <p className="text-2xl font-bold">
+                          {summaryAttempt.score ?? 0} / {assessment.max_score}
+                        </p>
+                      )}
+                      {canReviewAnswers && (
+                        <div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsReviewOpen(true)}
+                          >
+                            View Answers
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No attempts yet.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             {assessment.type === 'final_exam' && shouldHideScores && (
               <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-800/60 dark:bg-amber-900/20 dark:text-amber-200">
                 Final exam results are hidden until your instructor reviews
@@ -134,6 +196,15 @@ export default function QuizShow({
           </div>
         </div>
       </div>
+
+      {canReviewAnswers && summaryAttempt && (
+        <QuizAnswerReviewDialog
+          assessment={assessment}
+          attempt={summaryAttempt}
+          isOpen={isReviewOpen}
+          onOpenChange={setIsReviewOpen}
+        />
+      )}
     </AppLayout>
   );
 }

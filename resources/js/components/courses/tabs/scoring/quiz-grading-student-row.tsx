@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Assessment, AssessmentAttempt, AssessmentQuestion } from '@/types';
+import type { AnswerConfig, Assessment, AssessmentAttempt, AssessmentQuestion } from '@/types';
 import { Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -22,22 +22,92 @@ function normalizeFillBlank(value: unknown): string {
     .toLowerCase();
 }
 
+function isMultipleChoiceConfig(
+  config: AnswerConfig,
+): config is { type: 'multiple_choice'; options: string[]; correct_index: number } {
+  return config.type === 'multiple_choice';
+}
+
+function isFillBlankConfig(
+  config: AnswerConfig,
+): config is { type: 'fill_blank'; accepted_answers: string[] } {
+  return config.type === 'fill_blank';
+}
+
+function getMultipleChoiceLabel(
+  question: AssessmentQuestion,
+  value: unknown,
+): string {
+  if (value === null || value === undefined || String(value) === '') {
+    return '';
+  }
+
+  if (!isMultipleChoiceConfig(question.answer_config)) {
+    return String(value);
+  }
+
+  const index = Number(value);
+  const option = Number.isFinite(index)
+    ? question.answer_config.options[index]
+    : undefined;
+
+  return option ?? String(value);
+}
+
+function getFillBlankAnswerKey(question: AssessmentQuestion): string[] {
+  if (!isFillBlankConfig(question.answer_config)) {
+    return [];
+  }
+
+  const raw = question.answer_config.accepted_answers;
+
+  return raw.map((answer) => normalizeFillBlank(answer));
+}
+
+function getFillBlankAnswerDisplayList(question: AssessmentQuestion): string[] {
+  if (!isFillBlankConfig(question.answer_config)) {
+    return [];
+  }
+
+  const raw = question.answer_config.accepted_answers;
+
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const answer of raw) {
+    const normalized = normalizeFillBlank(answer);
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    unique.push(String(answer));
+  }
+
+  return unique;
+}
+
 function computeAutoPoints(question: AssessmentQuestion, answer: unknown): number {
   if (answer === null || answer === undefined || String(answer) === '') {
     return 0;
   }
 
   if (question.type === 'multiple_choice') {
-    return String(answer) === String(question.correct_answer ?? '')
+    if (!isMultipleChoiceConfig(question.answer_config)) {
+      return 0;
+    }
+
+    return Number(answer) === question.answer_config.correct_index
       ? question.points
       : 0;
   }
 
   if (question.type === 'fill_blank') {
-    return normalizeFillBlank(answer) ===
-      normalizeFillBlank(question.correct_answer)
-      ? question.points
-      : 0;
+    const normalizedAnswer = normalizeFillBlank(answer);
+    const correctAnswers = getFillBlankAnswerKey(question);
+
+    return correctAnswers.includes(normalizedAnswer) ? question.points : 0;
   }
 
   return 0;
@@ -175,6 +245,11 @@ export function QuizGradingStudentRow({
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                 /{assessment.max_score}
               </span>
+              {attempt.completed_at && !attempt.is_graded && (
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                  Preliminary
+                </span>
+              )}
             </p>
             {attempt.completed_at && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -218,16 +293,28 @@ export function QuizGradingStudentRow({
                         <span>Type: {question.type.replace('_', ' ')}</span>
                         <span>•</span>
                         <span>Max: {question.points}</span>
-                        {question.type !== 'essay' &&
-                          question.correct_answer !== null &&
-                          question.correct_answer !== undefined && (
+                        {question.type === 'multiple_choice' &&
+                          isMultipleChoiceConfig(question.answer_config) && (
                             <>
                               <span>•</span>
                               <span>
-                                Answer key: {String(question.correct_answer)}
+                                Answer key:{' '}
+                                {getMultipleChoiceLabel(
+                                  question,
+                                  question.answer_config.correct_index,
+                                )}
                               </span>
                             </>
                           )}
+                        {question.type === 'fill_blank' && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              Valid answers:{' '}
+                              {getFillBlankAnswerDisplayList(question).join(', ')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -242,7 +329,11 @@ export function QuizGradingStudentRow({
                           />
                         ) : (
                           <Input
-                            value={String(answer ?? '')}
+                            value={
+                              question.type === 'multiple_choice'
+                                ? getMultipleChoiceLabel(question, answer)
+                                : String(answer ?? '')
+                            }
                             readOnly
                             className="mt-1"
                           />

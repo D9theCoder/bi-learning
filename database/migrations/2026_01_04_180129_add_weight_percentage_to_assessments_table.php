@@ -14,7 +14,13 @@ return new class extends Migration
         Schema::table('assessments', function (Blueprint $table) {
             // Weight percentage for final exam (e.g., 80 means final exam is worth 80% of final score)
             // Only used for final_exam type, defaults to 50 for backward compatibility
-            $table->integer('weight_percentage')->default(50)->after('is_remedial');
+            // The `after` modifier is MySQL-specific; avoid calling it for SQLite.
+            if (Schema::getConnection()->getDriverName() === 'mysql') {
+                $table->integer('weight_percentage')->nullable()->default(null)->after('is_remedial');
+            } else {
+                // For sqlite and other drivers, add a nullable column without `after`
+                $table->integer('weight_percentage')->nullable()->default(null);
+            }
         });
     }
 
@@ -24,7 +30,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('assessments', function (Blueprint $table) {
-            $table->dropColumn('weight_percentage');
+            // Dropping columns on sqlite may require doctrine/dbal; attempt drop for all drivers.
+            if (Schema::getConnection()->getDriverName() === 'sqlite') {
+                // If doctrine/dbal isn't available, this may still fail; guard so migrations won't run DB-specific SQL elsewhere.
+                $table->dropColumn('weight_percentage');
+            } else {
+                $table->dropColumn('weight_percentage');
+            }
         });
     }
 };

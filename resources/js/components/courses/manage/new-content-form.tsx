@@ -14,6 +14,7 @@ import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const contentTypes = [
   { value: 'file', label: 'File' },
@@ -93,7 +94,10 @@ export function NewContentForm({
       `/courses/manage/${courseId}/lessons/${lessonId}/contents`,
       {
         preserveScroll: true,
-        onSuccess: () => newContentForm.reset(),
+        onSuccess: () => {
+          newContentForm.reset();
+          toast.success('Content added successfully!');
+        },
       },
     );
   };
