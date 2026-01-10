@@ -349,7 +349,7 @@ erDiagram
 
 Purpose: Core user accounts with gamification fields (XP, level, points, streaks).
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: None
 
 Columns:
 
@@ -378,11 +378,15 @@ Relationships:
 - One user can have many `enrollments`, `assessment_attempts`, `assessment_submissions`, `activities`, `achievement_user`, `daily_tasks`, `attendances`, `final_scores`, `reward_user`, `course_content_completions`, and `tutor_messages`.
 - `tutor_messages.sender_id` is nullable to allow sender removal while keeping the message.
 
+Foreign keys:
+
+- None (this table is the parent for other tables but does not reference another table).
+
 ### `courses`
 
 Purpose: Course catalog with instructor ownership and publish status.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `instructor_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -403,11 +407,15 @@ Relationships:
 - Belongs to `users` via `instructor_id`.
 - Has many `lessons`, `assessments`, `enrollments`, and `final_scores`.
 
+Foreign keys:
+
+- `instructor_id` → `users.id` (cascade on delete)
+
 ### `lessons`
 
 Purpose: Lessons within a course, including content and optional meeting metadata.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `course_id` → `courses.id` (cascade on delete)
 
 Columns:
 
@@ -430,11 +438,15 @@ Relationships:
 - Belongs to `courses`.
 - Has many `course_contents`, `assessments`, `attendances`, and `daily_tasks`.
 
+Foreign keys:
+
+- `course_id` → `courses.id` (cascade on delete)
+
 ### `course_contents`
 
 Purpose: Individual content items inside a lesson (files, links, videos, or assessments). When type is 'assessment', it links to an assessment record and includes assessment-specific configuration.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `lesson_id` → `lessons.id` (cascade on delete); `assessment_id` → `assessments.id` (nullable, cascade on delete)
 
 Columns:
 
@@ -463,6 +475,11 @@ Relationships:
 - Optionally belongs to `assessments` via `assessment_id` (when type is 'assessment').
 - Has many `course_content_completions`.
 
+Foreign keys:
+
+- `lesson_id` → `lessons.id` (cascade on delete)
+- `assessment_id` → `assessments.id` (nullable, cascade on delete)
+
 Notes:
 
 - When `type` is 'assessment', an assessment record is automatically created/synced.
@@ -474,7 +491,7 @@ Notes:
 
 Purpose: Tracks which users completed specific lesson content items.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `course_content_id` → `course_contents.id` (cascade on delete); `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -490,11 +507,16 @@ Relationships:
 - Belongs to `course_contents`.
 - Belongs to `users`.
 
+Foreign keys:
+
+- `course_content_id` → `course_contents.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+
 ### `enrollments`
 
 Purpose: User enrollment records for courses with progress and status.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `user_id` → `users.id` (cascade on delete); `course_id` → `courses.id` (cascade on delete)
 
 Columns:
 
@@ -512,13 +534,27 @@ Columns:
 Relationships:
 
 - Belongs to `users`.
+
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
 - Belongs to `courses`.
+
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+- `course_id` → `courses.id` (cascade on delete)
+
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+- `course_id` → `courses.id` (cascade on delete)
 
 ### `assessments`
 
 Purpose: Quizzes/exams attached to a course or optionally a specific lesson.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `course_id` → `courses.id` (cascade on delete); `lesson_id` → `lessons.id` (nullable, cascade on delete)
 
 Columns:
 
@@ -545,6 +581,11 @@ Relationships:
 - Has many `assessment_questions`, `assessment_attempts`, and `assessment_submissions`.
 - Uses `powerups` via `assessment_powerup`.
 
+Foreign keys:
+
+- `course_id` → `courses.id` (cascade on delete)
+- `lesson_id` → `lessons.id` (nullable, cascade on delete)
+
 Notes:
 
 - Only one final exam is allowed per course (enforced by validation).
@@ -557,7 +598,7 @@ Notes:
 
 Purpose: Questions that make up an assessment.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `assessment_id` → `assessments.id` (cascade on delete)
 
 Columns:
 
@@ -575,11 +616,15 @@ Relationships:
 
 - Belongs to `assessments`.
 
+Foreign keys:
+
+- `assessment_id` → `assessments.id` (cascade on delete)
+
 ### `assessment_attempts`
 
 Purpose: Stores each user attempt for an assessment, including answers and grading status.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `assessment_id` → `assessments.id` (cascade on delete); `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -604,11 +649,16 @@ Relationships:
 - Belongs to `users`.
 - Has many `assessment_attempt_powerups`.
 
+Foreign keys:
+
+- `assessment_id` → `assessments.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+
 ### `assessment_attempt_powerups`
 
 Purpose: Tracks powerups used during specific assessment attempts.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `assessment_attempt_id` → `assessment_attempts.id` (cascade on delete); `powerup_id` → `powerups.id` (cascade on delete)
 
 Columns:
 
@@ -623,11 +673,16 @@ Relationships:
 - Belongs to `assessment_attempts`.
 - Belongs to `powerups`.
 
+Foreign keys:
+
+- `assessment_attempt_id` → `assessment_attempts.id` (cascade on delete)
+- `powerup_id` → `powerups.id` (cascade on delete)
+
 ### `assessment_powerup`
 
 Purpose: Pivot table defining which powerups are allowed for each assessment.
 
-Primary key: `assessment_id`, `powerup_id`
+Primary key: `assessment_id`, `powerup_id` — Foreign keys: `assessment_id` → `assessments.id` (cascade on delete); `powerup_id` → `powerups.id` (cascade on delete)
 
 Columns:
 
@@ -640,11 +695,16 @@ Relationships:
 - Belongs to `assessments`.
 - Belongs to `powerups`.
 
+Foreign keys:
+
+- `assessment_id` → `assessments.id` (cascade on delete)
+- `powerup_id` → `powerups.id` (cascade on delete)
+
 ### `assessment_submissions`
 
 Purpose: Submission records for assessments (commonly used for manual grading or feedback).
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `assessment_id` → `assessments.id` (cascade on delete); `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -662,11 +722,16 @@ Relationships:
 - Belongs to `assessments`.
 - Belongs to `users`.
 
+Foreign keys:
+
+- `assessment_id` → `assessments.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+
 ### `attendances`
 
 Purpose: Attendance records for lessons.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `user_id` → `users.id` (cascade on delete); `lesson_id` → `lessons.id` (cascade on delete)
 
 Columns:
 
@@ -682,11 +747,16 @@ Relationships:
 - Belongs to `users`.
 - Belongs to `lessons`.
 
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+- `lesson_id` → `lessons.id` (cascade on delete)
+
 ### `daily_tasks`
 
 Purpose: Per-user tasks used for daily activity tracking and XP rewards.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `user_id` → `users.id` (cascade on delete); `lesson_id` → `lessons.id` (nullable, cascade on delete)
 
 Columns:
 
@@ -709,11 +779,16 @@ Relationships:
 - Belongs to `users`.
 - Optionally belongs to `lessons`.
 
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+- `lesson_id` → `lessons.id` (nullable, cascade on delete)
+
 ### `final_scores`
 
 Purpose: Final score summary for a user in a course.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `user_id` → `users.id` (cascade on delete); `course_id` → `courses.id` (cascade on delete)
 
 Columns:
 
@@ -732,11 +807,16 @@ Relationships:
 - Belongs to `users`.
 - Belongs to `courses`.
 
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+- `course_id` → `courses.id` (cascade on delete)
+
 ### `activities`
 
 Purpose: Activity feed entries for user actions and XP gains.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -755,11 +835,15 @@ Relationships:
 
 - Belongs to `users`.
 
+Foreign keys:
+
+- `user_id` → `users.id` (cascade on delete)
+
 ### `achievements`
 
 Purpose: Achievement definitions and rewards.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: None
 
 Columns:
 
@@ -779,11 +863,15 @@ Relationships:
 
 - Linked to `users` through `achievement_user`.
 
+Foreign keys:
+
+- None (reference table for achievement definitions)
+
 ### `achievement_user`
 
 Purpose: Tracks user progress and awards for achievements.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `achievement_id` → `achievements.id` (cascade on delete); `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -800,11 +888,16 @@ Relationships:
 - Belongs to `achievements`.
 - Belongs to `users`.
 
+Foreign keys:
+
+- `achievement_id` → `achievements.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+
 ### `powerups`
 
 Purpose: Powerup definitions used in assessments.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: None
 
 Columns:
 
@@ -823,11 +916,15 @@ Relationships:
 - Linked to `assessments` through `assessment_powerup`.
 - Linked to `assessment_attempts` through `assessment_attempt_powerups`.
 
+Foreign keys:
+
+- None (reference table used by other relations)
+
 ### `rewards`
 
 Purpose: Reward catalog items that users can redeem with points.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: None
 
 Columns:
 
@@ -847,11 +944,15 @@ Relationships:
 
 - Linked to `users` through `reward_user`.
 
+Foreign keys:
+
+- None (reference table for reward definitions)
+
 ### `reward_user`
 
 Purpose: Records reward redemptions by users.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `reward_id` → `rewards.id` (cascade on delete); `user_id` → `users.id` (cascade on delete)
 
 Columns:
 
@@ -868,11 +969,16 @@ Relationships:
 - Belongs to `rewards`.
 - Belongs to `users`.
 
+Foreign keys:
+
+- `reward_id` → `rewards.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+
 ### `tutor_messages`
 
 Purpose: Messages exchanged between tutors and users.
 
-Primary key: `id`
+Primary key: `id` — Foreign keys: `tutor_id` → `users.id` (cascade on delete); `user_id` → `users.id` (cascade on delete); `sender_id` → `users.id` (nullable, set null on delete)
 
 Columns:
 
@@ -889,3 +995,9 @@ Columns:
 Relationships:
 
 - Belongs to `users` via `tutor_id` (tutor), `user_id` (student), and `sender_id` (message author).
+
+Foreign keys:
+
+- `tutor_id` → `users.id` (cascade on delete)
+- `user_id` → `users.id` (cascade on delete)
+- `sender_id` → `users.id` (nullable, set null on delete)
