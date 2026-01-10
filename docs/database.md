@@ -340,7 +340,6 @@ erDiagram
 	users||--o{tutor_messages:"tutor"
 	users||--o{tutor_messages:"student"
 	users|o--o{tutor_messages:"sender"
-
 ```
 
 ## Tables (Total table: 22)
