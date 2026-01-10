@@ -312,11 +312,11 @@ erDiagram
 	courses||--o{enrollments:"has"
 	courses||--o{lessons:"has"
 	lessons||--o{course_contents:"contains"
-	course_contents||--o{assessments:"linked"
+	assessments|o--o{course_contents:"linked"
 	course_contents||--o{course_content_completions:"completes"
 	users||--o{course_content_completions:"completes"
 	courses||--o{assessments:"has"
-	lessons||--o{assessments:"has"
+	lessons|o--o{assessments:"has"
 	assessments||--o{assessment_questions:"includes"
 	assessments||--o{assessment_attempts:"attempted"
 	users||--o{assessment_attempts:"attempts"
@@ -330,7 +330,7 @@ erDiagram
 	achievements||--o{achievement_user:"awarded"
 	users||--o{achievement_user:"earns"
 	users||--o{daily_tasks:"assigned"
-	lessons||--o{daily_tasks:"relates"
+	lessons|o--o{daily_tasks:"relates"
 	users||--o{attendances:"attends"
 	lessons||--o{attendances:"attendance"
 	users||--o{final_scores:"results"
@@ -339,7 +339,7 @@ erDiagram
 	users||--o{reward_user:"claims"
 	users||--o{tutor_messages:"tutor"
 	users||--o{tutor_messages:"student"
-	users||--o{tutor_messages:"sender"
+	users|o--o{tutor_messages:"sender"
 
 ```
 
