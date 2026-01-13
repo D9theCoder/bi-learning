@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { CalendarTask } from '@/types';
 import { Link } from '@inertiajs/react';
-import { ArrowUpRight, Clock, FileText, Video } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Clock, FileText, Video } from 'lucide-react';
 
 interface TaskDateCardProps {
   date: string;
@@ -22,6 +22,8 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
         return <Video className="size-3 text-blue-500" />;
       case 'assessment':
         return <Clock className="size-3 text-orange-500" />;
+      case 'course':
+        return <BookOpen className="size-3 text-violet-500" />;
       default:
         return <FileText className="size-3 text-green-500" />;
     }
@@ -33,6 +35,8 @@ export function TaskDateCard({ date, tasks }: TaskDateCardProps) {
         return 'border-l-blue-500';
       case 'assessment':
         return 'border-l-orange-500';
+      case 'course':
+        return 'border-l-violet-500';
       default:
         return 'border-l-green-500';
     }

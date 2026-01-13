@@ -10,6 +10,7 @@ interface MiniCalendarProps {
   currentDate?: Date;
   tasksByDate?: Record<string, CalendarTask[]>;
   markers?: string[]; // Array of 'YYYY-MM-DD' strings that have events
+  courseMarkers?: string[]; // Array of 'YYYY-MM-DD' strings that have course events
   onDateSelect?: (date: Date) => void;
   onResetFilter?: () => void;
   isFiltered?: boolean;
@@ -20,6 +21,7 @@ export function MiniCalendar({
   currentDate = new Date(),
   tasksByDate = {},
   markers = [],
+  courseMarkers = [],
   onDateSelect,
   onResetFilter,
   isFiltered = false,
@@ -104,6 +106,9 @@ export function MiniCalendar({
     const dateStr = getDateKey(date);
     const tasks = tasksByDate[dateStr] || [];
     const categories = new Set(tasks.map((t) => t.category));
+    if (courseMarkers.includes(dateStr)) {
+      categories.add('course');
+    }
     return Array.from(categories) as CalendarTask['category'][];
   };
 
@@ -206,6 +211,14 @@ export function MiniCalendar({
                         className={cn(
                           'size-1 rounded-full bg-green-500',
                           isSelected && 'bg-green-200',
+                        )}
+                      />
+                    )}
+                    {categories.includes('course') && (
+                      <div
+                        className={cn(
+                          'size-1 rounded-full bg-violet-500',
+                          isSelected && 'bg-violet-200',
                         )}
                       />
                     )}

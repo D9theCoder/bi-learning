@@ -267,6 +267,17 @@ export interface TutorDashboardCourse {
   is_published?: boolean;
 }
 
+export interface AdminCalendarCourse {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  instructor?: { id: number; name: string } | null;
+  student_count: number;
+  next_meeting_date?: string | null;
+  next_meeting_time?: string | null;
+  is_published: boolean;
+}
+
 export interface TutorDashboardChartPoint {
   course: string;
   attendance: number;
@@ -421,7 +432,7 @@ export interface CalendarTask {
   xp_reward?: number;
   course_title?: string;
   type?: string;
-  category: 'task' | 'meeting' | 'assessment';
+  category: 'task' | 'meeting' | 'assessment' | 'course';
   time?: string | null;
   meeting_url?: string | null;
 }
@@ -436,6 +447,19 @@ export interface CalendarPageProps extends SharedData {
     assessments: number;
   };
   currentDate: string;
+  courses?: {
+    data: AdminCalendarCourse[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links?: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  courseMarkers?: string[];
   cursor?: {
     start: string;
     end: string;

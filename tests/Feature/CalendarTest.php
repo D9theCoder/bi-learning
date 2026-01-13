@@ -139,3 +139,66 @@ it('allows tutors to view calendar', function () {
         ->component('calendar/index')
     );
 });
+
+it('shows all courses to admin users', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $instructor = User::factory()->create(['name' => 'Ada Lovelace']);
+    $course = Course::factory()->create(['instructor_id' => $instructor->id]);
+    $otherCourse = Course::factory()->create();
+
+    $response = $this->actingAs($admin)->get(route('calendar'));
+
+    $response->assertSuccessful();
+    $courses = $response->inertiaProps('courses.data');
+
+    expect($courses)->toHaveCount(2);
+    expect(collect($courses)->pluck('id'))->toContain($course->id, $otherCourse->id);
+
+    $courseSnapshot = collect($courses)->firstWhere('id', $course->id);
+    expect($courseSnapshot['instructor']['name'])->toBe('Ada Lovelace');
+});
+
+it('paginates admin course list', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Course::factory()->count(13)->create();
+
+    $response = $this->actingAs($admin)->get(route('calendar'));
+
+    $courses = $response->inertiaProps('courses');
+
+    expect($courses['data'])->toHaveCount(12);
+    expect($courses['total'])->toBe(13);
+    expect($courses['last_page'])->toBe(2);
+});
+
+it('includes course markers in admin calendar', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $course = Course::factory()->create();
+
+    $meetingDate = now()->addDay();
+    $assessmentDate = now()->addDays(2);
+
+    $lesson = Lesson::factory()->create([
+        'course_id' => $course->id,
+        'meeting_start_time' => $meetingDate,
+    ]);
+
+    Assessment::factory()->published()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'due_date' => $assessmentDate,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('calendar'));
+
+    $courseMarkers = $response->inertiaProps('courseMarkers');
+
+    expect($courseMarkers)->toContain($meetingDate->toDateString());
+    expect($courseMarkers)->toContain($assessmentDate->toDateString());
+});

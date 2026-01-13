@@ -28,12 +28,17 @@ class CalendarController extends Controller
         $end = $date->copy()->endOfMonth()->endOfWeek();
 
         $calendarItems = collect();
+        $courseMarkers = [];
+        $paginatedCourses = null;
 
         if ($isTutor || $isAdmin) {
-            // Tutor/Admin: Get courses they teach
-            $courses = Course::with(['lessons', 'assessments'])
-                ->where('instructor_id', $user->id)
-                ->get();
+            $courseQuery = Course::with(['lessons', 'assessments']);
+
+            if (! $isAdmin) {
+                $courseQuery->where('instructor_id', $user->id);
+            }
+
+            $courses = $courseQuery->get();
 
             foreach ($courses as $course) {
                 // Add lesson meetings (past and future)
@@ -75,6 +80,52 @@ class CalendarController extends Controller
                     ]);
 
                 $calendarItems = $calendarItems->merge($assessments);
+            }
+
+            if ($isAdmin) {
+                $courseMarkers = $courses
+                    ->flatMap(fn (Course $course) => $course->lessons
+                        ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null)
+                        ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
+                        ->map(fn (Lesson $lesson) => $lesson->meeting_start_time->toDateString()))
+                    ->merge($courses->flatMap(fn (Course $course) => $course->assessments
+                        ->filter(fn (Assessment $assessment) => $assessment->due_date !== null && $assessment->is_published)
+                        ->filter(fn (Assessment $assessment) => $assessment->due_date->between($start, $end))
+                        ->map(fn (Assessment $assessment) => $assessment->due_date->toDateString())))
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                $paginatedCourses = Course::query()
+                    ->with([
+                        'instructor',
+                        'lessons' => fn ($query) => $query->whereNotNull('meeting_start_time'),
+                    ])
+                    ->withCount('enrollments')
+                    ->latest()
+                    ->paginate(12)
+                    ->withQueryString()
+                    ->through(function (Course $course) {
+                        $nextMeeting = $course->lessons
+                            ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
+                            ->sortBy('meeting_start_time')
+                            ->first();
+
+                        return [
+                            'id' => $course->id,
+                            'title' => $course->title,
+                            'thumbnail' => $course->thumbnail,
+                            'instructor' => $course->instructor ? [
+                                'id' => $course->instructor->id,
+                                'name' => $course->instructor->name,
+                            ] : null,
+                            'student_count' => $course->enrollments_count ?? 0,
+                            'next_meeting_date' => $nextMeeting?->meeting_start_time?->toDateString(),
+                            'next_meeting_time' => $nextMeeting?->meeting_start_time?->format('H:i'),
+                            'is_published' => $course->is_published,
+                        ];
+                    });
             }
         } else {
             // Student: Get enrolled courses
@@ -162,7 +213,7 @@ class CalendarController extends Controller
         $completedCount = $calendarItems->where('completed', true)->count();
         $overdueCount = $calendarItems->filter(fn ($item) => ! $item['completed'] && Carbon::parse($item['due_date'])->isPast())->count();
 
-        return Inertia::render('calendar/index', [
+        $payload = [
             'tasksByDate' => $tasksByDate,
             'stats' => [
                 'total' => $calendarItems->count(),
@@ -172,6 +223,13 @@ class CalendarController extends Controller
                 'assessments' => $assessmentsCount,
             ],
             'currentDate' => $date->format('Y-m-d'),
-        ]);
+        ];
+
+        if ($isAdmin) {
+            $payload['courses'] = $paginatedCourses;
+            $payload['courseMarkers'] = $courseMarkers;
+        }
+
+        return Inertia::render('calendar/index', $payload);
     }
 }

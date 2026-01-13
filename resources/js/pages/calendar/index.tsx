@@ -1,7 +1,9 @@
 import { CalendarOverviewCard } from '@/components/calendar/calendar-overview-card';
 import { CalendarTaskList } from '@/components/calendar/calendar-task-list';
 import { MiniCalendar } from '@/components/calendar/mini-calendar';
+import { AdminCourseListSection } from '@/components/calendar/admin-course-list-section';
 import { PageHeader } from '@/components/shared/page-header';
+import { useRoles } from '@/hooks/use-roles';
 import AppLayout from '@/layouts/app-layout';
 import {
   formatActiveDateLabel,
@@ -23,7 +25,10 @@ export default function CalendarPage() {
     tasksByDate,
     stats,
     currentDate: currentDateString,
+    courses,
+    courseMarkers,
   } = usePage<CalendarPageProps>().props;
+  const { isAdmin } = useRoles();
 
   const initialDate = useMemo(
     () => parseDateKey(currentDateString),
@@ -32,7 +37,13 @@ export default function CalendarPage() {
   const [filterDate, setFilterDate] = useState<string | null>(null);
 
   const dates = useMemo(() => Object.keys(tasksByDate).sort(), [tasksByDate]);
-  const markers = useMemo(() => Object.keys(tasksByDate), [tasksByDate]);
+  const markers = useMemo(() => {
+    const merged = new Set([
+      ...Object.keys(tasksByDate),
+      ...(courseMarkers ?? []),
+    ]);
+    return Array.from(merged);
+  }, [courseMarkers, tasksByDate]);
 
   const filteredDates = useMemo(() => {
     if (!filterDate) return dates;
@@ -68,12 +79,16 @@ export default function CalendarPage() {
               currentDate={selectedDate}
               tasksByDate={tasksByDate}
               markers={markers}
+              courseMarkers={courseMarkers}
               onDateSelect={handleDateSelect}
               onResetFilter={handleResetFilter}
               isFiltered={isFiltered}
               className="w-full"
             />
             <CalendarOverviewCard stats={stats} />
+            {isAdmin && courses && (
+              <AdminCourseListSection courses={courses} />
+            )}
           </div>
 
           <CalendarTaskList
@@ -81,6 +96,7 @@ export default function CalendarPage() {
             activeDateLabel={activeDateLabel}
             filteredDates={filteredDates}
             tasksByDate={tasksByDate}
+            showCourseLegend={Boolean(courseMarkers?.length)}
           />
         </div>
       </div>
