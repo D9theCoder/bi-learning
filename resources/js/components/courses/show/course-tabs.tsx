@@ -9,7 +9,7 @@ import {
   Star,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface CourseTabsProps {
   sessionContent: ReactNode;
@@ -45,7 +45,7 @@ export function CourseTabs({
   const canAccessGradebook = isAdmin || isTutor;
 
   // Read initial tab from URL query parameter
-  const getInitialTab = (): TabValue => {
+  const getInitialTab = useCallback((): TabValue => {
     if (typeof window === 'undefined') return 'session';
 
     const params = new URLSearchParams(window.location.search);
@@ -60,7 +60,7 @@ export function CourseTabs({
     }
 
     return 'session';
-  };
+  }, [canAccessGradebook]);
 
   const [activeTab, setActiveTab] = useState<TabValue>(getInitialTab);
 
@@ -93,7 +93,7 @@ export function CourseTabs({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [getInitialTab]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

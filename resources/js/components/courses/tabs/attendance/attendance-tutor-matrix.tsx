@@ -1,11 +1,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lesson } from '@/types';
+import { Lesson, User } from '@/types';
 import { CalendarCheck, CheckCircle, XCircle } from 'lucide-react';
+
+interface StudentWithAttendance extends User {
+  attendances?: Array<{ lesson_id: number }>;
+}
 
 interface AttendanceTutorMatrixProps {
   lessons: Lesson[];
-  students: any[];
+  students: StudentWithAttendance[];
 }
 
 export function AttendanceTutorMatrix({
@@ -64,7 +68,7 @@ export function AttendanceTutorMatrix({
                     </td>
                     {lessons.map((lesson) => {
                       const hasAttended = student.attendances?.some(
-                        (a: any) => a.lesson_id === lesson.id,
+                        (a: { lesson_id: number }) => a.lesson_id === lesson.id,
                       );
                       return (
                         <td key={lesson.id} className="p-3 text-center">

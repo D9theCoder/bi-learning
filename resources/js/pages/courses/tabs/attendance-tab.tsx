@@ -6,7 +6,7 @@ import {
 } from '@/components/courses/tabs/attendance';
 import { Card, CardContent } from '@/components/ui/card';
 import { useRoles } from '@/hooks/use-roles';
-import { Course, Lesson, User } from '@/types';
+import { Course, Lesson, StudentWithSubmissions, User } from '@/types';
 import { CalendarCheck } from 'lucide-react';
 
 interface AttendanceTabProps {
@@ -16,7 +16,7 @@ interface AttendanceTabProps {
   };
   isEnrolled: boolean;
   isTutor?: boolean;
-  students?: any[];
+  students?: StudentWithSubmissions[];
 }
 
 export function AttendanceTab({

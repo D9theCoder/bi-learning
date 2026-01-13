@@ -12,7 +12,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 const contentTypes = [
@@ -84,13 +84,10 @@ export function ContentRow({
     allowed_powerups: content.allowed_powerups ?? [],
   });
 
-  const [isAssessment, setIsAssessment] = useState(
-    content.type === 'assessment',
-  );
+  const isAssessment = contentForm.data.type === 'assessment';
 
   useEffect(() => {
     const isAssessmentType = contentForm.data.type === 'assessment';
-    setIsAssessment(isAssessmentType);
 
     // Reset powerups when switching to final exam or away from assessment
     if (isAssessmentType && contentForm.data.assessment_type === 'final_exam') {
@@ -105,7 +102,7 @@ export function ContentRow({
     } else {
       contentForm.setData('max_score', 100);
     }
-  }, [contentForm.data.type, contentForm.data.assessment_type]);
+  }, [contentForm]);
 
   const saveContent = () => {
     contentForm.put(

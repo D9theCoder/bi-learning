@@ -9,7 +9,15 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import { Activity, Award, Flame, Star, Trophy, Zap } from 'lucide-react';
+import {
+  Activity,
+  Award,
+  Flame,
+  LucideIcon,
+  Star,
+  Trophy,
+  Zap,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export default function LiveProgressDashboard() {
@@ -282,7 +290,7 @@ function BadgeItem({
   delay,
   isInView,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   label: string;
   delay: number;

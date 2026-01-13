@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Assessment } from '@/types';
+import { Assessment, StudentWithSubmissions } from '@/types';
 import { Award, ChevronDown, ChevronUp } from 'lucide-react';
 import { GradingStudentRow } from './grading-student-row';
 
 interface GradingAssessmentCardProps {
   assessment: Assessment;
-  students: any[];
+  students: StudentWithSubmissions[];
   isExpanded: boolean;
   onToggle: () => void;
   scores: Record<string, string>;
@@ -60,7 +60,7 @@ export function GradingAssessmentCard({
             {students.length > 0 ? (
               students.map((student) => {
                 const submission = student.submissions?.find(
-                  (s: any) => s.assessment_id === assessment.id,
+                  (s) => s.assessment_id === assessment.id,
                 );
                 const key = `${assessment.id}-${student.id}`;
                 const currentScore = scores[key] ?? submission?.score ?? '';

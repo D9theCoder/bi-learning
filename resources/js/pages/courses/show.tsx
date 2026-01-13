@@ -12,10 +12,11 @@ import {
   Course,
   CourseContent,
   Lesson,
+  StudentWithSubmissions,
   User,
 } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AssessmentTab, AttendanceTab, GradebookTab, ScoringTab } from './tabs';
 
 interface CourseShowProps {
@@ -27,7 +28,7 @@ interface CourseShowProps {
   };
   isEnrolled: boolean;
   isTutor?: boolean;
-  students?: any[];
+  students?: StudentWithSubmissions[];
   assessments?: Assessment[];
   submissions?: AssessmentSubmission[];
 }
@@ -41,7 +42,7 @@ export default function CourseShow({
   submissions = [],
 }: CourseShowProps) {
   // Read initial session from URL query parameter
-  const getInitialSessionId = (): string => {
+  const getInitialSessionId = useCallback((): string => {
     if (typeof window === 'undefined')
       return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
 
@@ -56,7 +57,7 @@ export default function CourseShow({
     }
 
     return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
-  };
+  }, [course]);
 
   const [activeSessionId, setActiveSessionId] =
     useState<string>(getInitialSessionId);
@@ -99,7 +100,7 @@ export default function CourseShow({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [getInitialSessionId]);
 
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 const contentTypes = [
@@ -65,11 +65,10 @@ export function NewContentForm({
     allowed_powerups: [],
   });
 
-  const [isAssessment, setIsAssessment] = useState(false);
+  const isAssessment = newContentForm.data.type === 'assessment';
 
   useEffect(() => {
     const isAssessmentType = newContentForm.data.type === 'assessment';
-    setIsAssessment(isAssessmentType);
 
     // Reset powerups when switching to final exam or away from assessment
     if (
@@ -87,7 +86,7 @@ export function NewContentForm({
     } else {
       newContentForm.setData('max_score', 100);
     }
-  }, [newContentForm.data.type, newContentForm.data.assessment_type]);
+  }, [newContentForm]);
 
   const submitNewContent = () => {
     newContentForm.post(

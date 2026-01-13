@@ -6,7 +6,13 @@ import {
 } from '@/components/courses/tabs/scoring';
 import { Card, CardContent } from '@/components/ui/card';
 import { useRoles } from '@/hooks/use-roles';
-import { Assessment, AssessmentSubmission, Course, User } from '@/types';
+import {
+  Assessment,
+  AssessmentSubmission,
+  Course,
+  StudentWithSubmissions,
+  User,
+} from '@/types';
 import { router } from '@inertiajs/react';
 import { Award } from 'lucide-react';
 import { useState } from 'react';
@@ -18,7 +24,7 @@ interface ScoringTabProps {
   isEnrolled: boolean;
   isTutor?: boolean;
   assessments?: Assessment[];
-  students?: any[];
+  students?: StudentWithSubmissions[];
   submissions?: AssessmentSubmission[];
 }
 
