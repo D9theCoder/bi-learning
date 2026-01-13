@@ -12,6 +12,8 @@ export default function EditCourse({
   mode,
   categories,
   availablePowerups = [],
+  availableTutors = [],
+  isAdmin = false,
 }: EditCoursePageProps) {
   const isEdit = mode === 'edit';
   const form = useForm({
@@ -22,6 +24,7 @@ export default function EditCourse({
     duration_minutes: course?.duration_minutes ?? '',
     thumbnail: course?.thumbnail ?? '',
     is_published: course?.is_published ?? false,
+    instructor_id: course?.instructor_id ?? '',
   });
 
   const submitCourse = () => {
@@ -69,6 +72,8 @@ export default function EditCourse({
           categories={categories}
           isEdit={isEdit}
           onSubmit={submitCourse}
+          availableTutors={availableTutors}
+          isAdmin={isAdmin}
         />
 
         {isEdit && course ? (

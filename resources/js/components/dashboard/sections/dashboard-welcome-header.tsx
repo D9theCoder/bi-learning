@@ -2,14 +2,16 @@ import { useRoles } from '@/hooks/use-roles';
 import { Coins } from 'lucide-react';
 interface DashboardWelcomeHeaderProps {
   userName: string;
-  pointsBalance: number;
+  pointsBalance?: number;
   isTutor?: boolean;
+  isAdmin?: boolean;
 }
 
 export function DashboardWelcomeHeader({
   userName,
-  pointsBalance,
+  pointsBalance = 0,
   isTutor = false,
+  isAdmin = false,
 }: DashboardWelcomeHeaderProps) {
   const { isStudent } = useRoles();
   return (
@@ -19,7 +21,9 @@ export function DashboardWelcomeHeader({
           Welcome back, {userName}!
         </h1>
         <p className="text-muted-foreground">
-          {isTutor
+          {isAdmin
+            ? 'Monitor platform activity, course health, and student engagement.'
+            : isTutor
             ? 'Monitor your classes, student activity, and upcoming deadlines at a glance.'
             : "Ready to continue your learning streak? You're doing great!"}
         </p>

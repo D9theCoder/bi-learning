@@ -151,6 +151,8 @@ it('includes lessons and contents in manage edit payload', function () {
 it('allows admins to view management and create courses', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
 
     $this->actingAs($admin);
 
@@ -163,13 +165,30 @@ it('allows admins to view management and create courses', function () {
         'difficulty' => 'beginner',
         'category' => CourseCategory::Physics->value,
         'is_published' => true,
+        'instructor_id' => $tutor->id,
     ]);
 
     $response->assertRedirect();
     $this->assertDatabaseHas('courses', [
         'title' => 'Admin Course',
-        'instructor_id' => $admin->id,
+        'instructor_id' => $tutor->id,
     ]);
+});
+
+it('requires admins to assign a tutor when creating a course', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post('/courses/manage', [
+        '_token' => csrf_token(),
+        'title' => 'Admin Course',
+        'description' => 'Admin created course',
+        'difficulty' => 'beginner',
+        'category' => CourseCategory::Physics->value,
+        'is_published' => true,
+    ]);
+
+    $response->assertSessionHasErrors('instructor_id');
 });
 
 it('rejects invalid course categories', function () {

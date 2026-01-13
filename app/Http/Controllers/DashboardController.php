@@ -6,11 +6,13 @@ use App\Models\AssessmentAttempt;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CourseContentCompletion;
+use App\Models\Enrollment;
 use App\Models\Reward;
 use App\Models\User;
 use App\Services\AchievementProgressService;
 use App\Services\GamificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,12 +28,17 @@ class DashboardController extends Controller
         $user = $request->user();
         $isTutor = $user->hasRole('tutor');
         $isAdmin = $user->hasRole('admin');
+        $hasGamification = $user->hasGamification();
 
         // Get level progress data
-        $levelProgress = $this->gamificationService->getLevelProgress($user);
+        $levelProgress = $hasGamification
+            ? $this->gamificationService->getLevelProgress($user)
+            : ['xp_in_level' => 0, 'xp_for_next_level' => 0, 'progress_percentage' => 0];
 
         // Get achievements with progress for dashboard
-        $dashboardAchievements = $this->achievementService->getDashboardAchievements($user);
+        $dashboardAchievements = $hasGamification
+            ? $this->achievementService->getDashboardAchievements($user)
+            : ['recent' => collect(), 'in_progress' => collect()];
 
         // Merge recent earned achievements with in-progress for display
         $recentAchievements = $dashboardAchievements['recent']->merge($dashboardAchievements['in_progress'])->take(4);
@@ -41,76 +48,82 @@ class DashboardController extends Controller
 
         // Get enrolled courses with relationships and compute next_lesson per enrollment
         // Returns arrays preserving nested `course` while adding computed `next_lesson`
-        $enrolledCourses = $user->enrollments()
-            ->with(['course.lessons', 'course.instructor', 'course.assessments'])
-            ->where('status', 'active')
-            ->latest('last_activity_at')
-            ->get()
-            ->map(function ($enrollment) use ($user) {
-                $data = $enrollment->toArray();
-                $nextLesson = $user->nextLessonForEnrollment($enrollment);
-                $data['next_lesson'] = $nextLesson ? $nextLesson->toArray() : null;
-                // Ensure numeric type on progress_percentage for frontend typings
-                $data['progress_percentage'] = (float) ($enrollment->progress_percentage ?? 0);
+        $enrolledCourses = $hasGamification
+            ? $user->enrollments()
+                ->with(['course.lessons', 'course.instructor', 'course.assessments'])
+                ->where('status', 'active')
+                ->latest('last_activity_at')
+                ->get()
+                ->map(function ($enrollment) use ($user) {
+                    $data = $enrollment->toArray();
+                    $nextLesson = $user->nextLessonForEnrollment($enrollment);
+                    $data['next_lesson'] = $nextLesson ? $nextLesson->toArray() : null;
+                    // Ensure numeric type on progress_percentage for frontend typings
+                    $data['progress_percentage'] = (float) ($enrollment->progress_percentage ?? 0);
 
-                return $data;
-            });
+                    return $data;
+                })
+            : collect();
 
         // Build student calendar with upcoming meetings and assessments from enrolled courses
         $studentCalendar = [];
 
-        foreach ($user->enrollments()->with(['course.lessons', 'course.assessments'])->where('status', 'active')->get() as $enrollment) {
-            $course = $enrollment->course;
+        if ($hasGamification) {
+            foreach ($user->enrollments()->with(['course.lessons', 'course.assessments'])->where('status', 'active')->get() as $enrollment) {
+                $course = $enrollment->course;
 
-            // Add upcoming lesson meetings
-            $upcomingMeetings = $course->lessons
-                ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
-                ->map(fn ($lesson) => [
-                    'id' => $lesson->id,
-                    'course_id' => $course->id,
-                    'lesson_id' => $lesson->id,
-                    'title' => $lesson->title,
-                    'course_title' => $course->title,
-                    'date' => $lesson->meeting_start_time?->toDateString(),
-                    'time' => $lesson->meeting_start_time?->format('H:i'),
-                    'type' => 'meeting',
-                    'meeting_url' => $lesson->meeting_url,
-                    'category' => 'meeting',
-                ]);
+                // Add upcoming lesson meetings
+                $upcomingMeetings = $course->lessons
+                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
+                    ->map(fn ($lesson) => [
+                        'id' => $lesson->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $lesson->id,
+                        'title' => $lesson->title,
+                        'course_title' => $course->title,
+                        'date' => $lesson->meeting_start_time?->toDateString(),
+                        'time' => $lesson->meeting_start_time?->format('H:i'),
+                        'type' => 'meeting',
+                        'meeting_url' => $lesson->meeting_url,
+                        'category' => 'meeting',
+                    ]);
 
-            $studentCalendar = array_merge($studentCalendar, $upcomingMeetings->all());
+                $studentCalendar = array_merge($studentCalendar, $upcomingMeetings->all());
 
-            // Add upcoming assessment due dates
-            $upcomingAssessments = $course->assessments
-                ->filter(fn ($assessment) => $assessment->due_date !== null && $assessment->due_date->isFuture() && $assessment->is_published)
-                ->map(fn ($assessment) => [
-                    'id' => $assessment->id,
-                    'course_id' => $course->id,
-                    'lesson_id' => $assessment->lesson_id,
-                    'title' => $assessment->title,
-                    'course_title' => $course->title,
-                    'date' => $assessment->due_date?->toDateString(),
-                    'time' => $assessment->due_date?->format('H:i'),
-                    'type' => $assessment->type,
-                    'meeting_url' => null,
-                    'category' => 'assessment',
-                ]);
+                // Add upcoming assessment due dates
+                $upcomingAssessments = $course->assessments
+                    ->filter(fn ($assessment) => $assessment->due_date !== null && $assessment->due_date->isFuture() && $assessment->is_published)
+                    ->map(fn ($assessment) => [
+                        'id' => $assessment->id,
+                        'course_id' => $course->id,
+                        'lesson_id' => $assessment->lesson_id,
+                        'title' => $assessment->title,
+                        'course_title' => $course->title,
+                        'date' => $assessment->due_date?->toDateString(),
+                        'time' => $assessment->due_date?->format('H:i'),
+                        'type' => $assessment->type,
+                        'meeting_url' => null,
+                        'category' => 'assessment',
+                    ]);
 
-            $studentCalendar = array_merge($studentCalendar, $upcomingAssessments->all());
+                $studentCalendar = array_merge($studentCalendar, $upcomingAssessments->all());
+            }
+
+            // Sort by date and limit to 8 items
+            usort($studentCalendar, fn ($a, $b) => strcmp($a['date'], $b['date']));
+            $studentCalendar = array_slice($studentCalendar, 0, 8);
         }
-
-        // Sort by date and limit to 8 items
-        usort($studentCalendar, fn ($a, $b) => strcmp($a['date'], $b['date']));
-        $studentCalendar = array_slice($studentCalendar, 0, 8);
 
         // Get today's tasks (using configured timezone with reset time logic)
         $taskToday = app(\App\Services\DailyTaskGeneratorService::class)->getTaskDate()->toDateString();
-        $todayTasks = $user->dailyTasks()
-            ->with('lesson')
-            ->whereDate('due_date', $taskToday)
-            ->orderBy('is_completed')
-            ->orderBy('estimated_minutes')
-            ->get();
+        $todayTasks = $hasGamification
+            ? $user->dailyTasks()
+                ->with('lesson')
+                ->whereDate('due_date', $taskToday)
+                ->orderBy('is_completed')
+                ->orderBy('estimated_minutes')
+                ->get()
+            : collect();
 
         // Get tutor messages
         $tutorMessages = $user->tutorMessages()
@@ -121,34 +134,40 @@ class DashboardController extends Controller
             ->get();
 
         // Get recent activity
-        $recentActivity = $user->activities()
-            ->latest()
-            ->limit(10)
-            ->get();
+        $recentActivity = $hasGamification
+            ? $user->activities()
+                ->latest()
+                ->limit(10)
+                ->get()
+            : collect();
 
         // Get global leaderboard
-        $globalLeaderboard = User::query()
-            ->orderByDesc('total_xp')
-            ->limit(10)
-            ->get()
-            ->map(function ($u, $index) use ($user) {
-                return [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'avatar' => $u->avatar,
-                    'xp' => $u->total_xp,
-                    'level' => $u->level ?? 1,
-                    'rank' => $index + 1,
-                    'isCurrentUser' => $u->id === $user->id,
-                ];
-            });
+        $globalLeaderboard = $hasGamification
+            ? User::query()
+                ->orderByDesc('total_xp')
+                ->limit(10)
+                ->get()
+                ->map(function ($u, $index) use ($user) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'avatar' => $u->avatar,
+                        'xp' => $u->total_xp,
+                        'level' => $u->level ?? 1,
+                        'rank' => $index + 1,
+                        'isCurrentUser' => $u->id === $user->id,
+                    ];
+                })
+            : collect();
 
-        $userTotalXp = $user->total_xp ?? 0;
-        $currentUserRank = User::where('total_xp', '>', $userTotalXp)->count() + 1;
+        $userTotalXp = $hasGamification ? ($user->total_xp ?? 0) : 0;
+        $currentUserRank = $hasGamification
+            ? User::where('total_xp', '>', $userTotalXp)->count() + 1
+            : null;
 
         $tutorData = null;
 
-        if ($isTutor || $isAdmin) {
+        if ($isTutor) {
             $taughtCourses = Course::with([
                 'lessons.contents',
                 'enrollments.user',
@@ -327,16 +346,93 @@ class DashboardController extends Controller
             ];
         }
 
+        $adminData = null;
+
+        if ($isAdmin) {
+            $tutors = User::role('tutor')
+                ->select(['id', 'name', 'avatar'])
+                ->orderBy('name')
+                ->get();
+
+            $courseCounts = Course::query()
+                ->select('instructor_id', DB::raw('count(*) as course_count'))
+                ->whereNotNull('instructor_id')
+                ->groupBy('instructor_id')
+                ->pluck('course_count', 'instructor_id');
+
+            $studentCounts = Enrollment::query()
+                ->select('courses.instructor_id', DB::raw('count(distinct enrollments.user_id) as student_count'))
+                ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+                ->whereNotNull('courses.instructor_id')
+                ->groupBy('courses.instructor_id')
+                ->pluck('student_count', 'courses.instructor_id');
+
+            $allTutors = $tutors->map(function (User $tutor) use ($courseCounts, $studentCounts) {
+                return [
+                    'id' => $tutor->id,
+                    'name' => $tutor->name,
+                    'avatar' => $tutor->avatar,
+                    'course_count' => (int) ($courseCounts[$tutor->id] ?? 0),
+                    'student_count' => (int) ($studentCounts[$tutor->id] ?? 0),
+                ];
+            });
+
+            $allCourses = Course::with('instructor')
+                ->withCount('enrollments')
+                ->latest()
+                ->get()
+                ->map(function (Course $course) {
+                    return [
+                        'id' => $course->id,
+                        'title' => $course->title,
+                        'instructor' => $course->instructor ? [
+                            'id' => $course->instructor->id,
+                            'name' => $course->instructor->name,
+                        ] : null,
+                        'student_count' => $course->enrollments_count,
+                        'is_published' => $course->is_published,
+                    ];
+                });
+
+            $allStudents = User::role('student')
+                ->withCount('enrollments')
+                ->orderByDesc('total_xp')
+                ->limit(20)
+                ->get()
+                ->map(function (User $student) {
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'avatar' => $student->avatar,
+                        'enrollment_count' => $student->enrollments_count,
+                        'total_xp' => $student->total_xp ?? 0,
+                        'level' => $student->level ?? 1,
+                    ];
+                });
+
+            $adminData = [
+                'tutors' => $allTutors,
+                'courses' => $allCourses,
+                'students' => $allStudents,
+                'summary' => [
+                    'tutor_count' => $tutors->count(),
+                    'course_count' => Course::count(),
+                    'student_count' => User::role('student')->count(),
+                    'active_enrollment_count' => Enrollment::where('status', 'active')->count(),
+                ],
+            ];
+        }
+
         return Inertia::render('dashboard', [
             'stats' => [
-                'streak' => $user->currentStreak(),
-                'longest_streak' => $user->longest_streak ?? 0,
-                'xp_this_week' => $user->xpThisWeek(),
-                'hours_learned' => $user->hoursThisWeek(),
-                'active_courses' => $user->enrollments()->where('status', 'active')->count(),
-                'total_xp' => $user->total_xp ?? 0,
-                'level' => $user->level ?? 1,
-                'points_balance' => $user->points_balance ?? 0,
+                'streak' => $hasGamification ? $user->currentStreak() : 0,
+                'longest_streak' => $hasGamification ? ($user->longest_streak ?? 0) : 0,
+                'xp_this_week' => $hasGamification ? $user->xpThisWeek() : 0,
+                'hours_learned' => $hasGamification ? $user->hoursThisWeek() : 0,
+                'active_courses' => $hasGamification ? $user->enrollments()->where('status', 'active')->count() : 0,
+                'total_xp' => $hasGamification ? ($user->total_xp ?? 0) : 0,
+                'level' => $hasGamification ? ($user->level ?? 1) : 1,
+                'points_balance' => $hasGamification ? ($user->points_balance ?? 0) : 0,
                 'xp_in_level' => $levelProgress['xp_in_level'],
                 'xp_for_next_level' => $levelProgress['xp_for_next_level'],
                 'level_progress_percentage' => $levelProgress['progress_percentage'],
@@ -351,15 +447,21 @@ class DashboardController extends Controller
             'unread_message_count' => $user->tutorMessages()->where('is_read', false)->count(),
             'global_leaderboard' => $globalLeaderboard,
             'current_user_rank' => $currentUserRank,
-            'weekly_activity_data' => collect($user->weeklyActivityChartData())->map(fn ($item) => [
-                'name' => $item['day'],
-                'value' => $item['xp'],
-            ])->toArray(),
-            'available_rewards' => Reward::where('is_active', true)
-                ->orderBy('cost')
-                ->limit(6)
-                ->get(),
+            'weekly_activity_data' => $hasGamification
+                ? collect($user->weeklyActivityChartData())->map(fn ($item) => [
+                    'name' => $item['day'],
+                    'value' => $item['xp'],
+                ])->toArray()
+                : [],
+            'available_rewards' => $hasGamification
+                ? Reward::where('is_active', true)
+                    ->orderBy('cost')
+                    ->limit(6)
+                    ->get()
+                : collect(),
             'tutor_dashboard' => $tutorData,
+            'admin_dashboard' => $adminData,
+            'is_admin' => $isAdmin,
         ]);
     }
 }

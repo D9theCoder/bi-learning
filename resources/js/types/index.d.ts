@@ -515,6 +515,8 @@ export interface EditCoursePageProps {
   mode: 'create' | 'edit';
   categories: Array<{ value: string; label: string }>;
   availablePowerups?: Powerup[];
+  availableTutors?: Array<Pick<User, 'id' | 'name' | 'avatar'>>;
+  isAdmin?: boolean;
 }
 
 export interface MessagesPageProps {
@@ -577,6 +579,37 @@ export interface TutorDashboardData {
     course_count: number;
     student_count: number;
     average_progress: number;
+  };
+}
+
+export interface AdminDashboardData {
+  tutors: Array<{
+    id: number;
+    name: string;
+    avatar?: string;
+    course_count: number;
+    student_count: number;
+  }>;
+  courses: Array<{
+    id: number;
+    title: string;
+    instructor: { id: number; name: string } | null;
+    student_count: number;
+    is_published: boolean;
+  }>;
+  students: Array<{
+    id: number;
+    name: string;
+    avatar?: string;
+    enrollment_count: number;
+    total_xp: number;
+    level: number;
+  }>;
+  summary: {
+    tutor_count: number;
+    course_count: number;
+    student_count: number;
+    active_enrollment_count: number;
   };
 }
 
