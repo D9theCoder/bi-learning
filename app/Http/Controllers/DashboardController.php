@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\CourseContentCompletion;
 use App\Models\Enrollment;
 use App\Models\Reward;
+use App\Models\StudentMeetingSchedule;
 use App\Models\User;
 use App\Services\AchievementProgressService;
 use App\Services\GamificationService;
@@ -69,26 +70,38 @@ class DashboardController extends Controller
         $studentCalendar = [];
 
         if ($hasGamification) {
-            foreach ($user->enrollments()->with(['course.lessons', 'course.assessments'])->where('status', 'active')->get() as $enrollment) {
+            $activeEnrollments = $user->enrollments()
+                ->with(['course.assessments'])
+                ->where('status', 'active')
+                ->get();
+
+            $activeCourseIds = $activeEnrollments->pluck('course_id')->values();
+
+            $upcomingMeetings = StudentMeetingSchedule::query()
+                ->with('course')
+                ->where('student_id', $user->id)
+                ->whereIn('course_id', $activeCourseIds)
+                ->where('status', 'scheduled')
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')
+                ->get()
+                ->map(fn ($schedule) => [
+                    'id' => $schedule->id,
+                    'course_id' => $schedule->course_id,
+                    'lesson_id' => $schedule->lesson_id,
+                    'title' => $schedule->title,
+                    'course_title' => $schedule->course?->title,
+                    'date' => $schedule->scheduled_at?->toDateString(),
+                    'time' => $schedule->scheduled_at?->format('H:i'),
+                    'type' => 'meeting',
+                    'meeting_url' => $schedule->meeting_url,
+                    'category' => 'meeting',
+                ]);
+
+            $studentCalendar = array_merge($studentCalendar, $upcomingMeetings->all());
+
+            foreach ($activeEnrollments as $enrollment) {
                 $course = $enrollment->course;
-
-                // Add upcoming lesson meetings
-                $upcomingMeetings = $course->lessons
-                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
-                    ->map(fn ($lesson) => [
-                        'id' => $lesson->id,
-                        'course_id' => $course->id,
-                        'lesson_id' => $lesson->id,
-                        'title' => $lesson->title,
-                        'course_title' => $course->title,
-                        'date' => $lesson->meeting_start_time?->toDateString(),
-                        'time' => $lesson->meeting_start_time?->format('H:i'),
-                        'type' => 'meeting',
-                        'meeting_url' => $lesson->meeting_url,
-                        'category' => 'meeting',
-                    ]);
-
-                $studentCalendar = array_merge($studentCalendar, $upcomingMeetings->all());
 
                 // Add upcoming assessment due dates
                 $upcomingAssessments = $course->assessments
@@ -193,9 +206,31 @@ class DashboardController extends Controller
                 ->whereNotNull('completed_at')
                 ->get();
 
+            $upcomingSchedules = StudentMeetingSchedule::query()
+                ->with('course')
+                ->whereIn('course_id', $courseIds)
+                ->where('status', 'scheduled')
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')
+                ->get();
+            $upcomingSchedulesByCourse = $upcomingSchedules->groupBy('course_id');
+
             $courseSnapshots = [];
             $chartSeries = [];
-            $upcomingItems = [];
+            $upcomingItems = $upcomingSchedules
+                ->map(fn ($schedule) => [
+                    'id' => $schedule->id,
+                    'course_id' => $schedule->course_id,
+                    'lesson_id' => $schedule->lesson_id,
+                    'title' => $schedule->title,
+                    'course_title' => $schedule->course?->title,
+                    'due_date' => $schedule->scheduled_at?->toDateString(),
+                    'time' => $schedule->scheduled_at?->format('H:i'),
+                    'type' => 'meeting',
+                    'meeting_url' => $schedule->meeting_url,
+                    'category' => 'meeting',
+                ])
+                ->all();
             $studentAggregates = [];
 
             foreach ($taughtCourses as $course) {
@@ -225,10 +260,7 @@ class DashboardController extends Controller
                 $quizPossible = max(1, $assessmentCount * max(1, $studentCount));
                 $quizRate = round(($quizCompletedCount / $quizPossible) * 100, 1);
 
-                $nextMeeting = $course->lessons
-                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
-                    ->sortBy('meeting_start_time')
-                    ->first();
+                $nextMeeting = $upcomingSchedulesByCourse->get($course->id)?->first();
 
                 $courseSnapshots[] = [
                     'id' => $course->id,
@@ -236,8 +268,8 @@ class DashboardController extends Controller
                     'thumbnail' => $course->thumbnail,
                     'student_count' => $studentCount,
                     'active_students' => $activeStudents,
-                    'next_meeting_date' => $nextMeeting?->meeting_start_time?->toDateString(),
-                    'next_meeting_time' => $nextMeeting?->meeting_start_time?->format('H:i'),
+                    'next_meeting_date' => $nextMeeting?->scheduled_at?->toDateString(),
+                    'next_meeting_time' => $nextMeeting?->scheduled_at?->format('H:i'),
                     'is_published' => $course->is_published,
                 ];
 
@@ -247,25 +279,6 @@ class DashboardController extends Controller
                     'quiz' => $quizRate,
                     'students' => $studentCount,
                 ];
-
-                // Add upcoming lesson meetings
-                $upcomingMeetings = $course->lessons
-                    ->filter(fn ($lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
-                    ->sortBy('meeting_start_time')
-                    ->map(fn ($lesson) => [
-                        'id' => $lesson->id,
-                        'course_id' => $course->id,
-                        'lesson_id' => $lesson->id,
-                        'title' => $lesson->title,
-                        'course_title' => $course->title,
-                        'due_date' => $lesson->meeting_start_time?->toDateString(),
-                        'time' => $lesson->meeting_start_time?->format('H:i'),
-                        'type' => 'meeting',
-                        'meeting_url' => $lesson->meeting_url,
-                        'category' => 'meeting',
-                    ]);
-
-                $upcomingItems = array_merge($upcomingItems, $upcomingMeetings->all());
 
                 // Add upcoming assessment due dates
                 $upcomingAssessments = $course->assessments

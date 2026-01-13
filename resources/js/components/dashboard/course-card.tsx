@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { Enrollment } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Calendar as CalendarIcon, Clock, Play } from 'lucide-react';
+import { BookOpen, Play } from 'lucide-react';
 
 interface CourseCardProps {
   enrollment: Enrollment;
@@ -64,30 +64,6 @@ export function CourseCard({ enrollment, onResume }: CourseCardProps) {
               </p>
             )}
 
-            {next_lesson?.meeting_start_time && (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <CalendarIcon className="size-3.5" />
-                  <span>
-                    {new Date(
-                      next_lesson.meeting_start_time,
-                    ).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="size-3.5" />
-                  <span>
-                    {new Date(next_lesson.meeting_start_time).toLocaleTimeString(
-                      [],
-                      {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      },
-                    )}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="space-y-1.5">

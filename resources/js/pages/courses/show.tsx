@@ -12,12 +12,19 @@ import {
   Course,
   CourseContent,
   Lesson,
+  StudentMeetingSchedule,
   StudentWithSubmissions,
   User,
 } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
-import { AssessmentTab, AttendanceTab, GradebookTab, ScoringTab } from './tabs';
+import {
+  AssessmentTab,
+  AttendanceTab,
+  GradebookTab,
+  ScheduleTab,
+  ScoringTab,
+} from './tabs';
 
 interface CourseShowProps {
   course: Course & {
@@ -31,6 +38,7 @@ interface CourseShowProps {
   students?: StudentWithSubmissions[];
   assessments?: Assessment[];
   submissions?: AssessmentSubmission[];
+  meetingSchedules?: StudentMeetingSchedule[];
 }
 
 export default function CourseShow({
@@ -40,6 +48,7 @@ export default function CourseShow({
   students = [],
   assessments = [],
   submissions = [],
+  meetingSchedules = [],
 }: CourseShowProps) {
   // Read initial session from URL query parameter
   const getInitialSessionId = useCallback((): string => {
@@ -140,7 +149,18 @@ export default function CourseShow({
               assessments={assessments}
               isAdmin={isAdmin}
               isTutor={isTutor}
+              meetingSchedules={meetingSchedules}
               onEnrollClick={() => setIsEnrollModalOpen(true)}
+            />
+          }
+          scheduleContent={
+            <ScheduleTab
+              course={course}
+              lessons={course.lessons}
+              isEnrolled={isEnrolled}
+              isTutor={isTutor}
+              students={students}
+              meetingSchedules={meetingSchedules}
             />
           }
           assessmentContent={

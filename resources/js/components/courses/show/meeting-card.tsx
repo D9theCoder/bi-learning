@@ -2,15 +2,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SuccessModal } from '@/components/ui/success-modal';
+import type { StudentMeetingSchedule } from '@/types';
 import { router } from '@inertiajs/react';
 import { CalendarClock, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface MeetingCardProps {
   lessonId: number;
-  meetingUrl: string;
-  meetingStartTime: string | null;
-  meetingEndTime: string | null;
+  schedule: StudentMeetingSchedule;
   hasAttended?: boolean;
   isAdmin: boolean;
   isTutor: boolean;
@@ -18,9 +17,7 @@ interface MeetingCardProps {
 
 export function MeetingCard({
   lessonId,
-  meetingUrl,
-  meetingStartTime,
-  meetingEndTime,
+  schedule,
   hasAttended,
   isAdmin,
   isTutor,
@@ -28,39 +25,59 @@ export function MeetingCard({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const now = new Date();
 
-  const startTime = meetingStartTime
-    ? new Date(meetingStartTime.substring(0, 19))
+  const startTime = schedule.scheduled_at
+    ? new Date(schedule.scheduled_at.substring(0, 19))
     : null;
-  const endTime = meetingEndTime
-    ? new Date(meetingEndTime.substring(0, 19))
-    : null;
+  const endTime =
+    startTime && schedule.duration_minutes
+      ? new Date(startTime.getTime() + schedule.duration_minutes * 60000)
+      : null;
 
-  const isActive = startTime && endTime && now >= startTime && now <= endTime;
-  const isPast = endTime && now > endTime;
-  const isFuture = startTime && now < startTime;
-  const statusLabel = isActive
-    ? 'Live now'
-    : isPast
-      ? 'Ended'
-      : isFuture
-        ? 'Upcoming'
-        : 'Ready';
-  const statusClass = isActive
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/30 dark:text-emerald-200'
-    : isPast
-      ? 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300'
-      : isFuture
-        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-900/30 dark:text-amber-200'
-        : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200';
+  const isCancelled = schedule.status === 'cancelled';
+  const isCompleted = schedule.status === 'completed';
+  const isActive =
+    !!startTime &&
+    schedule.status === 'scheduled' &&
+    (!endTime || (now >= startTime && now <= endTime));
+  const isPast =
+    !!startTime && schedule.status === 'scheduled' && endTime && now > endTime;
+  const isFuture =
+    !!startTime && schedule.status === 'scheduled' && now < startTime;
+  const statusLabel = isCancelled
+    ? 'Cancelled'
+    : isCompleted
+      ? 'Completed'
+      : isActive
+        ? 'Live now'
+        : isPast
+          ? 'Ended'
+          : isFuture
+            ? 'Upcoming'
+            : 'Scheduled';
+  const statusClass = isCancelled
+    ? 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300'
+    : isCompleted
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/30 dark:text-emerald-200'
+      : isActive
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/30 dark:text-emerald-200'
+        : isPast
+          ? 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300'
+          : isFuture
+            ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-900/30 dark:text-amber-200'
+            : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200';
 
   const handleJoinMeeting = () => {
+    if (! schedule.meeting_url) {
+      return;
+    }
+
     router.post(
       `/lessons/${lessonId}/attend`,
       {},
       {
         preserveScroll: true,
         onSuccess: () => {
-          window.open(meetingUrl, '_blank');
+          window.open(schedule.meeting_url, '_blank');
           setShowSuccessModal(true);
         },
         onError: (errors) => {
@@ -104,7 +121,8 @@ export function MeetingCard({
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <CalendarClock className="mt-0.5 h-4 w-4 text-blue-500" />
                 <span>
-                  {startTime.toLocaleString()} - {endTime?.toLocaleTimeString()}
+                  {startTime.toLocaleString()}
+                  {endTime ? ` - ${endTime.toLocaleTimeString()}` : null}
                 </span>
               </div>
             )}
@@ -114,7 +132,19 @@ export function MeetingCard({
                 <span>Attendance confirmed</span>
               </div>
             )}
-            {isActive ? (
+            {isCancelled ? (
+              <Button disabled className="w-full">
+                Meeting Cancelled
+              </Button>
+            ) : isCompleted ? (
+              <Button disabled className="w-full">
+                Meeting Completed
+              </Button>
+            ) : !schedule.meeting_url ? (
+              <Button disabled className="w-full">
+                Meeting Link Pending
+              </Button>
+            ) : isActive ? (
               <Button
                 onClick={handleJoinMeeting}
                 className="w-full bg-blue-600 text-white hover:bg-blue-700"

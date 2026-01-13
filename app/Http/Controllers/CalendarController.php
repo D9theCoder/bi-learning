@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assessment;
 use App\Models\Course;
-use App\Models\Lesson;
+use App\Models\StudentMeetingSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -32,34 +32,42 @@ class CalendarController extends Controller
         $paginatedCourses = null;
 
         if ($isTutor || $isAdmin) {
-            $courseQuery = Course::with(['lessons', 'assessments']);
+            $courseQuery = Course::with(['assessments']);
 
             if (! $isAdmin) {
                 $courseQuery->where('instructor_id', $user->id);
             }
 
             $courses = $courseQuery->get();
+            $courseIds = $courses->pluck('id')->values();
+
+            $scheduleItems = StudentMeetingSchedule::query()
+                ->with('course')
+                ->whereIn('course_id', $courseIds)
+                ->where('status', '!=', 'cancelled')
+                ->whereBetween('scheduled_at', [$start, $end])
+                ->get();
 
             foreach ($courses as $course) {
-                // Add lesson meetings (past and future)
-                $meetings = $course->lessons
-                    ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null)
-                    ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
-                    ->map(fn (Lesson $lesson) => [
-                        'id' => $lesson->id,
-                        'course_id' => $course->id,
-                        'lesson_id' => $lesson->id,
-                        'title' => $lesson->title,
-                        'due_date' => $lesson->meeting_start_time->format('Y-m-d'),
-                        'time' => $lesson->meeting_start_time->format('H:i'),
-                        'completed' => $lesson->meeting_start_time->isPast(),
-                        'course_title' => $course->title,
+                // Add scheduled meetings (past and future)
+                $meetings = $scheduleItems
+                    ->where('course_id', $course->id)
+                    ->map(fn (StudentMeetingSchedule $schedule) => [
+                        'id' => $schedule->id,
+                        'course_id' => $schedule->course_id,
+                        'lesson_id' => $schedule->lesson_id,
+                        'title' => $schedule->title,
+                        'due_date' => $schedule->scheduled_at?->format('Y-m-d'),
+                        'time' => $schedule->scheduled_at?->format('H:i'),
+                        'completed' => $schedule->status === 'completed'
+                            || $schedule->scheduled_at?->isPast(),
+                        'course_title' => $schedule->course?->title,
                         'type' => 'meeting',
-                        'meeting_url' => $lesson->meeting_url,
+                        'meeting_url' => $schedule->meeting_url,
                         'category' => 'meeting',
                     ]);
 
-                $calendarItems = $calendarItems->merge($meetings);
+                $calendarItems = $calendarItems->merge($meetings->all());
 
                 // Add assessments (past and future)
                 $assessments = $course->assessments
@@ -83,11 +91,8 @@ class CalendarController extends Controller
             }
 
             if ($isAdmin) {
-                $courseMarkers = $courses
-                    ->flatMap(fn (Course $course) => $course->lessons
-                        ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null)
-                        ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
-                        ->map(fn (Lesson $lesson) => $lesson->meeting_start_time->toDateString()))
+                $courseMarkers = $scheduleItems
+                    ->map(fn (StudentMeetingSchedule $schedule) => $schedule->scheduled_at?->toDateString())
                     ->merge($courses->flatMap(fn (Course $course) => $course->assessments
                         ->filter(fn (Assessment $assessment) => $assessment->due_date !== null && $assessment->is_published)
                         ->filter(fn (Assessment $assessment) => $assessment->due_date->between($start, $end))
@@ -98,64 +103,73 @@ class CalendarController extends Controller
                     ->all();
 
                 $paginatedCourses = Course::query()
-                    ->with([
-                        'instructor',
-                        'lessons' => fn ($query) => $query->whereNotNull('meeting_start_time'),
-                    ])
+                    ->with('instructor')
                     ->withCount('enrollments')
                     ->latest()
                     ->paginate(12)
-                    ->withQueryString()
-                    ->through(function (Course $course) {
-                        $nextMeeting = $course->lessons
-                            ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null && $lesson->meeting_start_time->isFuture())
-                            ->sortBy('meeting_start_time')
-                            ->first();
+                    ->withQueryString();
 
-                        return [
-                            'id' => $course->id,
-                            'title' => $course->title,
-                            'thumbnail' => $course->thumbnail,
-                            'instructor' => $course->instructor ? [
-                                'id' => $course->instructor->id,
-                                'name' => $course->instructor->name,
-                            ] : null,
-                            'student_count' => $course->enrollments_count ?? 0,
-                            'next_meeting_date' => $nextMeeting?->meeting_start_time?->toDateString(),
-                            'next_meeting_time' => $nextMeeting?->meeting_start_time?->format('H:i'),
-                            'is_published' => $course->is_published,
-                        ];
-                    });
+                $nextMeetingByCourse = StudentMeetingSchedule::query()
+                    ->whereIn('course_id', $paginatedCourses->getCollection()->pluck('id'))
+                    ->where('status', 'scheduled')
+                    ->where('scheduled_at', '>=', now())
+                    ->orderBy('scheduled_at')
+                    ->get()
+                    ->groupBy('course_id');
+
+                $paginatedCourses = $paginatedCourses->through(function (Course $course) use ($nextMeetingByCourse) {
+                    $nextMeeting = $nextMeetingByCourse->get($course->id)?->first();
+
+                    return [
+                        'id' => $course->id,
+                        'title' => $course->title,
+                        'thumbnail' => $course->thumbnail,
+                        'instructor' => $course->instructor ? [
+                            'id' => $course->instructor->id,
+                            'name' => $course->instructor->name,
+                        ] : null,
+                        'student_count' => $course->enrollments_count ?? 0,
+                        'next_meeting_date' => $nextMeeting?->scheduled_at?->toDateString(),
+                        'next_meeting_time' => $nextMeeting?->scheduled_at?->format('H:i'),
+                        'is_published' => $course->is_published,
+                    ];
+                });
             }
         } else {
             // Student: Get enrolled courses
             $enrollments = $user->enrollments()
-                ->with(['course.lessons', 'course.assessments'])
+                ->with(['course.assessments'])
                 ->where('status', 'active')
                 ->get();
 
+            $courseIds = $enrollments->pluck('course_id')->values();
+            $meetingSchedules = StudentMeetingSchedule::query()
+                ->with('course')
+                ->where('student_id', $user->id)
+                ->whereIn('course_id', $courseIds)
+                ->where('status', '!=', 'cancelled')
+                ->whereBetween('scheduled_at', [$start, $end])
+                ->get();
+
+            $meetings = $meetingSchedules->map(fn (StudentMeetingSchedule $schedule) => [
+                'id' => $schedule->id,
+                'course_id' => $schedule->course_id,
+                'lesson_id' => $schedule->lesson_id,
+                'title' => $schedule->title,
+                'due_date' => $schedule->scheduled_at?->format('Y-m-d'),
+                'time' => $schedule->scheduled_at?->format('H:i'),
+                'completed' => $schedule->status === 'completed'
+                    || $schedule->scheduled_at?->isPast(),
+                'course_title' => $schedule->course?->title,
+                'type' => 'meeting',
+                'meeting_url' => $schedule->meeting_url,
+                'category' => 'meeting',
+            ]);
+
+            $calendarItems = $calendarItems->merge($meetings->all());
+
             foreach ($enrollments as $enrollment) {
                 $course = $enrollment->course;
-
-                // Add lesson meetings (past and future)
-                $meetings = $course->lessons
-                    ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time !== null)
-                    ->filter(fn (Lesson $lesson) => $lesson->meeting_start_time->between($start, $end))
-                    ->map(fn (Lesson $lesson) => [
-                        'id' => $lesson->id,
-                        'course_id' => $course->id,
-                        'lesson_id' => $lesson->id,
-                        'title' => $lesson->title,
-                        'due_date' => $lesson->meeting_start_time->format('Y-m-d'),
-                        'time' => $lesson->meeting_start_time->format('H:i'),
-                        'completed' => $lesson->meeting_start_time->isPast(),
-                        'course_title' => $course->title,
-                        'type' => 'meeting',
-                        'meeting_url' => $lesson->meeting_url,
-                        'category' => 'meeting',
-                    ]);
-
-                $calendarItems = $calendarItems->merge($meetings);
 
                 // Add assessments (past and future)
                 $assessments = $course->assessments

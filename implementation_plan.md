@@ -1,162 +1,176 @@
-# Admin Calendar Enhancement - Implementation Plan
+# Per-Student Meeting Scheduling for Course Page
 
-This plan adds course markers and a paginated course list to the admin calendar page, modeled after the tutor dashboard's course features.
+## Problem Summary
 
-## User Review Required
+Currently, in a course with a tutor and multiple students:
 
-> [!IMPORTANT] > **Pagination Strategy:** The backend will use standard Laravel pagination for the course list API endpoint. The calendar will fetch ALL courses without pagination for displaying markers (since we need to show all course events on the calendar), but the course list sidebar will use paginated data. This approach balances performance with functionality.
+- **Students** can view their own schedule, score, and attendance (working correctly)
+- **Tutors** can teach multiple students, but meetings are one-on-one (private)
+- **Issue**: Meeting times are stored on the `lessons` table (shared by all students), making it impossible to schedule personalized per-student meetings
 
-> [!IMPORTANT] > **Admin Course Access:** Admins will see ALL courses in the system (not just courses they're teaching), since admins have oversight authority over all tutors and courses. The course markers will show events from all courses system-wide.
+## Proposed Solution
+
+Create a new **"Schedule" tab** on the course page that allows tutors to manage individual meeting schedules per student, while students only see their own personalized schedule.
+
+---
 
 ## Proposed Changes
 
-### Backend - Calendar Controller
+### Database Layer
 
-#### [MODIFY] [CalendarController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/CalendarController.php>)
+#### [NEW] `database/migrations/xxxx_create_student_meeting_schedules_table.php`
 
-Update the `index` method to:
+New pivot table linking lessons/courses to specific students with meeting times:
 
-1. **For admin users:** Load all courses with lessons and assessments to generate calendar markers
-2. **Add pagination:** Create a separate method or extend the index to return paginated course data for the course list
-3. **Include course metadata:** Add similar data structure as tutor dashboard courses (student count, next meeting, etc.)
-
-**Key changes:**
-
-- Add a new query after line 32 for admin users to fetch all courses (not just instructor_id filtered)
-- Include course markers similar to lines 38-78 (tutor logic) but for ALL courses
-- Add a paginated course list using Laravel's `paginate()` method (per_page = 12)
-- Return course data including: `id`, `title`, `thumbnail`, `instructor`, `student_count`, `next_meeting_date`, `next_meeting_time`, `is_published`
-
----
-
-### Backend - API Endpoint (Optional Approach)
-
-#### [NEW] [AdminCoursesController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/Admin/AdminCoursesController.php>)
-
-Alternatively, create a dedicated admin controller for paginated course data:
-
-- `GET /admin/courses` - Returns paginated course list with metadata
-- This keeps separation of concerns and allows reuse across admin pages
-- Uses `Course::with(['instructor', 'lessons', 'assessments', 'enrollments'])->paginate(12)`
+| Column                  | Type                    | Description                              |
+| ----------------------- | ----------------------- | ---------------------------------------- |
+| `id`                    | bigint                  | Primary key                              |
+| `course_id`             | FK → courses            | Parent course                            |
+| `lesson_id`             | FK → lessons (nullable) | Optional lesson reference                |
+| `student_id`            | FK → users              | The enrolled student                     |
+| `title`                 | string                  | Meeting title (defaults to lesson title) |
+| `meeting_url`           | string (nullable)       | Video call link                          |
+| `scheduled_at`          | datetime                | Meeting date/time                        |
+| `duration_minutes`      | integer (nullable)      | Expected duration                        |
+| `notes`                 | text (nullable)         | Tutor notes for this session             |
+| `status`                | enum                    | `scheduled`, `completed`, `cancelled`    |
+| `created_at/updated_at` | timestamps              |
 
 ---
 
-### Frontend - TypeScript Types
+### Backend
 
-#### [MODIFY] [index.d.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/types/index.d.ts>)
+#### [NEW] `app/Models/StudentMeetingSchedule.php`
 
-Add new interfaces:
+Eloquent model with relationships to `Course`, `Lesson`, and `User` (student).
 
-1. **`AdminCalendarCourse`** - Similar to `TutorDashboardCourse` but with instructor info
-2. **Update `CalendarPageProps`** - Add optional `courses?` and `courseMarkers?` properties for admin
+#### [MODIFY] `app/Models/Course.php`
+
+Add relationship: `studentMeetingSchedules() → hasMany`
+
+#### [MODIFY] `app/Models/Enrollment.php` or add to `User.php`
+
+Add relationship for student's meeting schedules.
+
+#### [NEW] `app/Http/Controllers/StudentMeetingScheduleController.php`
+
+Endpoints for tutors to manage schedules:
+
+| Method | Route                                   | Description                                                  |
+| ------ | --------------------------------------- | ------------------------------------------------------------ |
+| GET    | `courses/{course}/schedules`            | List all student schedules (tutor) or own schedule (student) |
+| POST   | `courses/{course}/schedules`            | Create new meeting for specific student                      |
+| PUT    | `courses/{course}/schedules/{schedule}` | Update meeting                                               |
+| DELETE | `courses/{course}/schedules/{schedule}` | Delete meeting                                               |
+| POST   | `courses/{course}/schedules/bulk`       | Bulk schedule (optional, for efficiency)                     |
+
+#### [MODIFY] `app/Http/Controllers/CourseController.php`
+
+In `show()` method:
+
+- For tutors: fetch all student meeting schedules grouped by student
+- For students: fetch only their own meeting schedules
+
+---
+
+### Frontend
+
+#### [MODIFY] `resources/js/components/courses/show/course-tabs.tsx`
+
+Add new **"Schedule"** tab between "Session" and "Assessment":
+
+- Tab shows for all users
+- Content differs based on role
+
+#### [NEW] `resources/js/components/courses/tabs/schedule/` folder
+
+New folder with components:
+
+| Component                    | Purpose                                                  |
+| ---------------------------- | -------------------------------------------------------- |
+| `index.ts`                   | Barrel export                                            |
+| `schedule-tutor-view.tsx`    | Shows all students with their schedules, add/edit/delete |
+| `schedule-student-view.tsx`  | Shows student's own upcoming & past meetings             |
+| `schedule-form-dialog.tsx`   | Modal for creating/editing a meeting                     |
+| `schedule-calendar-view.tsx` | Optional: mini calendar showing scheduled meetings       |
+
+#### [MODIFY] `resources/js/types/index.d.ts`
+
+Add new interface:
 
 ```typescript
-export interface AdminCalendarCourse {
+export interface StudentMeetingSchedule {
   id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  student_id: number;
+  student?: User;
   title: string;
-  thumbnail?: string;
-  instructor?: { id: number; name: string } | null;
-  student_count: number;
-  next_meeting_date?: string | null;
-  next_meeting_time?: string | null;
-  is_published: boolean;
-}
-
-export interface CalendarPageProps extends SharedData {
-  // ... existing properties
-  courses?: {
-    data: AdminCalendarCourse[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-  };
-  courseMarkers?: string[]; // YYYY-MM-DD dates with course events
+  meeting_url?: string | null;
+  scheduled_at: string;
+  duration_minutes?: number | null;
+  notes?: string | null;
+  status: "scheduled" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
 }
 ```
 
 ---
 
-### Frontend - Calendar Page
+## User Review Required
 
-#### [MODIFY] [index.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/calendar/index.tsx>)
+> [!IMPORTANT] > **Tab Naming Decision**: The plan proposes adding a "Schedule" tab. Would you prefer a different name, such as "Meetings" or "Sessions"?
 
-1. Check if user is admin and courses data exists
-2. If admin, add a new section below the calendar overview showing the course list
-3. Add pagination controls at the bottom of the course list
-4. Merge `courseMarkers` into the existing `markers` array for the mini calendar
+> [!IMPORTANT] > **Bulk Scheduling**: Should the tutor be able to bulk-schedule the same time slot for all students, or is individual scheduling sufficient for the initial version?
 
----
-
-### Frontend - Components
-
-#### [NEW] [admin-course-list-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/admin-course-list-section.tsx>)
-
-Create a new component based on `TutorCourseListSection`:
-
-- Display paginated courses with thumbnail, title, instructor name
-- Show student count and next meeting info
-- Add pagination controls using Inertia's links
-- Include "View course" and "Manage course" buttons
-- Responsive grid layout (1 col mobile, 2 cols desktop)
+> [!IMPORTANT] > **Calendar Integration**: Should new student meeting schedules automatically appear in the existing calendar page? This would require modifications to `CalendarController`.
 
 ---
 
-### Frontend - Mini Calendar Enhancement
+## UI/UX Improvements for Intuitive Scheduling
 
-#### [MODIFY] [mini-calendar.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/mini-calendar.tsx>)
+### For Tutors (Schedule Tab)
 
-No major changes needed - the component already supports custom markers. Just ensure:
+1. **Student List View**: Table showing all enrolled students with their next scheduled meeting
+2. **Add Meeting Button**: Per student, opens a dialog to schedule meeting
+3. **Quick Actions**: Edit/cancel/mark complete on each scheduled meeting
+4. **Empty State**: Prompt to schedule first meeting when no schedules exist
 
-- Course event markers use a distinct color (e.g., purple/violet) to differentiate from meetings, assessments, and tasks
-- Add a 4th category for 'course' events if needed
+### For Students (Schedule Tab)
+
+1. **Upcoming Meetings**: Card list of scheduled meetings with join button
+2. **Past Meetings**: Collapsed section showing completed sessions
+3. **Meeting Cards**: Show title, date/time, duration, join link
+
+---
 
 ## Verification Plan
 
 ### Automated Tests
 
-1. **Update existing calendar tests** (Lines to add in [CalendarTest.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/tests/Feature/CalendarTest.php>)):
+Create new test file `tests/Feature/StudentMeetingScheduleTest.php`:
 
 ```bash
-php artisan test tests/Feature/CalendarTest.php
+php artisan test tests/Feature/StudentMeetingScheduleTest.php
 ```
 
-Add new test cases:
+Test cases:
 
-- `it('shows all courses to admin users')` - Verify admin sees all courses, not just taught ones
-- `it('paginates admin course list')` - Check pagination works correctly
-- `it('includes course markers in admin calendar')` - Verify course events appear as markers
-- `it('includes instructor info for admin courses')` - Check instructor data is present
-
-2. **Create new admin calendar test file** (if needed):
-
-```bash
-php artisan make:test AdminCalendarTest --pest
-php artisan test tests/Feature/AdminCalendarTest.php
-```
-
-3. **Run code formatter:**
-
-```bash
-vendor/bin/pint --dirty
-```
+- Tutor can list all student schedules for their course
+- Tutor can create meeting for enrolled student
+- Tutor cannot create meeting for non-enrolled student
+- Tutor can update/delete existing meetings
+- Student can only see their own meeting schedules
+- Student cannot create/update/delete meetings
+- Non-enrolled user cannot access schedules
 
 ### Manual Verification
 
-1. **Login as admin user** and navigate to `/calendar`
-2. **Verify course list appears** below the calendar overview (right side)
-3. **Check pagination:**
-   - Scroll to bottom of course list
-   - Click "Next page" button
-   - Verify new courses load without page refresh (Inertia)
-4. **Verify course markers:**
-   - Look at the mini calendar
-   - Dates with course events should have visual indicators
-   - Click on a marked date to filter events
-5. **Test course cards:**
-   - Each course should show: thumbnail, title, instructor, student count
-   - Next meeting date/time should display if available
-   - "View course" and "Manage course" buttons should work
-6. **Verify performance:**
-   - With 50+ courses, pagination should prevent lag
-   - Calendar should load within 2 seconds
+1. **Login as tutor** → Navigate to a course → Click "Schedule" tab
+2. **Verify student list** shows all enrolled students
+3. **Click "Add Meeting"** for a student → Fill form → Submit
+4. **Verify meeting appears** in the student's schedule row
+5. **Login as student** → Same course → "Schedule" tab
+6. **Verify student sees only their own** scheduled meetings
+7. **Verify meeting appears** in calendar page (if calendar integration approved)

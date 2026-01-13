@@ -3,6 +3,7 @@ import { useRoles } from '@/hooks/use-roles';
 import { router } from '@inertiajs/react';
 import {
   BookOpen,
+  Clock,
   CalendarCheck,
   CheckCircle,
   ClipboardList,
@@ -13,6 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 interface CourseTabsProps {
   sessionContent: ReactNode;
+  scheduleContent: ReactNode;
   assessmentContent: ReactNode;
   gradebookContent: ReactNode;
   scoringContent: ReactNode;
@@ -21,6 +23,7 @@ interface CourseTabsProps {
 
 type TabValue =
   | 'session'
+  | 'schedule'
   | 'assessment'
   | 'gradebook'
   | 'scoring'
@@ -28,6 +31,7 @@ type TabValue =
 
 const validTabs: TabValue[] = [
   'session',
+  'schedule',
   'assessment',
   'gradebook',
   'scoring',
@@ -36,6 +40,7 @@ const validTabs: TabValue[] = [
 
 export function CourseTabs({
   sessionContent,
+  scheduleContent,
   assessmentContent,
   gradebookContent,
   scoringContent,
@@ -107,6 +112,13 @@ export function CourseTabs({
             Session
           </TabsTrigger>
           <TabsTrigger
+            value="schedule"
+            className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
+          >
+            <Clock className="mr-1.5 h-4 w-4" />
+            Schedule
+          </TabsTrigger>
+          <TabsTrigger
             value="assessment"
             className="rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm data-[state=active]:border-yellow-500 data-[state=active]:text-yellow-600 data-[state=active]:shadow-none"
           >
@@ -141,6 +153,10 @@ export function CourseTabs({
 
       <TabsContent value="session" className="mt-4 space-y-6">
         {sessionContent}
+      </TabsContent>
+
+      <TabsContent value="schedule" className="mt-4">
+        {scheduleContent}
       </TabsContent>
 
       <TabsContent value="assessment" className="mt-4">

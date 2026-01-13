@@ -10,6 +10,7 @@ use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\FinalScore;
 use App\Models\Lesson;
+use App\Models\StudentMeetingSchedule;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -157,6 +158,24 @@ class CourseController extends Controller
         $students = [];
         $assessments = [];
         $submissions = [];
+        $meetingSchedules = [];
+
+        $formatSchedule = static function (StudentMeetingSchedule $schedule): array {
+            return [
+                'id' => $schedule->id,
+                'course_id' => $schedule->course_id,
+                'lesson_id' => $schedule->lesson_id,
+                'student_id' => $schedule->student_id,
+                'title' => $schedule->title,
+                'meeting_url' => $schedule->meeting_url,
+                'scheduled_at' => $schedule->scheduled_at?->toIsoString(),
+                'duration_minutes' => $schedule->duration_minutes,
+                'notes' => $schedule->notes,
+                'status' => $schedule->status,
+                'created_at' => $schedule->created_at?->toIsoString(),
+                'updated_at' => $schedule->updated_at?->toIsoString(),
+            ];
+        };
 
         if ($user) {
             if (! $isInstructor) {
@@ -252,6 +271,34 @@ class CourseController extends Controller
                         return $student;
                     });
                 }
+
+                $meetingSchedulesByStudent = StudentMeetingSchedule::query()
+                    ->where('course_id', $course->id)
+                    ->orderBy('scheduled_at')
+                    ->get()
+                    ->groupBy('student_id');
+
+                $meetingSchedules = $meetingSchedulesByStudent
+                    ->flatten(1)
+                    ->map(fn (StudentMeetingSchedule $schedule) => $formatSchedule($schedule))
+                    ->values();
+
+                $students = $students->map(function (array $student) use ($meetingSchedulesByStudent, $formatSchedule) {
+                    $studentId = $student['id'] ?? null;
+
+                    if (! $studentId) {
+                        $student['meeting_schedules'] = [];
+
+                        return $student;
+                    }
+
+                    $student['meeting_schedules'] = $meetingSchedulesByStudent
+                        ->get($studentId, collect())
+                        ->map(fn (StudentMeetingSchedule $schedule) => $formatSchedule($schedule))
+                        ->values();
+
+                    return $student;
+                });
             } else {
                 $attendedLessonIds = $user->attendances()
                     ->whereIn('lesson_id', $course->lessons->pluck('id'))
@@ -321,6 +368,14 @@ class CourseController extends Controller
                             'attempt' => $attempt ? $formatAttempt($attempt) : null,
                         ];
                     });
+
+                    $meetingSchedules = StudentMeetingSchedule::query()
+                        ->where('course_id', $course->id)
+                        ->where('student_id', $user->id)
+                        ->orderBy('scheduled_at')
+                        ->get()
+                        ->map(fn (StudentMeetingSchedule $schedule) => $formatSchedule($schedule))
+                        ->values();
                 }
             }
         }
@@ -332,6 +387,7 @@ class CourseController extends Controller
             'students' => $students,
             'assessments' => $assessments,
             'submissions' => $submissions,
+            'meetingSchedules' => $meetingSchedules,
         ]);
     }
 
@@ -342,15 +398,6 @@ class CourseController extends Controller
         if (! $user) {
             return back()->withErrors(['error' => 'Unauthorized']);
         }
-
-        // Check if meeting is currently active (optional time validation)
-        // Commented out for debug mode - uncomment in production
-        // $now = now();
-        // if ($lesson->meeting_start_time && $lesson->meeting_end_time) {
-        //     if ($now < $lesson->meeting_start_time || $now > $lesson->meeting_end_time) {
-        //         return back()->withErrors(['error' => 'Meeting is not active']);
-        //     }
-        // }
 
         Attendance::updateOrCreate(
             [

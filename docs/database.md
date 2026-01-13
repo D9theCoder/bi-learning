@@ -76,9 +76,21 @@ erDiagram
 		int duration_minutes
 		int order
 		varchar video_url
+		timestamp created_at
+		timestamp updated_at
+	}
+
+	student_meeting_schedules {
+		bigint id PK
+		bigint course_id FK
+		bigint lesson_id FK
+		bigint student_id FK
+		varchar title
 		varchar meeting_url
-		datetime meeting_start_time
-		datetime meeting_end_time
+		datetime scheduled_at
+		int duration_minutes
+		text notes
+		enum status
 		timestamp created_at
 		timestamp updated_at
 	}
@@ -311,6 +323,9 @@ erDiagram
 	users||--o{enrollments:"enrolls"
 	courses||--o{enrollments:"has"
 	courses||--o{lessons:"has"
+	courses||--o{student_meeting_schedules:"schedules"
+	users||--o{student_meeting_schedules:"scheduled"
+	lessons|o--o{student_meeting_schedules:"links"
 	lessons||--o{course_contents:"contains"
 	assessments|o--o{course_contents:"linked"
 	course_contents||--o{course_content_completions:"completes"
@@ -342,7 +357,7 @@ erDiagram
 	users|o--o{tutor_messages:"sender"
 ```
 
-## Tables (Total table: 22)
+## Tables (Total table: 23)
 
 ### `users`
 
@@ -374,7 +389,7 @@ Columns:
 Relationships:
 
 - One user can instruct many `courses` via `courses.instructor_id`.
-- One user can have many `enrollments`, `assessment_attempts`, `assessment_submissions`, `activities`, `achievement_user`, `daily_tasks`, `attendances`, `final_scores`, `reward_user`, `course_content_completions`, and `tutor_messages`.
+- One user can have many `enrollments`, `student_meeting_schedules`, `assessment_attempts`, `assessment_submissions`, `activities`, `achievement_user`, `daily_tasks`, `attendances`, `final_scores`, `reward_user`, `course_content_completions`, and `tutor_messages`.
 - `tutor_messages.sender_id` is nullable to allow sender removal while keeping the message.
 
 Foreign keys:
@@ -404,7 +419,7 @@ Columns:
 Relationships:
 
 - Belongs to `users` via `instructor_id`.
-- Has many `lessons`, `assessments`, `enrollments`, and `final_scores`.
+- Has many `lessons`, `student_meeting_schedules`, `assessments`, `enrollments`, and `final_scores`.
 
 Foreign keys:
 
@@ -412,7 +427,9 @@ Foreign keys:
 
 ### `lessons`
 
-Purpose: Lessons within a course, including content and optional meeting metadata.
+Purpose: Lessons within a course, including content metadata.
+
+Note: Per-student meeting times live in `student_meeting_schedules`.
 
 Primary key: `id` — Foreign keys: `course_id` → `courses.id` (cascade on delete)
 
@@ -426,9 +443,6 @@ Columns:
 - `duration_minutes` (int, not null)
 - `order` (int, not null)
 - `video_url` (varchar(255), null)
-- `meeting_url` (varchar(255), null)
-- `meeting_start_time` (datetime, null)
-- `meeting_end_time` (datetime, null)
 - `created_at` (timestamp, null)
 - `updated_at` (timestamp, null)
 
@@ -440,6 +454,39 @@ Relationships:
 Foreign keys:
 
 - `course_id` → `courses.id` (cascade on delete)
+
+### `student_meeting_schedules`
+
+Purpose: Per-student 1:1 meeting schedules for a course, optionally linked to a lesson.
+
+Primary key: `id` — Foreign keys: `course_id` → `courses.id` (cascade on delete); `lesson_id` → `lessons.id` (nullable, set null on delete); `student_id` → `users.id` (cascade on delete)
+
+Columns:
+
+- `id` (bigint unsigned, not null)
+- `course_id` (bigint unsigned, not null)
+- `lesson_id` (bigint unsigned, null)
+- `student_id` (bigint unsigned, not null)
+- `title` (varchar(255), not null)
+- `meeting_url` (varchar(255), null)
+- `scheduled_at` (datetime, not null)
+- `duration_minutes` (int, null)
+- `notes` (text, null)
+- `status` (enum('scheduled','completed','cancelled'), not null)
+- `created_at` (timestamp, null)
+- `updated_at` (timestamp, null)
+
+Relationships:
+
+- Belongs to `courses`.
+- Optionally belongs to `lessons`.
+- Belongs to `users` via `student_id`.
+
+Foreign keys:
+
+- `course_id` → `courses.id` (cascade on delete)
+- `lesson_id` → `lessons.id` (nullable, set null on delete)
+- `student_id` → `users.id` (cascade on delete)
 
 ### `course_contents`
 

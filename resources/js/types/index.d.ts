@@ -73,11 +73,23 @@ export interface Lesson {
   duration_minutes: number | null;
   order: number | null;
   video_url?: string | null;
-  meeting_url?: string | null;
-  meeting_start_time?: string | null;
-  meeting_end_time?: string | null;
   has_attended?: boolean;
   is_completed?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentMeetingSchedule {
+  id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  student_id: number;
+  title: string;
+  meeting_url?: string | null;
+  scheduled_at: string;
+  duration_minutes?: number | null;
+  notes?: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
 }
@@ -368,6 +380,7 @@ export interface FinalScore {
 export interface StudentWithSubmissions extends User {
   submissions?: AssessmentSubmission[];
   final_score?: FinalScore | null;
+  meeting_schedules?: StudentMeetingSchedule[];
 }
 
 export type AnswerConfig =

@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\CourseContent;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\StudentMeetingSchedule;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -66,6 +67,8 @@ class FixedScenarioSeeder extends Seeder
         if ($course->lessons()->count() < 6) {
             $this->createSessions($course);
         }
+
+        $this->createStudentSchedules($course, $student);
     }
 
     private function createSessions(Course $course)
@@ -75,9 +78,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 1: Link Resource',
             'order' => 1,
-            'meeting_url' => 'https://zoom.us/j/1234567891',
-            'meeting_start_time' => now()->addDays(1)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(1)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
         CourseContent::create([
@@ -93,9 +93,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 2: Video Resource',
             'order' => 2,
-            'meeting_url' => 'https://zoom.us/j/1234567892',
-            'meeting_start_time' => now()->addDays(2)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(2)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
         CourseContent::create([
@@ -111,9 +108,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 3: File Resource',
             'order' => 3,
-            'meeting_url' => 'https://zoom.us/j/1234567893',
-            'meeting_start_time' => now()->addDays(3)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(3)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
 
@@ -142,9 +136,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 4: Final Quiz',
             'order' => 4,
-            'meeting_url' => 'https://zoom.us/j/1234567894',
-            'meeting_start_time' => now()->addDays(4)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(4)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
 
@@ -245,9 +236,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 5: Practice Assessment',
             'order' => 5,
-            'meeting_url' => 'https://zoom.us/j/1234567895',
-            'meeting_start_time' => now()->addDays(5)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(5)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
 
@@ -343,9 +331,6 @@ class FixedScenarioSeeder extends Seeder
             'course_id' => $course->id,
             'title' => 'Session 6: Final Exam',
             'order' => 6,
-            'meeting_url' => 'https://zoom.us/j/1234567896',
-            'meeting_start_time' => now()->addDays(6)->setHour(10)->setMinute(0),
-            'meeting_end_time' => now()->addDays(6)->setHour(11)->setMinute(0),
             'duration_minutes' => 60,
         ]);
 
@@ -428,5 +413,33 @@ class FixedScenarioSeeder extends Seeder
 
         $totalScoreFinal = $finalExam->questions()->sum('points');
         $finalExam->update(['max_score' => $totalScoreFinal]);
+    }
+
+    private function createStudentSchedules(Course $course, User $student): void
+    {
+        $hasSchedules = StudentMeetingSchedule::query()
+            ->where('course_id', $course->id)
+            ->where('student_id', $student->id)
+            ->exists();
+
+        if ($hasSchedules) {
+            return;
+        }
+
+        $course->lessons()
+            ->orderBy('order')
+            ->get()
+            ->each(function (Lesson $lesson) use ($course, $student) {
+                StudentMeetingSchedule::create([
+                    'course_id' => $course->id,
+                    'lesson_id' => $lesson->id,
+                    'student_id' => $student->id,
+                    'title' => "1:1 - {$lesson->title}",
+                    'meeting_url' => sprintf('https://zoom.us/j/123456789%d', $lesson->order ?? 1),
+                    'scheduled_at' => now()->addDays($lesson->order ?? 1)->setHour(10)->setMinute(0),
+                    'duration_minutes' => $lesson->duration_minutes,
+                    'status' => 'scheduled',
+                ]);
+            });
     }
 }

@@ -30,22 +30,12 @@ export function LessonCard({
     duration_minutes: number | '';
     order: number | '';
     video_url: string;
-    meeting_url: string;
-    meeting_start_time: string;
-    meeting_end_time: string;
   }>({
     title: lesson.title ?? '',
     description: lesson.description ?? '',
     duration_minutes: lesson.duration_minutes ?? '',
     order: lesson.order ?? '',
     video_url: lesson.video_url ?? '',
-    meeting_url: lesson.meeting_url ?? '',
-    meeting_start_time: lesson.meeting_start_time
-      ? lesson.meeting_start_time.replace('Z', '').substring(0, 16)
-      : '',
-    meeting_end_time: lesson.meeting_end_time
-      ? lesson.meeting_end_time.replace('Z', '').substring(0, 16)
-      : '',
   });
 
   const saveLesson = () => {
@@ -160,51 +150,6 @@ export function LessonCard({
                   {lessonForm.errors.video_url}
                 </p>
               ) : null}
-            </div>
-          </div>
-
-          <div className="border-t pt-3">
-            <h4 className="mb-2 text-sm font-semibold">Meeting Details</h4>
-            <div className="grid gap-3 lg:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor={`lesson-meeting-url-${lesson.id}`}>
-                  Meeting URL
-                </Label>
-                <Input
-                  id={`lesson-meeting-url-${lesson.id}`}
-                  value={lessonForm.data.meeting_url ?? ''}
-                  onChange={(e) =>
-                    lessonForm.setData('meeting_url', e.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`lesson-meeting-start-${lesson.id}`}>
-                  Start Time
-                </Label>
-                <Input
-                  id={`lesson-meeting-start-${lesson.id}`}
-                  type="datetime-local"
-                  value={lessonForm.data.meeting_start_time ?? ''}
-                  onChange={(e) =>
-                    lessonForm.setData('meeting_start_time', e.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`lesson-meeting-end-${lesson.id}`}>
-                  End Time
-                </Label>
-                <Input
-                  id={`lesson-meeting-end-${lesson.id}`}
-                  type="datetime-local"
-                  value={lessonForm.data.meeting_end_time ?? ''}
-                  onChange={(e) =>
-                    lessonForm.setData('meeting_end_time', e.target.value)
-                  }
-                />
-              </div>
             </div>
           </div>
 

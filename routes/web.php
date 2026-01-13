@@ -13,6 +13,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\RewardRedemptionController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentMeetingScheduleController;
 use App\Http\Controllers\TutorController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +97,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('courses/{course}', [CourseController::class, 'show'])
         ->whereNumber('course')
         ->name('courses.show');
+    Route::get('courses/{course}/schedules', [StudentMeetingScheduleController::class, 'index'])
+        ->middleware('role:student|tutor|admin')
+        ->whereNumber('course')
+        ->name('courses.schedules.index');
+    Route::post('courses/{course}/schedules', [StudentMeetingScheduleController::class, 'store'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->name('courses.schedules.store');
+    Route::put('courses/{course}/schedules/{schedule}', [StudentMeetingScheduleController::class, 'update'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->whereNumber('schedule')
+        ->name('courses.schedules.update');
+    Route::delete('courses/{course}/schedules/{schedule}', [StudentMeetingScheduleController::class, 'destroy'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->whereNumber('schedule')
+        ->name('courses.schedules.destroy');
     Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])
         ->middleware('role:student|admin')
         ->whereNumber('course')

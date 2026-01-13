@@ -145,9 +145,6 @@ class CourseManagementController extends Controller
                         'duration_minutes' => $lesson->duration_minutes,
                         'order' => $lesson->order,
                         'video_url' => $lesson->video_url,
-                        'meeting_url' => $lesson->meeting_url,
-                        'meeting_start_time' => $lesson->meeting_start_time?->toIsoString(),
-                        'meeting_end_time' => $lesson->meeting_end_time?->toIsoString(),
                         'contents' => $lesson->contents
                             ->where('type', '!=', 'assessment')
                             ->map(function (CourseContent $content) {

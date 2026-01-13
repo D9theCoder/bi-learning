@@ -7,15 +7,16 @@ interface SessionDetailsProps {
   session: Lesson;
   contentCount: number;
   assessmentCount: number;
+  meetingStatus?: string;
 }
 
 export function SessionDetails({
   session,
   contentCount,
   assessmentCount,
+  meetingStatus = 'No meeting scheduled',
 }: SessionDetailsProps) {
   const hasDescription = Boolean(session.description?.trim());
-  const meetingLabel = session.meeting_url ? 'Meeting scheduled' : 'No meeting';
 
   return (
     <Card className="border-border/60 bg-white shadow-sm dark:bg-slate-950">
@@ -74,7 +75,7 @@ export function SessionDetails({
           <div>
             <span className="block text-muted-foreground">Meeting</span>
             <span className="font-medium text-gray-900 dark:text-gray-100">
-              {meetingLabel}
+              {meetingStatus}
             </span>
           </div>
         </div>

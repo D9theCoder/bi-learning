@@ -5,6 +5,7 @@ use App\Models\Course;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\StudentMeetingSchedule;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -76,8 +77,15 @@ it('includes course metadata for meetings and assessments', function () {
 
     $lesson = Lesson::factory()->create([
         'course_id' => $course->id,
-        'meeting_start_time' => $meetingDate,
+    ]);
+
+    $schedule = StudentMeetingSchedule::factory()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'student_id' => $user->id,
+        'scheduled_at' => $meetingDate,
         'meeting_url' => 'https://example.com/meet',
+        'status' => 'scheduled',
     ]);
 
     Assessment::factory()->published()->create([
@@ -91,7 +99,7 @@ it('includes course metadata for meetings and assessments', function () {
     $response->assertInertia(fn (Assert $page) => $page
         ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.course_id', $course->id)
         ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.lesson_id', $lesson->id)
-        ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.meeting_url', $lesson->meeting_url)
+        ->where('tasksByDate.'.$meetingDate->format('Y-m-d').'.0.meeting_url', $schedule->meeting_url)
         ->where('tasksByDate.'.$assessmentDate->format('Y-m-d').'.0.course_id', $course->id)
         ->where('tasksByDate.'.$assessmentDate->format('Y-m-d').'.0.lesson_id', $lesson->id)
     );
@@ -186,7 +194,14 @@ it('includes course markers in admin calendar', function () {
 
     $lesson = Lesson::factory()->create([
         'course_id' => $course->id,
-        'meeting_start_time' => $meetingDate,
+    ]);
+
+    StudentMeetingSchedule::factory()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'student_id' => User::factory(),
+        'scheduled_at' => $meetingDate,
+        'status' => 'scheduled',
     ]);
 
     Assessment::factory()->published()->create([
