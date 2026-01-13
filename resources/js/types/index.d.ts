@@ -643,6 +643,11 @@ export interface StudentsPageProps {
       name: string;
       email?: string;
       avatar?: string;
+      level?: number | null;
+      points_balance?: number | null;
+      total_xp?: number | null;
+      enrollments_count?: number | null;
+      active_enrollments_count?: number | null;
     }>;
     current_page: number;
     last_page: number;

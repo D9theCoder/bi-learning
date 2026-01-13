@@ -15,6 +15,7 @@ class StudentController extends Controller
     {
         $filters = $request->validated();
         $user = Auth::user();
+        $isAdmin = $user?->hasRole('admin');
 
         $courseIds = Course::query()
             ->where('instructor_id', $user?->id)
@@ -30,8 +31,9 @@ class StudentController extends Controller
 
         $query = User::query();
 
-        if ($user->hasRole('admin')) {
-            $query->role('student');
+        if ($isAdmin) {
+            $query->role('student')
+                ->withCount(['enrollments', 'activeEnrollments']);
         } else {
             $query->whereIn('id', $studentIds);
         }
@@ -42,12 +44,17 @@ class StudentController extends Controller
 
         $students = $query->paginate(12)->withQueryString();
 
-        $students = $students->through(function ($student) {
+        $students = $students->through(function ($student) use ($isAdmin) {
             return [
                 'id' => $student->id,
                 'name' => $student->name,
                 'email' => $student->email,
                 'avatar' => $student->avatar,
+                'level' => $isAdmin ? ($student->level ?? 1) : null,
+                'points_balance' => $isAdmin ? ($student->points_balance ?? 0) : null,
+                'total_xp' => $isAdmin ? ($student->total_xp ?? 0) : null,
+                'enrollments_count' => $isAdmin ? ($student->enrollments_count ?? 0) : null,
+                'active_enrollments_count' => $isAdmin ? ($student->active_enrollments_count ?? 0) : null,
             ];
         });
 
