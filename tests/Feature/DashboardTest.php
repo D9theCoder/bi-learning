@@ -59,6 +59,70 @@ test('tutors can visit the dashboard', function () {
         );
 });
 
+test('admins receive monitoring data and no gamification stats', function () {
+    $admin = User::factory()->create([
+        'total_xp' => 1200,
+        'level' => 4,
+        'points_balance' => 300,
+    ]);
+    $admin->assignRole('admin');
+
+    $tutor = User::factory()->create();
+    $tutor->assignRole('tutor');
+
+    $student = User::factory()->create();
+    $student->assignRole('student');
+
+    $course = Course::factory()->create([
+        'instructor_id' => $tutor->id,
+        'is_published' => true,
+    ]);
+
+    Enrollment::factory()->create([
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('dashboard')
+                ->has('admin_dashboard.tutors')
+                ->has('admin_dashboard.courses')
+                ->has('admin_dashboard.students')
+                ->where(
+                    'admin_dashboard.tutors',
+                    fn ($tutors) => collect($tutors)->pluck('id')->contains($tutor->id)
+                )
+                ->where(
+                    'admin_dashboard.courses',
+                    fn ($courses) => collect($courses)->pluck('id')->contains($course->id)
+                )
+                ->where(
+                    'admin_dashboard.summary.tutor_count',
+                    fn ($count) => $count >= 1
+                )
+                ->where(
+                    'admin_dashboard.summary.course_count',
+                    fn ($count) => $count >= 1
+                )
+                ->where(
+                    'admin_dashboard.summary.student_count',
+                    fn ($count) => $count >= 1
+                )
+                ->where(
+                    'admin_dashboard.summary.active_enrollment_count',
+                    fn ($count) => $count >= 1
+                )
+                ->where('stats.total_xp', 0)
+                ->where('stats.level', 1)
+                ->where('stats.points_balance', 0)
+        );
+});
+
 test('dashboard displays user statistics', function () {
     $user = User::factory()->create([
         'total_xp' => 2500,

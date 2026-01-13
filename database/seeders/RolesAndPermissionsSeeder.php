@@ -29,6 +29,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage courses',
             'manage course sessions',
             'manage users',
+            'monitor all tutors',
+            'monitor all students',
+            'view all chats',
         ];
 
         foreach ($permissions as $permission) {

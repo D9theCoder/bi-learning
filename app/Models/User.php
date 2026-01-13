@@ -118,6 +118,14 @@ class User extends Authenticatable
         return $this->hasMany(AssessmentSubmission::class);
     }
 
+    /**
+     * Determine if the user should see gamification features.
+     */
+    public function hasGamification(): bool
+    {
+        return ! $this->hasAnyRole(['admin', 'tutor']);
+    }
+
     // Helper methods for dashboard statistics
     public function currentStreak(): int
     {

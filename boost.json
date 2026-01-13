@@ -1,15 +1,17 @@
 {
-    "agents": [
+    "agents": [        
         "copilot",
         "cursor",
         "gemini",
-        "codex"
+        "codex",
+        "claude_code"
     ],
     "editors": [
         "copilot",
         "cursor",
         "gemini",
-        "codex"
+        "codex",
+        "claude_code"
     ],
     "guidelines": [
         "laravel/fortify"

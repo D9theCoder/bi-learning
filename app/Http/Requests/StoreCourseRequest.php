@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\CourseCategory;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +29,7 @@ class StoreCourseRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'thumbnail' => ['nullable', 'string', 'max:255'],
@@ -38,6 +39,28 @@ class StoreCourseRequest extends FormRequest
             'category' => ['required', Rule::enum(CourseCategory::class)],
             'is_published' => ['sometimes', 'boolean'],
             'instructor_id' => ['nullable', 'exists:users,id'],
+        ];
+
+        if ($this->user()?->hasRole('admin')) {
+            $rules['instructor_id'] = [
+                'required',
+                'exists:users,id',
+                function (string $attribute, mixed $value, $fail) {
+                    $instructor = User::find($value);
+                    if (! $instructor || ! $instructor->hasRole('tutor')) {
+                        $fail('The selected instructor must have the tutor role.');
+                    }
+                },
+            ];
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'instructor_id.required' => 'As an admin, you must assign a tutor to this course.',
         ];
     }
 }

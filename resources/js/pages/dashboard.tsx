@@ -1,4 +1,5 @@
 import {
+  AdminDashboardView,
   StudentDashboardView,
   TutorDashboardView,
 } from '@/components/dashboard/views';
@@ -8,6 +9,7 @@ import { dashboard } from '@/routes';
 import type {
   Achievement,
   Activity,
+  AdminDashboardData,
   BreadcrumbItem,
   DailyTask,
   Enrollment,
@@ -41,6 +43,7 @@ interface DashboardPageProps {
   available_rewards?: Reward[];
   current_user_rank?: number | null;
   tutor_dashboard?: TutorDashboardData | null;
+  admin_dashboard?: AdminDashboardData | null;
 }
 
 export default function Dashboard({
@@ -56,6 +59,7 @@ export default function Dashboard({
   global_leaderboard,
   weekly_activity_data,
   tutor_dashboard,
+  admin_dashboard,
 }: DashboardPageProps) {
   const { isAdmin, isTutor } = useRoles();
   const page = usePage<{ auth?: { user?: User } }>();
@@ -110,12 +114,23 @@ export default function Dashboard({
         )
       : 0;
 
-  const isTutorView = isTutor || isAdmin;
+  if (isAdmin && admin_dashboard) {
+    return (
+      <AppLayout breadcrumbs={breadcrumbs}>
+        <Head title="Admin Dashboard" />
+        <AdminDashboardView
+          userName={userName}
+          adminData={admin_dashboard}
+          isLoading={isLoading}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
-      {isTutorView ? (
+      {isTutor ? (
         <TutorDashboardView
           userName={userName}
           pointsBalance={safeStats.points_balance}

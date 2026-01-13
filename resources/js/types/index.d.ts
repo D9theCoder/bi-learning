@@ -267,6 +267,17 @@ export interface TutorDashboardCourse {
   is_published?: boolean;
 }
 
+export interface AdminCalendarCourse {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  instructor?: { id: number; name: string } | null;
+  student_count: number;
+  next_meeting_date?: string | null;
+  next_meeting_time?: string | null;
+  is_published: boolean;
+}
+
 export interface TutorDashboardChartPoint {
   course: string;
   attendance: number;
@@ -421,7 +432,7 @@ export interface CalendarTask {
   xp_reward?: number;
   course_title?: string;
   type?: string;
-  category: 'task' | 'meeting' | 'assessment';
+  category: 'task' | 'meeting' | 'assessment' | 'course';
   time?: string | null;
   meeting_url?: string | null;
 }
@@ -436,6 +447,19 @@ export interface CalendarPageProps extends SharedData {
     assessments: number;
   };
   currentDate: string;
+  courses?: {
+    data: AdminCalendarCourse[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links?: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  courseMarkers?: string[];
   cursor?: {
     start: string;
     end: string;
@@ -515,6 +539,8 @@ export interface EditCoursePageProps {
   mode: 'create' | 'edit';
   categories: Array<{ value: string; label: string }>;
   availablePowerups?: Powerup[];
+  availableTutors?: Array<Pick<User, 'id' | 'name' | 'avatar'>>;
+  isAdmin?: boolean;
 }
 
 export interface MessagesPageProps {
@@ -580,6 +606,37 @@ export interface TutorDashboardData {
   };
 }
 
+export interface AdminDashboardData {
+  tutors: Array<{
+    id: number;
+    name: string;
+    avatar?: string;
+    course_count: number;
+    student_count: number;
+  }>;
+  courses: Array<{
+    id: number;
+    title: string;
+    instructor: { id: number; name: string } | null;
+    student_count: number;
+    is_published: boolean;
+  }>;
+  students: Array<{
+    id: number;
+    name: string;
+    avatar?: string;
+    enrollment_count: number;
+    total_xp: number;
+    level: number;
+  }>;
+  summary: {
+    tutor_count: number;
+    course_count: number;
+    student_count: number;
+    active_enrollment_count: number;
+  };
+}
+
 export interface TutorsPageProps {
   filters: {
     search?: string;
@@ -610,6 +667,11 @@ export interface StudentsPageProps {
       name: string;
       email?: string;
       avatar?: string;
+      level?: number | null;
+      points_balance?: number | null;
+      total_xp?: number | null;
+      enrollments_count?: number | null;
+      active_enrollments_count?: number | null;
     }>;
     current_page: number;
     last_page: number;

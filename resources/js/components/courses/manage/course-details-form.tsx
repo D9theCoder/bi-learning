@@ -2,6 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Link, type InertiaFormProps } from '@inertiajs/react';
 import { Save } from 'lucide-react';
@@ -20,6 +27,7 @@ type CourseFormData = {
   duration_minutes: number | '' | string;
   thumbnail: string;
   is_published: boolean;
+  instructor_id?: number | string | '';
 };
 
 interface CourseDetailsFormProps {
@@ -27,6 +35,8 @@ interface CourseDetailsFormProps {
   categories: Array<{ value: string; label: string }>;
   isEdit: boolean;
   onSubmit: () => void;
+  availableTutors?: Array<{ id: number; name: string; avatar?: string }>;
+  isAdmin?: boolean;
 }
 
 export function CourseDetailsForm({
@@ -34,6 +44,8 @@ export function CourseDetailsForm({
   categories,
   isEdit,
   onSubmit,
+  availableTutors = [],
+  isAdmin = false,
 }: CourseDetailsFormProps) {
   const fieldErrorKeys = [
     'title',
@@ -43,6 +55,7 @@ export function CourseDetailsForm({
     'duration_minutes',
     'thumbnail',
     'is_published',
+    'instructor_id',
   ];
 
   const generalErrors = Object.entries(form.errors ?? {})
@@ -91,6 +104,40 @@ export function CourseDetailsForm({
               <p className="text-xs text-destructive">{form.errors.category}</p>
             ) : null}
           </div>
+          {isAdmin ? (
+            <div className="space-y-2">
+              <Label htmlFor="instructor_id">Assign tutor *</Label>
+              <Select
+                value={
+                  form.data.instructor_id
+                    ? String(form.data.instructor_id)
+                    : ''
+                }
+                onValueChange={(value) =>
+                  form.setData('instructor_id', value)
+                }
+              >
+                <SelectTrigger
+                  id="instructor_id"
+                  aria-invalid={Boolean(form.errors.instructor_id)}
+                >
+                  <SelectValue placeholder="Select a tutor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTutors.map((tutor) => (
+                    <SelectItem key={tutor.id} value={String(tutor.id)}>
+                      {tutor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.errors.instructor_id ? (
+                <p className="text-xs text-destructive">
+                  {form.errors.instructor_id}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-2">

@@ -1,182 +1,162 @@
-# Rewards Page UI/UX Improvements
+# Admin Calendar Enhancement - Implementation Plan
 
-Enhance the rewards page with gamified elements including product images, improved modals, confetti effects, and better confirmation dialogs while maintaining the original Indonesian language design.
+This plan adds course markers and a paginated course list to the admin calendar page, modeled after the tutor dashboard's course features.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Image Strategy**: The plan uses Lorem Picsum for placeholder images. If you prefer to use actual reward images or a different image service, please let me know.
+> [!IMPORTANT] > **Pagination Strategy:** The backend will use standard Laravel pagination for the course list API endpoint. The calendar will fetch ALL courses without pagination for displaying markers (since we need to show all course events on the calendar), but the course list sidebar will use paginated data. This approach balances performance with functionality.
 
-> [!NOTE] > **Sound Effects**: The plan includes an optional sound effect implementation. Please confirm if you'd like to include sound effects for successful redemptions.
-
----
+> [!IMPORTANT] > **Admin Course Access:** Admins will see ALL courses in the system (not just courses they're teaching), since admins have oversight authority over all tutors and courses. The course markers will show events from all courses system-wide.
 
 ## Proposed Changes
 
-### Frontend Components
+### Backend - Calendar Controller
 
-#### [MODIFY] [reward-card.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/rewards/reward-card.tsx)
+#### [MODIFY] [CalendarController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/CalendarController.php>)
 
-**Changes:**
+Update the `index` method to:
 
-- Add product image display using Lorem Picsum as placeholder
-  - Image URL format: `https://picsum.photos/seed/${reward.id}/400/300`
-  - Add image container with proper aspect ratio (4:3)
-  - Include fallback/loading states
-- Replace generic `SuccessModal` with new enhanced `RewardSuccessModal`
-- Update confirmation dialog to show:
-  - Current balance
-  - Item cost
-  - Remaining balance after purchase (calculated: `balance - cost`)
-- Improve visual hierarchy with better spacing and typography
+1. **For admin users:** Load all courses with lessons and assessments to generate calendar markers
+2. **Add pagination:** Create a separate method or extend the index to return paginated course data for the course list
+3. **Include course metadata:** Add similar data structure as tutor dashboard courses (student count, next meeting, etc.)
 
----
+**Key changes:**
 
-#### [NEW] [reward-success-modal.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/components/rewards/reward-success-modal.tsx)
-
-**Purpose:** A specialized success modal for reward redemptions with gamified elements.
-
-**Features:**
-
-- Fun celebratory illustration/icon (using lucide-react icons like `PartyPopper`, `Sparkles`, `Gift`)
-- Display reward details:
-  - Reward name and rarity badge
-  - Points spent
-  - Previous balance → New balance
-- Animated entrance using framer-motion
-- Trigger confetti effect on mount
-- Celebratory color scheme matching reward rarity
+- Add a new query after line 32 for admin users to fetch all courses (not just instructor_id filtered)
+- Include course markers similar to lines 38-78 (tutor logic) but for ALL courses
+- Add a paginated course list using Laravel's `paginate()` method (per_page = 12)
+- Return course data including: `id`, `title`, `thumbnail`, `instructor`, `student_count`, `next_meeting_date`, `next_meeting_time`, `is_published`
 
 ---
 
-#### [MODIFY] [index.tsx](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/pages/rewards/index.tsx)
+### Backend - API Endpoint (Optional Approach)
 
-**Changes:**
+#### [NEW] [AdminCoursesController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/Admin/AdminCoursesController.php>)
 
-- Pass user's current balance as prop to each `RewardCard` component
-- This enables the card to calculate and display remaining balance in the confirmation dialog
+Alternatively, create a dedicated admin controller for paginated course data:
 
----
-
-### Type Definitions
-
-#### [MODIFY] [index.d.ts](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/types/index.d.ts)
-
-**Changes:**
-
-- Add optional `image_url?: string` to the `Reward` interface
-- This allows backend to provide custom images in the future while using placeholder images for now
+- `GET /admin/courses` - Returns paginated course list with metadata
+- This keeps separation of concerns and allows reuse across admin pages
+- Uses `Course::with(['instructor', 'lessons', 'assessments', 'enrollments'])->paginate(12)`
 
 ---
 
-### Utilities
+### Frontend - TypeScript Types
 
-#### [NEW] [confetti.ts](file:///c:/Users/kevin/Herd/web-skripsi/resources/js/lib/confetti.ts)
+#### [MODIFY] [index.d.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/types/index.d.ts>)
 
-**Purpose:** Centralized confetti utility functions for consistent animations across the app.
+Add new interfaces:
 
-**Features:**
+1. **`AdminCalendarCourse`** - Similar to `TutorDashboardCourse` but with instructor info
+2. **Update `CalendarPageProps`** - Add optional `courses?` and `courseMarkers?` properties for admin
 
-- `fireConfetti()`: Main confetti animation function
-- `fireRewardConfetti(rarity)`: Rarity-specific confetti colors
-  - Common: gray/silver tones
-  - Rare: blue tones
-  - Epic: purple tones
-  - Legendary: gold/yellow tones
-- Configurable parameters (particle count, spread, origin position)
+```typescript
+export interface AdminCalendarCourse {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  instructor?: { id: number; name: string } | null;
+  student_count: number;
+  next_meeting_date?: string | null;
+  next_meeting_time?: string | null;
+  is_published: boolean;
+}
+
+export interface CalendarPageProps extends SharedData {
+  // ... existing properties
+  courses?: {
+    data: AdminCalendarCourse[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+  courseMarkers?: string[]; // YYYY-MM-DD dates with course events
+}
+```
+
+---
+
+### Frontend - Calendar Page
+
+#### [MODIFY] [index.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/calendar/index.tsx>)
+
+1. Check if user is admin and courses data exists
+2. If admin, add a new section below the calendar overview showing the course list
+3. Add pagination controls at the bottom of the course list
+4. Merge `courseMarkers` into the existing `markers` array for the mini calendar
 
 ---
 
-### Additional Enhancements
+### Frontend - Components
 
-#### Card Interactions
+#### [NEW] [admin-course-list-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/admin-course-list-section.tsx>)
 
-- Add subtle shadow transition on hover
-- Smooth transitions using framer-motion
+Create a new component based on `TutorCourseListSection`:
 
-#### Rarity Badge Styling
-
-- Add glow effect matching rarity color
-- Better contrast for text visibility
-
-#### Mobile Optimizations
-
-- Ensure touch-friendly tap targets (min 44px)
-- Optimize image sizes for mobile bandwidth
-- Test modal responsiveness on small screens
+- Display paginated courses with thumbnail, title, instructor name
+- Show student count and next meeting info
+- Add pagination controls using Inertia's links
+- Include "View course" and "Manage course" buttons
+- Responsive grid layout (1 col mobile, 2 cols desktop)
 
 ---
+
+### Frontend - Mini Calendar Enhancement
+
+#### [MODIFY] [mini-calendar.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/mini-calendar.tsx>)
+
+No major changes needed - the component already supports custom markers. Just ensure:
+
+- Course event markers use a distinct color (e.g., purple/violet) to differentiate from meetings, assessments, and tasks
+- Add a 4th category for 'course' events if needed
 
 ## Verification Plan
 
 ### Automated Tests
 
-Currently, this project doesn't have frontend tests. Consider adding tests in the future using Vitest or React Testing Library.
+1. **Update existing calendar tests** (Lines to add in [CalendarTest.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/tests/Feature/CalendarTest.php>)):
 
-### Browser Testing
+```bash
+php artisan test tests/Feature/CalendarTest.php
+```
 
-**Test the complete redemption flow:**
+Add new test cases:
 
-1. **Start the development server** (if not already running):
+- `it('shows all courses to admin users')` - Verify admin sees all courses, not just taught ones
+- `it('paginates admin course list')` - Check pagination works correctly
+- `it('includes course markers in admin calendar')` - Verify course events appear as markers
+- `it('includes instructor info for admin courses')` - Check instructor data is present
 
-   ```bash
-   npm run dev
-   ```
+2. **Create new admin calendar test file** (if needed):
 
-2. **Navigate to the rewards page**:
+```bash
+php artisan make:test AdminCalendarTest --pest
+php artisan test tests/Feature/AdminCalendarTest.php
+```
 
-   - Open browser to the application URL
-   - Log in as a student (students have access to rewards)
-   - Navigate to `/rewards` page
+3. **Run code formatter:**
 
-3. **Verify product images**:
+```bash
+vendor/bin/pint --dirty
+```
 
-   - Each reward card should display a placeholder image from Lorem Picsum
-   - Images should have consistent aspect ratio (4:3)
-   - Images should load properly or show a fallback state
+### Manual Verification
 
-4. **Test redemption flow** (select a reward you have enough points for):
-
-   - Click "Redeem" button on a reward card
-   - **Verify Confirmation Dialog** shows:
-     - Reward name
-     - Cost in points
-     - Current balance
-     - Remaining balance (current - cost)
-   - Click "Confirm Redeem"
-   - **Verify Success Modal** displays:
-     - Fun celebration icon/illustration
-     - Reward details (name, rarity)
-     - Points spent
-     - Balance transition (before → after)
-   - **Verify Confetti Effect** fires when modal appears
-   - Confetti colors should match reward rarity
-
-5. **Test responsive design**:
-
-   - Resize browser to mobile width (375px, 768px, 1024px)
-   - Verify cards stack properly
-   - Verify modals are readable and functional
-   - Verify images scale appropriately
-
-### Manual Verification Steps
-
-> [!TIP] > **Testing with Insufficient Points**: To test the "Insufficient Points" state, you can temporarily reduce your points balance in the database, or test with a reward that costs more points than you have.
-
-**Checklist:**
-
-- [ ] Product images load correctly for all rewards
-- [ ] Confirmation dialog shows correct balance calculations
-- [ ] Success modal appears with celebration elements
-- [ ] Confetti fires on successful redemption
-- [ ] Confetti colors match reward rarity
-- [ ] Points balance updates correctly in UI after redemption
-- [ ] Layout is responsive on mobile devices
-- [ ] Modal is accessible (can be closed with Esc key)
-- [ ] No console errors in browser dev tools
-
-### Edge Cases to Test
-
-- Redeeming the last item in stock → verify stock updates
-- Redeeming when you have exactly enough points
-- Attempting to redeem with insufficient points → button should be disabled
-- Multiple rapid redemptions (if enabled)
+1. **Login as admin user** and navigate to `/calendar`
+2. **Verify course list appears** below the calendar overview (right side)
+3. **Check pagination:**
+   - Scroll to bottom of course list
+   - Click "Next page" button
+   - Verify new courses load without page refresh (Inertia)
+4. **Verify course markers:**
+   - Look at the mini calendar
+   - Dates with course events should have visual indicators
+   - Click on a marked date to filter events
+5. **Test course cards:**
+   - Each course should show: thumbnail, title, instructor, student count
+   - Next meeting date/time should display if available
+   - "View course" and "Manage course" buttons should work
+6. **Verify performance:**
+   - With 50+ courses, pagination should prevent lag
+   - Calendar should load within 2 seconds

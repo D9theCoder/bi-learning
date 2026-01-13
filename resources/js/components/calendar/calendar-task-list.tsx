@@ -8,12 +8,14 @@ interface CalendarTaskListProps {
   activeDateLabel: string | null;
   filteredDates: string[];
   tasksByDate: Record<string, CalendarTask[]>;
+  showCourseLegend?: boolean;
 }
 
 export function CalendarTaskList({
   isFiltered,
   filteredDates,
   tasksByDate,
+  showCourseLegend = false,
 }: CalendarTaskListProps) {
   return (
     <Card className="h-fit px-4">
@@ -37,6 +39,12 @@ export function CalendarTaskList({
               <span className="size-1.5 bg-green-500" />
               Task
             </span>
+            {showCourseLegend && (
+              <span className="flex items-center gap-0.5">
+                <span className="size-1.5 bg-violet-500" />
+                Course
+              </span>
+            )}
           </div>
         </div>
       </CardHeader>

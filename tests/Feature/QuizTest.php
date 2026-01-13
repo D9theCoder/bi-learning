@@ -455,8 +455,7 @@ it('does not auto-grade essay questions', function () {
     $course = Course::factory()->create();
     Enrollment::factory()->for($student)->for($course)->create();
     $assessment = Assessment::factory()->for($course)->create(['is_published' => true]);
-    $question = AssessmentQuestion::factory()->for($assessment)->create([
-        'type' => 'essay',
+    $question = AssessmentQuestion::factory()->for($assessment)->essay()->create([
         'question' => 'Explain photosynthesis.',
         'points' => 20,
     ]);
@@ -481,8 +480,7 @@ it('allows tutor to grade essay question', function () {
     $student->assignRole('student');
     $course = Course::factory()->create(['instructor_id' => $tutor->id]);
     $assessment = Assessment::factory()->for($course)->create();
-    $question = AssessmentQuestion::factory()->for($assessment)->create([
-        'type' => 'essay',
+    $question = AssessmentQuestion::factory()->for($assessment)->essay()->create([
         'question' => 'Explain photosynthesis.',
         'points' => 20,
     ]);
@@ -864,8 +862,7 @@ it('weights final exam using configured percentage', function () {
         'max_score' => 20,
         'weight_percentage' => 80,
     ]);
-    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
-        'type' => 'essay',
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->essay()->create([
         'points' => 20,
     ]);
     $finalAttempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
@@ -905,8 +902,7 @@ it('allows remedial attempt when final score is below 65', function () {
         'max_score' => 100,
         'weight_percentage' => 100,
     ]);
-    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
-        'type' => 'essay',
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->essay()->create([
         'points' => 100,
     ]);
     $attempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
@@ -943,8 +939,7 @@ it('prevents remedial attempt when final score is 65 or above', function () {
         'max_score' => 100,
         'weight_percentage' => 100,
     ]);
-    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
-        'type' => 'essay',
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->essay()->create([
         'points' => 100,
     ]);
     $attempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([
@@ -981,8 +976,7 @@ it('caps final score at 65 and awards no points for remedial attempts', function
         'max_score' => 100,
         'weight_percentage' => 100,
     ]);
-    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->create([
-        'type' => 'essay',
+    $finalExamQuestion = AssessmentQuestion::factory()->for($finalExam)->essay()->create([
         'points' => 100,
     ]);
     $initialAttempt = AssessmentAttempt::factory()->for($student)->for($finalExam)->create([

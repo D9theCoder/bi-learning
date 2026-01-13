@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\AssessmentQuestion;
-use Tests\TestCase;
 
 it('validates multiple choice answer config structure', function () {
     $question = AssessmentQuestion::factory()->create([
@@ -33,9 +32,12 @@ it('validates fill blank answer config structure', function () {
 
     $question->refresh();
 
-    expect($question->answer_config['accepted_answers'])->toBe([
-        'Paris',
-        'City of Paris',
+    expect($question->answer_config)->toMatchArray([
+        'type' => 'fill_blank',
+        'accepted_answers' => [
+            'Paris',
+            'City of Paris',
+        ],
     ]);
 });
 
@@ -53,7 +55,7 @@ it('validates essay answer config structure', function () {
 });
 
 it('rejects invalid correct_index for multiple choice', function () {
-    expect(fn() => AssessmentQuestion::factory()->create([
+    expect(fn () => AssessmentQuestion::factory()->create([
         'type' => 'multiple_choice',
         'answer_config' => [
             'type' => 'multiple_choice',
@@ -64,7 +66,7 @@ it('rejects invalid correct_index for multiple choice', function () {
 });
 
 it('rejects empty accepted_answers for fill blank', function () {
-    expect(fn() => AssessmentQuestion::factory()->create([
+    expect(fn () => AssessmentQuestion::factory()->create([
         'type' => 'fill_blank',
         'answer_config' => [
             'type' => 'fill_blank',

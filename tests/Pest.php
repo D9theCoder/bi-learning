@@ -11,7 +11,7 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)->in('Feature', 'Unit');
+pest()->extend(Tests\TestCase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------

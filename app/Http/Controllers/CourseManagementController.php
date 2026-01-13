@@ -72,10 +72,19 @@ class CourseManagementController extends Controller
             abort(403);
         }
 
+        $availableTutors = [];
+        if ($user->hasRole('admin')) {
+            $availableTutors = User::role('tutor')
+                ->orderBy('name')
+                ->get(['id', 'name', 'avatar']);
+        }
+
         return Inertia::render('courses/manage/edit', [
             'course' => null,
             'mode' => 'create',
             'categories' => CourseCategory::options(),
+            'availableTutors' => $availableTutors,
+            'isAdmin' => $user->hasRole('admin'),
         ]);
     }
 
@@ -84,9 +93,7 @@ class CourseManagementController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        if ($user->hasRole('admin')) {
-            $data['instructor_id'] = $data['instructor_id'] ?? $user->id;
-        } else {
+        if (! $user->hasRole('admin')) {
             $data['instructor_id'] = $user->id;
         }
 
@@ -111,6 +118,13 @@ class CourseManagementController extends Controller
         $course->load(['lessons.contents.assessment', 'lessons.assessments']);
 
         $availablePowerups = Powerup::query()->orderBy('name')->get();
+        $availableTutors = [];
+
+        if ($user->hasRole('admin')) {
+            $availableTutors = User::role('tutor')
+                ->orderBy('name')
+                ->get(['id', 'name', 'avatar']);
+        }
 
         return Inertia::render('courses/manage/edit', [
             'course' => [
@@ -180,6 +194,8 @@ class CourseManagementController extends Controller
             'mode' => 'edit',
             'categories' => CourseCategory::options(),
             'availablePowerups' => $availablePowerups,
+            'availableTutors' => $availableTutors,
+            'isAdmin' => $user->hasRole('admin'),
         ]);
     }
 

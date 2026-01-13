@@ -343,7 +343,7 @@ If your application uses the `<Form>` component from Inertia, you can use Wayfin
 - All tests must be written using Pest. Use `php artisan make:test --pest {name}`.
 - You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files - these are core to the application.
 - Tests should test all of the happy paths, failure paths, and weird paths.
-- Tests live in the `tests/Feature` and `tests/Unit` directories.
+- Tests live in the `tests/Feature` directories.
 - Pest tests look and behave like this:
   <code-snippet name="Basic Pest Test Example" lang="php">
   it('is true', function () {
