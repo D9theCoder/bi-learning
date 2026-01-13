@@ -27,7 +27,19 @@ export default function QuizEdit({
       limit: powerup.limit ?? powerup.default_limit ?? 1,
     })) ?? [];
 
-  const settingsForm = useForm({
+  const settingsForm = useForm<{
+    type: 'practice' | 'quiz' | 'final_exam';
+    title: string;
+    description: string;
+    lesson_id: number | '' | string;
+    due_date: string;
+    max_score: number;
+    weight_percentage: number | '';
+    allow_retakes: boolean;
+    time_limit_minutes: number | '' | string;
+    is_published: boolean;
+    powerups: Array<{ id: number; limit: number }>;
+  }>({
     type: assessment.type ?? 'quiz',
     title: assessment.title ?? '',
     description: assessment.description ?? '',
@@ -36,7 +48,9 @@ export default function QuizEdit({
       ? new Date(assessment.due_date).toISOString().slice(0, 16)
       : '',
     max_score: assessment.max_score ?? 100,
-    weight_percentage: assessment.weight_percentage ?? '',
+    weight_percentage: assessment.weight_percentage
+      ? Number(assessment.weight_percentage)
+      : '',
     allow_retakes: assessment.allow_retakes ?? false,
     time_limit_minutes: assessment.time_limit_minutes ?? '',
     is_published: assessment.is_published ?? false,

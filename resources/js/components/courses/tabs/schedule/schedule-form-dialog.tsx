@@ -34,7 +34,7 @@ interface ScheduleFormDialogProps {
 }
 
 const formatForInput = (value?: string | null) => {
-  if (! value) return '';
+  if (!value) return '';
 
   return value.replace('Z', '').substring(0, 16);
 };
@@ -64,7 +64,7 @@ export function ScheduleFormDialog({
   const form = useForm(getScheduleFormData());
 
   useEffect(() => {
-    if (! open) return;
+    if (!open) return;
 
     form.setData(getScheduleFormData());
     form.clearErrors();
@@ -106,7 +106,7 @@ export function ScheduleFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-h-[80vh] overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Update Meeting' : 'Schedule Meeting'}
@@ -221,7 +221,12 @@ export function ScheduleFormDialog({
               <Label>Status</Label>
               <Select
                 value={form.data.status}
-                onValueChange={(value) => form.setData('status', value)}
+                onValueChange={(value) =>
+                  form.setData(
+                    'status',
+                    value as 'scheduled' | 'completed' | 'cancelled',
+                  )
+                }
               >
                 <SelectTrigger>
                   <SelectValue />

@@ -67,7 +67,7 @@ export function MeetingCard({
             : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200';
 
   const handleJoinMeeting = () => {
-    if (! schedule.meeting_url) {
+    if (!schedule.meeting_url) {
       return;
     }
 
@@ -77,7 +77,9 @@ export function MeetingCard({
       {
         preserveScroll: true,
         onSuccess: () => {
-          window.open(schedule.meeting_url, '_blank');
+          if (schedule.meeting_url) {
+            window.open(schedule.meeting_url, '_blank');
+          }
           setShowSuccessModal(true);
         },
         onError: (errors) => {
