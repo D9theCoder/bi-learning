@@ -685,6 +685,16 @@ export interface StudentsPageProps {
       total_xp?: number | null;
       enrollments_count?: number | null;
       active_enrollments_count?: number | null;
+      enrollments?: Array<{
+        id: number;
+        course: {
+          id: number;
+          title: string;
+          thumbnail?: string;
+        };
+        progress_percentage: number;
+        status: 'active' | 'completed' | 'paused';
+      }> | null;
     }>;
     current_page: number;
     last_page: number;
