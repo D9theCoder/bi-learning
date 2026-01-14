@@ -141,20 +141,23 @@ export function NewContentForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`new-content-type-${lessonId}`}>Type</Label>
-          <select
-            id={`new-content-type-${lessonId}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          <Select
             value={newContentForm.data.type}
-            onChange={(e) =>
-              handleTypeChange(e.target.value as CourseContent['type'])
+            onValueChange={(value) =>
+              handleTypeChange(value as CourseContent['type'])
             }
           >
-            {contentTypes.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id={`new-content-type-${lessonId}`}>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {contentTypes.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {newContentForm.errors.type ? (
             <p className="text-xs text-destructive">
               {newContentForm.errors.type}

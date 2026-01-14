@@ -1,6 +1,13 @@
 import type { UserSummary } from '@/components/admin-messages/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface NewAdminTutorConversationProps {
   tutors: UserSummary[];
@@ -32,20 +39,23 @@ export function NewAdminTutorConversation({
             >
               Select a tutor
             </label>
-            <select
-              id="new-tutor"
-              className="w-full rounded-md border border-input bg-background p-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary md:max-w-sm"
-              value={selectedTutorId}
-              onChange={(e) =>
-                onTutorChange(e.target.value ? Number(e.target.value) : '')
+            <Select
+              value={selectedTutorId ? String(selectedTutorId) : ''}
+              onValueChange={(value) =>
+                onTutorChange(value ? Number(value) : '')
               }
             >
-              {tutors.map((tutor) => (
-                <option key={tutor.id} value={tutor.id}>
-                  {tutor.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="new-tutor" className="md:max-w-sm">
+                <SelectValue placeholder="Select a tutor" />
+              </SelectTrigger>
+              <SelectContent>
+                {tutors.map((tutor) => (
+                  <SelectItem key={tutor.id} value={String(tutor.id)}>
+                    {tutor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               type="submit"
               className="md:w-auto"

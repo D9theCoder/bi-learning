@@ -146,23 +146,23 @@ export function ContentRow({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`content-type-${content.id}`}>Type</Label>
-          <select
-            id={`content-type-${content.id}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          <Select
             value={contentForm.data.type}
-            onChange={(e) =>
-              contentForm.setData(
-                'type',
-                e.target.value as CourseContent['type'],
-              )
+            onValueChange={(value) =>
+              contentForm.setData('type', value as CourseContent['type'])
             }
           >
-            {contentTypes.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id={`content-type-${content.id}`}>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {contentTypes.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {contentForm.errors.type ? (
             <p className="text-xs text-destructive">
               {contentForm.errors.type}
