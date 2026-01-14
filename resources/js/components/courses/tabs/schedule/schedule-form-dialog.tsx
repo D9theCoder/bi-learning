@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { Lesson, StudentMeetingSchedule } from '@/types';
 import { useForm } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -164,13 +166,18 @@ export function ScheduleFormDialog({
               <Label htmlFor={`schedule-datetime-${studentId}`}>
                 Date & time
               </Label>
-              <Input
-                id={`schedule-datetime-${studentId}`}
-                type="datetime-local"
+              <DateTimePicker24h
                 value={form.data.scheduled_at}
-                onChange={(event) =>
-                  form.setData('scheduled_at', event.target.value)
-                }
+                onChange={(date) => {
+                  if (date) {
+                    form.setData(
+                      'scheduled_at',
+                      format(date, 'yyyy-MM-dd HH:mm:ss'),
+                    );
+                  } else {
+                    form.setData('scheduled_at', '');
+                  }
+                }}
               />
               {form.errors.scheduled_at && (
                 <p className="text-xs text-destructive">

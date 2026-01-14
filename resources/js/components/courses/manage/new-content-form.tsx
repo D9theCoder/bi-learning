@@ -1,5 +1,6 @@
 import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,6 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { Save } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -216,13 +218,18 @@ export function NewContentForm({
         {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`new-content-due-${lessonId}`}>Due date</Label>
-            <Input
-              id={`new-content-due-${lessonId}`}
-              type="datetime-local"
-              value={newContentForm.data.due_date ?? ''}
-              onChange={(e) =>
-                newContentForm.setData('due_date', e.target.value)
-              }
+            <DateTimePicker24h
+              value={newContentForm.data.due_date}
+              onChange={(date) => {
+                if (date) {
+                  newContentForm.setData(
+                    'due_date',
+                    format(date, 'yyyy-MM-dd HH:mm:ss'),
+                  );
+                } else {
+                  newContentForm.setData('due_date', '');
+                }
+              }}
             />
             {newContentForm.errors.due_date ? (
               <p className="text-xs text-destructive">

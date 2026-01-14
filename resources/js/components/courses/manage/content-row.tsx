@@ -1,5 +1,6 @@
 import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,6 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -231,11 +233,18 @@ export function ContentRow({
         {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`content-due-${content.id}`}>Due date</Label>
-            <Input
-              id={`content-due-${content.id}`}
-              type="datetime-local"
-              value={contentForm.data.due_date ?? ''}
-              onChange={(e) => contentForm.setData('due_date', e.target.value)}
+            <DateTimePicker24h
+              value={contentForm.data.due_date}
+              onChange={(date) => {
+                if (date) {
+                  contentForm.setData(
+                    'due_date',
+                    format(date, 'yyyy-MM-dd HH:mm:ss'),
+                  );
+                } else {
+                  contentForm.setData('due_date', '');
+                }
+              }}
             />
             {contentForm.errors.due_date ? (
               <p className="text-xs text-destructive">

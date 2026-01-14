@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,6 +14,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { Assessment, Powerup } from '@/types';
 import type { InertiaFormProps } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { Save } from 'lucide-react';
 import { PowerupSelector } from './powerup-selector';
 
@@ -68,7 +70,9 @@ export function QuizSettingsCard({
     .map(([, message]) => message as string);
 
   const powerupErrors = Object.entries(form.errors ?? {})
-    .filter(([field, message]) => Boolean(message) && field.startsWith('powerups'))
+    .filter(
+      ([field, message]) => Boolean(message) && field.startsWith('powerups'),
+    )
     .map(([, message]) => message as string);
 
   const allowsPowerups = form.data.type !== 'final_exam';
@@ -154,7 +158,6 @@ export function QuizSettingsCard({
               <SelectItem value="none">None</SelectItem>
               {lessons.map((lesson) => (
                 <SelectItem key={lesson.id} value={String(lesson.id)}>
-                  {lesson.order !== null ? `Session ${lesson.order}: ` : ''}
                   {lesson.title}
                 </SelectItem>
               ))}
@@ -170,12 +173,17 @@ export function QuizSettingsCard({
 
         <div className="space-y-2">
           <Label htmlFor="due_date">Due Date (optional)</Label>
-          <Input
-            id="due_date"
-            type="datetime-local"
+          <DateTimePicker24h
             value={form.data.due_date}
-            onChange={(e) => form.setData('due_date', e.target.value)}
-            aria-invalid={Boolean(form.errors.due_date)}
+            onChange={(date) => {
+              if (date) {
+                // Formatting for Laravel (YYYY-MM-DD HH:mm:ss)
+                const formattedDate = format(date, 'yyyy-MM-dd HH:mm:ss');
+                form.setData('due_date', formattedDate);
+              } else {
+                form.setData('due_date', '');
+              }
+            }}
           />
           {form.errors.due_date ? (
             <p className="text-xs text-destructive">{form.errors.due_date}</p>
