@@ -1,259 +1,225 @@
-# Admin-Tutor Private Chat Feature Implementation Plan
+# Enhanced Fixed Scenario Seeder Implementation Plan
 
-This plan introduces a separate, private chat channel between **Admin** and **Tutor** roles, distinct from the existing Tutor-Student messaging system. Students cannot view these conversations, and only Admins can initiate the conversation.
-
-## Current System Overview
-
-The existing messaging system (`TutorMessage` model) supports:
-
-- **Tutor ↔ Student** messaging (bidirectional, enrollment-based)
-- **Admin** has read-only access to all Tutor-Student conversations
-
-### Key Constraints for New Feature
-
-1. **Students cannot see** Admin-Tutor conversations
-2. **Tutors cannot initiate** conversations with Admins — they can only see/reply after an Admin starts a conversation
-3. **Admins can initiate** conversations by selecting a tutor from a list
-4. **Separate channel** from Tutor-Student messages to avoid confusion
-
----
+Enhance the `FixedScenarioSeeder` to create a comprehensive testing environment with realistic high school mathematics courses, multiple user types, and complete course content.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Design Decision: Separate Model vs. Reusing `TutorMessage`**
->
-> This plan proposes creating a **new `AdminTutorMessage` model/table** rather than reusing `TutorMessage`. This provides:
->
-> - Clear separation between the two chat types
-> - Simpler queries and authorization logic
-> - No risk of students accidentally seeing admin-tutor messages
->
-> Alternative: Reuse `TutorMessage` with a `type` column. Let me know if you prefer this approach.
+> [!IMPORTANT] > **New User Accounts**: Adding a superadmin user and an additional student account with predefined credentials.
 
-> [!WARNING]  
-> **Breaking Change: Admin Message Page Updates**
->
-> The Admin's `/messages` page will be significantly modified to show:
->
-> - Tab 1: "Tutor-Student Conversations" (existing read-only view)
-> - Tab 2: "Admin-Tutor Chat" (new private messaging)
->
-> This changes the current UX where admins only see a single conversation list.
-
----
+> [!WARNING] > **Course Content Changes**: The existing "Fixed Scenario Course" will be renamed to "Basic Mathematics" with completely new content. This will affect existing test data if the seeder is re-run on a database that already has this course.
 
 ## Proposed Changes
 
-### Database Layer
+### User Management
 
-#### [NEW] [2025_01_14_create_admin_tutor_messages_table.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/migrations/2025_01_14_create_admin_tutor_messages_table.php>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-New migration to create `admin_tutor_messages` table:
+**Add Superadmin User**:
 
-- `id` - Primary key
-- `admin_id` - Foreign key to users (admin who initiated/participates)
-- `tutor_id` - Foreign key to users (tutor in conversation)
-- `sender_id` - Foreign key to users (who sent this message, either admin or tutor)
-- `content` - Text of the message
-- `is_read` - Boolean for read status
-- `sent_at` - Timestamp when message was sent
-- Standard timestamps
+- Email: `superadmin@gmail.com`
+- Password: `password`
+- Role: `admin`
+- Should have elevated privileges for all admin functions
 
----
+**Add Additional Student**:
 
-### Model Layer
-
-#### [NEW] [AdminTutorMessage.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Models/AdminTutorMessage.php>)
-
-New Eloquent model for admin-tutor messaging:
-
-- Relationships: `admin()`, `tutor()`, `sender()`
-- Scopes: `scopeUnread()`, `scopeForParticipant()`
-- Casts for `is_read`, `sent_at`
-
-#### [NEW] [AdminTutorMessageFactory.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/factories/AdminTutorMessageFactory.php>)
-
-Factory for testing admin-tutor messages
+- Email: `student1@gmail.com`
+- Password: `password`
+- Role: `student`
+- Will be enrolled in both courses with different progress levels
 
 ---
 
-### Controller Layer
+### Course 1: Basic Mathematics
 
-#### [NEW] [AdminTutorMessageController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/AdminTutorMessageController.php>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-New controller with methods:
+**Course Details**:
 
-- `index(Request $request)` - Display admin-tutor chat page
-  - For **Admin**: Show list of all tutors, allow initiating conversations
-  - For **Tutor**: Show only conversations where they've been contacted by an admin
-- `store(SendAdminTutorMessageRequest $request)` - Send a message
-  - Validates admin can initiate OR tutor can reply to existing conversation
-- `poll(Request $request)` - Real-time polling for message updates
-- `threadsForAdmin()` - Get all admin-tutor conversations for admin
-- `threadsForTutor(User $tutor)` - Get admin conversations for a specific tutor
-- `activeThread(int $tutorId)` / `activeThreadForTutor(int $adminId)` - Load messages
-- `tutorsForAdmin()` - Get list of all tutors for admin to initiate conversation
+- Title: "Basic Mathematics"
+- Description: Comprehensive high school mathematics covering fundamental topics
+- Category: BasicMathematics
+- Difficulty: beginner
+- Duration: ~360 minutes (6 hours total)
+- Instructor: Fixed Tutor
 
-#### [NEW] [SendAdminTutorMessageRequest.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Requests/SendAdminTutorMessageRequest.php>)
+**Course Structure** (6 lessons with varied content):
 
-Form request with validation:
+1. **Lesson 1: Introduction to Algebra**
+   - Description: Variables, expressions, and basic equations
+   - Duration: 60 minutes
+   - Content: Educational link to Khan Academy Algebra
+2. **Lesson 2: Linear Equations**
 
-- `tutor_id` or `admin_id` required (depending on sender role)
-- `content` required, string, max length
-- Authorization: Admin can always send; Tutor can only send if existing conversation exists
+   - Description: Solving and graphing linear equations
+   - Duration: 60 minutes
+   - Content: YouTube video on linear equations
 
----
+3. **Lesson 3: Geometry Fundamentals**
 
-### Routes
+   - Description: Points, lines, angles, and basic shapes
+   - Duration: 60 minutes
+   - Content: PDF resource file on geometry basics
 
-#### [MODIFY] [web.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/routes/web.php>)
+4. **Lesson 4: Quiz - Algebra & Geometry Basics**
 
-Add new routes for admin-tutor messaging:
+   - Description: Test your understanding of algebra and geometry
+   - Duration: 30 minutes
+   - Content: Quiz assessment with 10 questions (multiple choice, fill-in-blank)
 
-```php
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Admin-Tutor private messaging
-    Route::get('admin-messages', [AdminTutorMessageController::class, 'index'])
-        ->name('admin-tutor-messages');
-    Route::post('admin-messages', [AdminTutorMessageController::class, 'store'])
-        ->name('admin-tutor-messages.store');
-    Route::get('admin-messages/poll', [AdminTutorMessageController::class, 'poll'])
-        ->name('admin-tutor-messages.poll');
-});
-```
+5. **Lesson 5: Practice - Problem Solving**
 
----
+   - Description: Practice exercises for mastery
+   - Duration: 45 minutes
+   - Content: Practice assessment with 5 questions
 
-### Frontend - Pages
-
-#### [NEW] [resources/js/pages/admin-messages/index.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/admin-messages/index.tsx>)
-
-New page for admin-tutor conversations:
-
-- **Admin View**:
-  - Left panel: List of tutors with existing conversations + "New Conversation" section with tutor selector
-  - Right panel: Active conversation thread with send capability
-- **Tutor View**:
-  - Left panel: List of admins who have contacted them (no "New Conversation" section)
-  - Right panel: Active conversation thread with send capability (reply only)
+6. **Lesson 6: Final Exam - Basic Mathematics**
+   - Description: Comprehensive final examination
+   - Duration: 45 minutes
+   - Content: Final exam with mixed question types (15 questions)
 
 ---
 
-### Frontend - Components
+### Course 2: Advanced Mathematics
 
-#### [NEW] [resources/js/components/admin-messages/types.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/admin-messages/types.ts>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-Type definitions:
+**Course Details**:
 
-- `AdminTutorThread` - Thread summary with admin/tutor info
-- `AdminTutorMessage` - Individual message type
-- `AdminTutorActiveThread` - Active conversation with messages
+- Title: "Advanced Mathematics"
+- Description: Advanced high school mathematics including calculus and advanced topics
+- Category: AdvancedMathematics (or Mathematics if advanced doesn't exist)
+- Difficulty: advanced
+- Duration: ~420 minutes (7 hours total)
+- Instructor: Fixed Tutor
 
-#### [NEW] [resources/js/components/admin-messages/admin-tutor-thread-list.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/admin-messages/admin-tutor-thread-list.tsx>)
+**Course Structure** (7 lessons):
 
-Thread list component showing:
+1. **Lesson 1: Introduction to Calculus**
 
-- For Admin: Tutor name, avatar, last message time, unread count
-- For Tutor: Admin name, avatar, last message time, unread count
+   - Description: Limits and continuity concepts
+   - Duration: 60 minutes
+   - Content: Link to calculus resources
 
-#### [NEW] [resources/js/components/admin-messages/admin-tutor-message-thread.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/admin-messages/admin-tutor-message-thread.tsx>)
+2. **Lesson 2: Derivatives**
 
-Message display and input component:
+   - Description: Understanding and computing derivatives
+   - Duration: 60 minutes
+   - Content: YouTube video on derivatives
 
-- Shows conversation history with sender labels
-- Text input for composing messages
-- Both Admin and Tutor can send (tutor only after admin initiates)
+3. **Lesson 3: Integration Basics**
 
-#### [NEW] [resources/js/components/admin-messages/new-admin-tutor-conversation.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/admin-messages/new-admin-tutor-conversation.tsx>)
+   - Description: Fundamental theorem of calculus and basic integration
+   - Duration: 60 minutes
+   - Content: Educational video on integration
 
-Admin-only component to start new conversation:
+4. **Lesson 4: Applications of Calculus**
 
-- Dropdown to select a tutor (loads all tutors)
-- "Start Conversation" button
+   - Description: Real-world applications and problem solving
+   - Duration: 60 minutes
+   - Content: PDF resource on calculus applications
 
----
+5. **Lesson 5: Quiz - Calculus Fundamentals**
 
-### Frontend - Hooks
+   - Description: Test your calculus knowledge
+   - Duration: 45 minutes
+   - Content: Quiz with 10 questions
 
-#### [NEW] [resources/js/hooks/use-admin-tutor-message-polling.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/hooks/use-admin-tutor-message-polling.ts>)
+6. **Lesson 6: Practice - Advanced Problems**
 
-Polling hook for real-time updates (similar to existing `use-message-polling.ts`)
+   - Description: Practice complex calculus problems
+   - Duration: 60 minutes
+   - Content: Practice assessment with 8 questions
 
----
-
-### Navigation
-
-#### [MODIFY] Sidebar/Navigation Components
-
-Add navigation link for Admin-Tutor messages:
-
-- **For Admin**: Show "Tutor Messages" link in sidebar (or as a tab on messages page)
-- **For Tutor**: Show "Admin Messages" link in sidebar when they have active conversations
-
-Specific files to update will be identified during implementation (likely `app-sidebar.tsx` or similar).
-
----
-
-## Authorization Summary
-
-| Actor   | Can View                      | Can Send                             | Can See Tutor List |
-| ------- | ----------------------------- | ------------------------------------ | ------------------ |
-| Admin   | All admin-tutor conversations | Yes (can initiate with any tutor)    | Yes                |
-| Tutor   | Only their own conversations  | Yes (reply only, after admin starts) | No                 |
-| Student | None                          | No                                   | No                 |
+7. **Lesson 7: Final Exam - Advanced Mathematics**
+   - Description: Comprehensive final examination
+   - Duration: 75 minutes
+   - Content: Final exam with 20 questions
 
 ---
+
+### Enrollments and Schedules
+
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
+
+**Student Enrollments**:
+
+- Original student (`student@gmail.com`): Enrolled in Basic Mathematics (0% progress)
+- New student (`student1@gmail.com`): Enrolled in both courses
+  - Basic Mathematics: 50% progress
+  - Advanced Mathematics: 0% progress
+
+**Meeting Schedules**:
+
+- Create realistic meeting schedules for all enrolled students
+- Use sequential dates for sessions
+- Generate realistic Zoom-style meeting URLs
 
 ## Verification Plan
 
 ### Automated Tests
 
-#### [NEW] [tests/Feature/AdminTutorMessageTest.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/tests/Feature/AdminTutorMessageTest.php>)
-
-Feature tests covering:
-
-1. Admin can view admin-tutor messages page
-2. Admin can see list of all tutors
-3. Admin can initiate conversation with a tutor
-4. Admin can send messages to tutor
-5. Tutor can view admin-tutor messages page (only their conversations)
-6. Tutor cannot see list of admins to initiate
-7. Tutor can reply to existing admin conversation
-8. Tutor cannot initiate new conversation
-9. Student cannot access admin-tutor messages page
-10. Student cannot see admin-tutor conversations
+Since there are no existing tests for `FixedScenarioSeeder`, I will create a new feature test:
 
 ```bash
-php artisan test --filter=AdminTutorMessageTest
+php artisan make:test --pest FixedScenarioSeederTest
+```
+
+The test will verify:
+
+1. Superadmin user is created with correct role
+2. Additional student is created with correct credentials
+3. Both courses are created with correct titles and properties
+4. All lessons are created with descriptions and appropriate durations
+5. All assessments contain mathematics-related questions
+6. Enrollments are created correctly
+7. Meeting schedules are generated for all students
+
+Run with:
+
+```bash
+php artisan test --filter=FixedScenarioSeederTest
 ```
 
 ### Manual Verification
 
-1. Log in as Admin, navigate to Admin Messages
-2. Start a new conversation with a tutor
-3. Send a message
-4. Log in as Tutor in a separate browser
-5. Verify the tutor sees the conversation and can reply
-6. Verify the tutor CANNOT start a new conversation
-7. Log in as Student and verify no access to admin-tutor messages
+After running the seeder, verify in the database:
 
----
+1. Run the seeder:
 
-## File Summary
+   ```bash
+   php artisan db:seed --class=FixedScenarioSeeder
+   ```
 
-| Type   | File                                                                      | Description                             |
-| ------ | ------------------------------------------------------------------------- | --------------------------------------- |
-| NEW    | `database/migrations/..._create_admin_tutor_messages_table.php`           | Database table for admin-tutor chat     |
-| NEW    | `app/Models/AdminTutorMessage.php`                                        | Eloquent model                          |
-| NEW    | `database/factories/AdminTutorMessageFactory.php`                         | Factory for testing                     |
-| NEW    | `app/Http/Controllers/AdminTutorMessageController.php`                    | Controller with all endpoints           |
-| NEW    | `app/Http/Requests/SendAdminTutorMessageRequest.php`                      | Form request validation                 |
-| MODIFY | `routes/web.php`                                                          | Add new routes                          |
-| NEW    | `resources/js/pages/admin-messages/index.tsx`                             | Admin-tutor chat page                   |
-| NEW    | `resources/js/components/admin-messages/types.ts`                         | TypeScript types                        |
-| NEW    | `resources/js/components/admin-messages/admin-tutor-thread-list.tsx`      | Thread list component                   |
-| NEW    | `resources/js/components/admin-messages/admin-tutor-message-thread.tsx`   | Message thread component                |
-| NEW    | `resources/js/components/admin-messages/new-admin-tutor-conversation.tsx` | New conversation component (admin only) |
-| NEW    | `resources/js/hooks/use-admin-tutor-message-polling.ts`                   | Polling hook                            |
-| MODIFY | Sidebar/Navigation                                                        | Add navigation links                    |
-| NEW    | `tests/Feature/AdminTutorMessageTest.php`                                 | Feature tests                           |
+2. Verify users exist by logging in:
+
+   - Login as `superadmin@gmail.com` / `password` - should have admin access
+   - Login as `student@gmail.com` / `password` - should see Basic Mathematics course
+   - Login as `student1@gmail.com` / `password` - should see both courses
+
+3. Check course content in the UI:
+
+   - Navigate to courses page
+   - Verify "Basic Mathematics" and "Advanced Mathematics" are visible
+   - Open each course and verify all lessons have descriptions
+   - Verify assessments contain mathematics questions (not Laravel questions)
+
+4. Database verification using tinker:
+
+   ```bash
+   php artisan tinker
+   ```
+
+   ```php
+   // Check users
+   User::whereIn('email', ['superadmin@gmail.com', 'student1@gmail.com'])->get(['email', 'name']);
+
+   // Check courses
+   Course::whereIn('title', ['Basic Mathematics', 'Advanced Mathematics'])->get(['title', 'description', 'duration_minutes']);
+
+   // Check lesson descriptions
+   Course::where('title', 'Basic Mathematics')->first()->lessons->pluck('title', 'description');
+
+   // Check quiz questions
+   Assessment::where('title', 'Quiz - Algebra & Geometry Basics')->first()->questions->pluck('question');
+   ```

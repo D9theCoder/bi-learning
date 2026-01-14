@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Achievement;
-use App\Models\DailyTask;
+use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -14,42 +14,33 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        $achievements = Achievement::all();
+        $student = User::where('email', 'student@gmail.com')->first();
+        $studentOne = User::where('email', 'student1@gmail.com')->first();
+        $basicCourse = Course::where('title', 'Basic Mathematics')->first();
+        $advancedCourse = Course::where('title', 'Advanced Mathematics')->first();
 
-        // Create some random students for leaderboard
-        User::factory(20)->withoutTwoFactor()->create()->each(function ($user) use ($achievements) {
-            $user->update([
-                'total_xp' => fake()->numberBetween(500, 8000),
-                'level' => fake()->numberBetween(1, 15),
-                'points_balance' => fake()->numberBetween(0, 3000),
-            ]);
+        if ($student && $basicCourse) {
+            $this->upsertEnrollment($student, $basicCourse, 0);
+        }
 
-            $user->assignRole('student');
+        if ($studentOne && $basicCourse) {
+            $this->upsertEnrollment($studentOne, $basicCourse, 50);
+        }
 
-            // Seed a couple of daily quests for the dashboard (today-focused)
-            DailyTask::factory(2)->create([
-                'user_id' => $user->id,
-                'due_date' => today(),
-                'is_completed' => false,
-                'xp_reward' => fake()->numberBetween(10, 75),
-            ]);
+        if ($studentOne && $advancedCourse) {
+            $this->upsertEnrollment($studentOne, $advancedCourse, 0);
+        }
+    }
 
-            // Add a completed task to provide progress context
-            DailyTask::factory()->create([
-                'user_id' => $user->id,
-                'due_date' => today(),
-                'is_completed' => true,
-                'completed_at' => now()->subHours(fake()->numberBetween(1, 12)),
-                'xp_reward' => fake()->numberBetween(10, 75),
-            ]);
-
-            // Attach a recent achievement if available to populate the dashboard
-            if ($achievements->isNotEmpty()) {
-                $user->achievements()->attach(
-                    $achievements->random(min(2, $achievements->count()))->pluck('id'),
-                    ['earned_at' => now()->subDays(fake()->numberBetween(0, 7))]
-                );
-            }
-        });
+    private function upsertEnrollment(User $student, Course $course, float $progressPercentage): Enrollment
+    {
+        return Enrollment::updateOrCreate(
+            ['user_id' => $student->id, 'course_id' => $course->id],
+            [
+                'status' => 'active',
+                'enrolled_at' => now(),
+                'progress_percentage' => $progressPercentage,
+            ]
+        );
     }
 }
