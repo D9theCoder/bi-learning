@@ -13,7 +13,6 @@ import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
-import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 const contentTypes = [
@@ -67,26 +66,42 @@ export function NewContentForm({
 
   const isAssessment = newContentForm.data.type === 'assessment';
 
-  useEffect(() => {
-    const isAssessmentType = newContentForm.data.type === 'assessment';
+  const handleTypeChange = (newType: CourseContent['type']) => {
+    newContentForm.setData('type', newType);
 
-    // Reset powerups when switching to final exam or away from assessment
-    if (
-      isAssessmentType &&
-      newContentForm.data.assessment_type === 'final_exam'
-    ) {
-      newContentForm.setData('allowed_powerups', []);
-      newContentForm.setData('allow_powerups', false);
-      newContentForm.setData('weight_percentage', '');
-    } else if (!isAssessmentType) {
-      newContentForm.setData('allowed_powerups', []);
-      newContentForm.setData('allow_powerups', true);
-      newContentForm.setData('weight_percentage', '');
-      newContentForm.setData('max_score', 100);
-    } else {
-      newContentForm.setData('max_score', 100);
+    // Reset assessment-specific fields when switching away from assessment
+    if (newType !== 'assessment') {
+      newContentForm.setData({
+        ...newContentForm.data,
+        type: newType,
+        allowed_powerups: [],
+        allow_powerups: true,
+        weight_percentage: '',
+        max_score: 100,
+      });
     }
-  }, [newContentForm]);
+  };
+
+  const handleAssessmentTypeChange = (
+    newAssessmentType: 'practice' | 'quiz' | 'final_exam',
+  ) => {
+    // Reset powerups and weight when switching to/from final exam
+    if (newAssessmentType === 'final_exam') {
+      newContentForm.setData({
+        ...newContentForm.data,
+        assessment_type: newAssessmentType,
+        allowed_powerups: [],
+        allow_powerups: false,
+        weight_percentage: '',
+      });
+    } else {
+      newContentForm.setData({
+        ...newContentForm.data,
+        assessment_type: newAssessmentType,
+        max_score: 100,
+      });
+    }
+  };
 
   const submitNewContent = () => {
     newContentForm.post(
@@ -129,10 +144,7 @@ export function NewContentForm({
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             value={newContentForm.data.type}
             onChange={(e) =>
-              newContentForm.setData(
-                'type',
-                e.target.value as CourseContent['type'],
-              )
+              handleTypeChange(e.target.value as CourseContent['type'])
             }
           >
             {contentTypes.map((opt) => (
@@ -185,8 +197,7 @@ export function NewContentForm({
             <Select
               value={newContentForm.data.assessment_type}
               onValueChange={(value) =>
-                newContentForm.setData(
-                  'assessment_type',
+                handleAssessmentTypeChange(
                   value as 'practice' | 'quiz' | 'final_exam',
                 )
               }
