@@ -10,9 +10,10 @@ import type {
 import { PageHeader } from '@/components/shared/page-header';
 import { useMessagePolling } from '@/hooks/use-message-polling';
 import AppLayout from '@/layouts/app-layout';
-import { messages as messagesRoute } from '@/routes';
+import { adminMessages, messages as messagesRoute } from '@/routes';
+import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
@@ -72,6 +73,28 @@ export default function MessagesPage({
           description="Chat with your tutors and peers."
           iconClassName="text-blue-400"
         />
+
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted p-1 text-sm">
+            <Link
+              href={messagesRoute().url}
+              className={cn(
+                'rounded-md px-3 py-1.5 font-medium transition',
+                'bg-background text-foreground shadow-sm',
+              )}
+            >
+              Tutor-Student Conversations
+            </Link>
+            <Link
+              href={adminMessages().url}
+              className={cn(
+                'rounded-md px-3 py-1.5 font-medium text-muted-foreground transition hover:text-foreground',
+              )}
+            >
+              Admin-Tutor Chat
+            </Link>
+          </div>
+        )}
 
         {!isAdmin && (
           <NewConversationCard

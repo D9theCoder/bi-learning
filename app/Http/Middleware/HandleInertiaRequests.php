@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Course;
+use App\Models\TutorMessage;
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -47,8 +50,44 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
                 'roles' => $user ? $user->getRoleNames() : [],
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
+                'adminTutorChatAvailable' => $this->adminTutorChatAvailable($user),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    private function adminTutorChatAvailable(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if (! $this->isTutorUser($user)) {
+            return false;
+        }
+
+        $adminIds = User::role('admin')->pluck('id');
+
+        if ($adminIds->isEmpty()) {
+            return false;
+        }
+
+        return TutorMessage::query()
+            ->where('tutor_id', $user->id)
+            ->whereIn('user_id', $adminIds)
+            ->exists();
+    }
+
+    private function isTutorUser(User $user): bool
+    {
+        if ($user->hasRole('tutor')) {
+            return true;
+        }
+
+        return Course::where('instructor_id', $user->id)->exists();
     }
 }

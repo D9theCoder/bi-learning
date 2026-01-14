@@ -389,7 +389,7 @@ Columns:
 Relationships:
 
 - One user can instruct many `courses` via `courses.instructor_id`.
-- One user can have many `enrollments`, `student_meeting_schedules`, `assessment_attempts`, `assessment_submissions`, `activities`, `achievement_user`, `daily_tasks`, `attendances`, `final_scores`, `reward_user`, `course_content_completions`, and `tutor_messages`.
+- One user can have many `enrollments`, `student_meeting_schedules`, `assessment_attempts`, `assessment_submissions`, `activities`, `achievement_user`, `daily_tasks`, `attendances`, `final_scores`, `reward_user`, `course_content_completions`, and `tutor_messages` (includes tutor-student and admin-tutor chats).
 - `tutor_messages.sender_id` is nullable to allow sender removal while keeping the message.
 
 Foreign keys:
@@ -1022,7 +1022,7 @@ Foreign keys:
 
 ### `tutor_messages`
 
-Purpose: Messages exchanged between tutors and users.
+Purpose: Messages exchanged between tutors and users (students and admins).
 
 Primary key: `id` — Foreign keys: `tutor_id` → `users.id` (cascade on delete); `user_id` → `users.id` (cascade on delete); `sender_id` → `users.id` (nullable, set null on delete)
 
@@ -1040,7 +1040,8 @@ Columns:
 
 Relationships:
 
-- Belongs to `users` via `tutor_id` (tutor), `user_id` (student), and `sender_id` (message author).
+- Belongs to `users` via `tutor_id` (tutor), `user_id` (student or admin), and `sender_id` (message author).
+- Tutor-student conversations use `user_id` as the student; admin-tutor conversations use `user_id` as the admin.
 
 Foreign keys:
 

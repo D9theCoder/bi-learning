@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\AdminTutorMessageController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CourseContentController;
 use App\Http\Controllers\CourseController;
@@ -134,6 +135,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('messages', [MessageController::class, 'index'])->name('messages');
     Route::get('messages/poll', [MessageController::class, 'poll'])->name('messages.poll');
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
+
+    // Admin-Tutor messaging routes
+    Route::get('admin-messages', [AdminTutorMessageController::class, 'index'])
+        ->name('admin-messages');
+    Route::get('admin-messages/poll', [AdminTutorMessageController::class, 'poll'])
+        ->name('admin-messages.poll');
+    Route::post('admin-messages', [AdminTutorMessageController::class, 'store'])
+        ->name('admin-messages.store');
 
     // Reward routes
     Route::get('rewards', [RewardController::class, 'index'])
