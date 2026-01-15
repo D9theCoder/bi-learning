@@ -141,7 +141,7 @@ class AdminTutorMessageController extends Controller
             ->select('tutor_id')
             ->selectRaw('MAX(sent_at) as latest_message_at')
             ->selectRaw(
-                'SUM(CASE WHEN is_read = 0 AND sender_id != ? THEN 1 ELSE 0 END) as unread_count',
+                'SUM(CASE WHEN is_read = false AND sender_id != ? THEN 1 ELSE 0 END) as unread_count',
                 [$admin->id]
             )
             ->where('user_id', $admin->id)
@@ -179,7 +179,7 @@ class AdminTutorMessageController extends Controller
             ->select('user_id')
             ->selectRaw('MAX(sent_at) as latest_message_at')
             ->selectRaw(
-                'SUM(CASE WHEN is_read = 0 AND sender_id != ? THEN 1 ELSE 0 END) as unread_count',
+                'SUM(CASE WHEN is_read = false AND sender_id != ? THEN 1 ELSE 0 END) as unread_count',
                 [$tutor->id]
             )
             ->where('tutor_id', $tutor->id)

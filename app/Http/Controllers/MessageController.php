@@ -161,7 +161,7 @@ class MessageController extends Controller
             )
             ->selectRaw('MAX(sent_at) as latest_message_at')
             ->selectRaw(
-                'SUM(CASE WHEN user_id = ? AND is_read = 0 THEN 1 ELSE 0 END) as unread_count',
+                'SUM(CASE WHEN user_id = ? AND is_read = false THEN 1 ELSE 0 END) as unread_count',
                 [$user->id]
             )
             ->where(function ($q) use ($user) {
@@ -206,7 +206,7 @@ class MessageController extends Controller
         $threads = TutorMessage::query()
             ->select('tutor_id', 'user_id')
             ->selectRaw('MAX(sent_at) as latest_message_at')
-            ->selectRaw('SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread_count')
+            ->selectRaw('SUM(CASE WHEN is_read = false THEN 1 ELSE 0 END) as unread_count')
             ->when($adminIds->isNotEmpty(), function ($query) use ($adminIds) {
                 $query->whereNotIn('tutor_id', $adminIds)
                     ->whereNotIn('user_id', $adminIds);
