@@ -14,13 +14,10 @@ interface TutorCalendarSectionProps {
 export const TutorCalendarSection = memo(
   ({ items }: TutorCalendarSectionProps) => {
     const getRedirectHref = (item: TutorDashboardData['calendar'][number]) => {
-      const sessionId = item.lesson_id ?? item.id;
-
       if (item.course_id) {
         return show.url(item.course_id, {
           query: {
-            tab: 'session',
-            session: sessionId,
+            tab: item.category === 'meeting' ? 'schedule' : 'assessment',
           },
         });
       }

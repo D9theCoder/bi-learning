@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\AdminTutorMessageController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CourseContentController;
 use App\Http\Controllers\CourseController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\RewardRedemptionController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentMeetingScheduleController;
 use App\Http\Controllers\TutorController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +98,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('courses/{course}', [CourseController::class, 'show'])
         ->whereNumber('course')
         ->name('courses.show');
+    Route::get('courses/{course}/schedules', [StudentMeetingScheduleController::class, 'index'])
+        ->middleware('role:student|tutor|admin')
+        ->whereNumber('course')
+        ->name('courses.schedules.index');
+    Route::post('courses/{course}/schedules', [StudentMeetingScheduleController::class, 'store'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->name('courses.schedules.store');
+    Route::put('courses/{course}/schedules/{schedule}', [StudentMeetingScheduleController::class, 'update'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->whereNumber('schedule')
+        ->name('courses.schedules.update');
+    Route::delete('courses/{course}/schedules/{schedule}', [StudentMeetingScheduleController::class, 'destroy'])
+        ->middleware('role:tutor|admin')
+        ->whereNumber('course')
+        ->whereNumber('schedule')
+        ->name('courses.schedules.destroy');
     Route::post('courses/{course}/enroll', [EnrollmentController::class, 'store'])
         ->middleware('role:student|admin')
         ->whereNumber('course')
@@ -115,6 +135,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('messages', [MessageController::class, 'index'])->name('messages');
     Route::get('messages/poll', [MessageController::class, 'poll'])->name('messages.poll');
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
+
+    // Admin-Tutor messaging routes
+    Route::get('admin-messages', [AdminTutorMessageController::class, 'index'])
+        ->name('admin-messages');
+    Route::get('admin-messages/poll', [AdminTutorMessageController::class, 'poll'])
+        ->name('admin-messages.poll');
+    Route::post('admin-messages', [AdminTutorMessageController::class, 'store'])
+        ->name('admin-messages.store');
 
     // Reward routes
     Route::get('rewards', [RewardController::class, 'index'])

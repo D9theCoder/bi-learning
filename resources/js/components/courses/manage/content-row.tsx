@@ -1,5 +1,6 @@
 import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,7 +13,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { router, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 const contentTypes = [
@@ -84,13 +86,10 @@ export function ContentRow({
     allowed_powerups: content.allowed_powerups ?? [],
   });
 
-  const [isAssessment, setIsAssessment] = useState(
-    content.type === 'assessment',
-  );
+  const isAssessment = contentForm.data.type === 'assessment';
 
   useEffect(() => {
     const isAssessmentType = contentForm.data.type === 'assessment';
-    setIsAssessment(isAssessmentType);
 
     // Reset powerups when switching to final exam or away from assessment
     if (isAssessmentType && contentForm.data.assessment_type === 'final_exam') {
@@ -105,7 +104,7 @@ export function ContentRow({
     } else {
       contentForm.setData('max_score', 100);
     }
-  }, [contentForm.data.type, contentForm.data.assessment_type]);
+  }, [contentForm]);
 
   const saveContent = () => {
     contentForm.put(
@@ -147,23 +146,23 @@ export function ContentRow({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`content-type-${content.id}`}>Type</Label>
-          <select
-            id={`content-type-${content.id}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          <Select
             value={contentForm.data.type}
-            onChange={(e) =>
-              contentForm.setData(
-                'type',
-                e.target.value as CourseContent['type'],
-              )
+            onValueChange={(value) =>
+              contentForm.setData('type', value as CourseContent['type'])
             }
           >
-            {contentTypes.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id={`content-type-${content.id}`}>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {contentTypes.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {contentForm.errors.type ? (
             <p className="text-xs text-destructive">
               {contentForm.errors.type}
@@ -234,11 +233,18 @@ export function ContentRow({
         {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`content-due-${content.id}`}>Due date</Label>
-            <Input
-              id={`content-due-${content.id}`}
-              type="datetime-local"
-              value={contentForm.data.due_date ?? ''}
-              onChange={(e) => contentForm.setData('due_date', e.target.value)}
+            <DateTimePicker24h
+              value={contentForm.data.due_date}
+              onChange={(date) => {
+                if (date) {
+                  contentForm.setData(
+                    'due_date',
+                    format(date, 'yyyy-MM-dd HH:mm:ss'),
+                  );
+                } else {
+                  contentForm.setData('due_date', '');
+                }
+              }}
             />
             {contentForm.errors.due_date ? (
               <p className="text-xs text-destructive">

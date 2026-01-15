@@ -2,12 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Achievement;
-use App\Models\Activity;
-use App\Models\Course;
-use App\Models\DailyTask;
-use App\Models\Enrollment;
-use App\Models\TutorMessage;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -18,74 +12,42 @@ class TestUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $achievements = Achievement::all();
-        $courses = Course::all();
-        $instructors = User::all();
-
-        // Create admin user
-        $testUser = User::factory()->withoutTwoFactor()->create([
-            'name' => 'Super Admin',
+        $this->upsertUser([
+            'name' => 'Fixed Superadmin',
             'email' => 'superadmin@gmail.com',
             'password' => 'password',
-            'total_xp' => 10000,
-            'level' => 20,
-            'points_balance' => 5000,
-            'current_streak' => 30,
-            'longest_streak' => 100,
-            'last_activity_date' => today(),
-        ]);
+            'email_verified_at' => now(),
+        ], 'admin');
 
-        $testUser->assignRole('admin');
+        $this->upsertUser([
+            'name' => 'Fixed Tutor',
+            'email' => 'tutor@gmail.com',
+            'password' => 'password',
+            'email_verified_at' => now(),
+        ], 'tutor');
 
-        // Award some achievements to test user
-        $testUser->achievements()->attach(
-            $achievements->random(3)->pluck('id'),
-            ['earned_at' => now()]
-        );
+        $this->upsertUser([
+            'name' => 'Fixed Student',
+            'email' => 'student@gmail.com',
+            'password' => 'password',
+            'email_verified_at' => now(),
+            'points_balance' => 100000,
+        ], 'student');
 
-        // Create enrollments for test user
-        $enrolledCourses = $courses->random(4);
-        $enrolledCourses->each(function ($course) use ($testUser) {
-            Enrollment::factory()->create([
-                'user_id' => $testUser->id,
-                'course_id' => $course->id,
-                'progress_percentage' => fake()->numberBetween(10, 85),
-                'status' => 'active',
-            ]);
-        });
+        $this->upsertUser([
+            'name' => 'Focused Student',
+            'email' => 'student1@gmail.com',
+            'password' => 'password',
+            'email_verified_at' => now(),
+            'points_balance' => 50000,
+        ], 'student');
+    }
 
-        // Create daily tasks for test user (today)
-        DailyTask::factory(5)->create([
-            'user_id' => $testUser->id,
-            'due_date' => today(),
-        ]);
+    private function upsertUser(array $attributes, string $role): User
+    {
+        $user = User::updateOrCreate(['email' => $attributes['email']], $attributes);
+        $user->syncRoles($role);
 
-        // Create some completed tasks this week to drive hoursThisWeek()
-        DailyTask::factory(3)->create([
-            'user_id' => $testUser->id,
-            'is_completed' => true,
-            'completed_at' => now()->subDays(fake()->numberBetween(0, 6)),
-            'due_date' => now()->subDays(fake()->numberBetween(0, 6)),
-        ]);
-
-        // Create tutor messages for test user
-        TutorMessage::factory(8)->create([
-            'user_id' => $testUser->id,
-            'tutor_id' => $instructors->random()->id,
-        ]);
-
-        // Create mixed activities for test user
-        Activity::factory(15)->create([
-            'user_id' => $testUser->id,
-        ]);
-
-        // Ensure some lesson_completed activities this week to drive xpThisWeek()
-        for ($i = 0; $i < 5; $i++) {
-            Activity::factory()->create([
-                'user_id' => $testUser->id,
-                'type' => 'lesson_completed',
-                'created_at' => now()->subDays($i),
-            ]);
-        }
+        return $user;
     }
 }

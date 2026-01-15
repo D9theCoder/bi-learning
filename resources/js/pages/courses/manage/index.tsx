@@ -26,14 +26,10 @@ export default function ManageCourses({
       }
     }, 150);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, filters?.search]);
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { title: 'Courses', href: '/courses/manage' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ title: 'Courses', href: '/courses/manage' }]}>
       <Head title="Manage Courses" />
 
       <div className="flex flex-col gap-6 p-4 lg:p-8">

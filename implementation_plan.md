@@ -1,162 +1,225 @@
-# Admin Calendar Enhancement - Implementation Plan
+# Enhanced Fixed Scenario Seeder Implementation Plan
 
-This plan adds course markers and a paginated course list to the admin calendar page, modeled after the tutor dashboard's course features.
+Enhance the `FixedScenarioSeeder` to create a comprehensive testing environment with realistic high school mathematics courses, multiple user types, and complete course content.
 
 ## User Review Required
 
-> [!IMPORTANT] > **Pagination Strategy:** The backend will use standard Laravel pagination for the course list API endpoint. The calendar will fetch ALL courses without pagination for displaying markers (since we need to show all course events on the calendar), but the course list sidebar will use paginated data. This approach balances performance with functionality.
+> [!IMPORTANT] > **New User Accounts**: Adding a superadmin user and an additional student account with predefined credentials.
 
-> [!IMPORTANT] > **Admin Course Access:** Admins will see ALL courses in the system (not just courses they're teaching), since admins have oversight authority over all tutors and courses. The course markers will show events from all courses system-wide.
+> [!WARNING] > **Course Content Changes**: The existing "Fixed Scenario Course" will be renamed to "Basic Mathematics" with completely new content. This will affect existing test data if the seeder is re-run on a database that already has this course.
 
 ## Proposed Changes
 
-### Backend - Calendar Controller
+### User Management
 
-#### [MODIFY] [CalendarController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/CalendarController.php>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-Update the `index` method to:
+**Add Superadmin User**:
 
-1. **For admin users:** Load all courses with lessons and assessments to generate calendar markers
-2. **Add pagination:** Create a separate method or extend the index to return paginated course data for the course list
-3. **Include course metadata:** Add similar data structure as tutor dashboard courses (student count, next meeting, etc.)
+- Email: `superadmin@gmail.com`
+- Password: `password`
+- Role: `admin`
+- Should have elevated privileges for all admin functions
 
-**Key changes:**
+**Add Additional Student**:
 
-- Add a new query after line 32 for admin users to fetch all courses (not just instructor_id filtered)
-- Include course markers similar to lines 38-78 (tutor logic) but for ALL courses
-- Add a paginated course list using Laravel's `paginate()` method (per_page = 12)
-- Return course data including: `id`, `title`, `thumbnail`, `instructor`, `student_count`, `next_meeting_date`, `next_meeting_time`, `is_published`
-
----
-
-### Backend - API Endpoint (Optional Approach)
-
-#### [NEW] [AdminCoursesController.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/app/Http/Controllers/Admin/AdminCoursesController.php>)
-
-Alternatively, create a dedicated admin controller for paginated course data:
-
-- `GET /admin/courses` - Returns paginated course list with metadata
-- This keeps separation of concerns and allows reuse across admin pages
-- Uses `Course::with(['instructor', 'lessons', 'assessments', 'enrollments'])->paginate(12)`
+- Email: `student1@gmail.com`
+- Password: `password`
+- Role: `student`
+- Will be enrolled in both courses with different progress levels
 
 ---
 
-### Frontend - TypeScript Types
+### Course 1: Basic Mathematics
 
-#### [MODIFY] [index.d.ts](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/types/index.d.ts>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-Add new interfaces:
+**Course Details**:
 
-1. **`AdminCalendarCourse`** - Similar to `TutorDashboardCourse` but with instructor info
-2. **Update `CalendarPageProps`** - Add optional `courses?` and `courseMarkers?` properties for admin
+- Title: "Basic Mathematics"
+- Description: Comprehensive high school mathematics covering fundamental topics
+- Category: BasicMathematics
+- Difficulty: beginner
+- Duration: ~360 minutes (6 hours total)
+- Instructor: Fixed Tutor
 
-```typescript
-export interface AdminCalendarCourse {
-  id: number;
-  title: string;
-  thumbnail?: string;
-  instructor?: { id: number; name: string } | null;
-  student_count: number;
-  next_meeting_date?: string | null;
-  next_meeting_time?: string | null;
-  is_published: boolean;
-}
+**Course Structure** (6 lessons with varied content):
 
-export interface CalendarPageProps extends SharedData {
-  // ... existing properties
-  courses?: {
-    data: AdminCalendarCourse[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-  };
-  courseMarkers?: string[]; // YYYY-MM-DD dates with course events
-}
-```
+1. **Lesson 1: Introduction to Algebra**
+   - Description: Variables, expressions, and basic equations
+   - Duration: 60 minutes
+   - Content: Educational link to Khan Academy Algebra
+2. **Lesson 2: Linear Equations**
 
----
+   - Description: Solving and graphing linear equations
+   - Duration: 60 minutes
+   - Content: YouTube video on linear equations
 
-### Frontend - Calendar Page
+3. **Lesson 3: Geometry Fundamentals**
 
-#### [MODIFY] [index.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/pages/calendar/index.tsx>)
+   - Description: Points, lines, angles, and basic shapes
+   - Duration: 60 minutes
+   - Content: PDF resource file on geometry basics
 
-1. Check if user is admin and courses data exists
-2. If admin, add a new section below the calendar overview showing the course list
-3. Add pagination controls at the bottom of the course list
-4. Merge `courseMarkers` into the existing `markers` array for the mini calendar
+4. **Lesson 4: Quiz - Algebra & Geometry Basics**
 
----
+   - Description: Test your understanding of algebra and geometry
+   - Duration: 30 minutes
+   - Content: Quiz assessment with 10 questions (multiple choice, fill-in-blank)
 
-### Frontend - Components
+5. **Lesson 5: Practice - Problem Solving**
 
-#### [NEW] [admin-course-list-section.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/admin-course-list-section.tsx>)
+   - Description: Practice exercises for mastery
+   - Duration: 45 minutes
+   - Content: Practice assessment with 5 questions
 
-Create a new component based on `TutorCourseListSection`:
-
-- Display paginated courses with thumbnail, title, instructor name
-- Show student count and next meeting info
-- Add pagination controls using Inertia's links
-- Include "View course" and "Manage course" buttons
-- Responsive grid layout (1 col mobile, 2 cols desktop)
+6. **Lesson 6: Final Exam - Basic Mathematics**
+   - Description: Comprehensive final examination
+   - Duration: 45 minutes
+   - Content: Final exam with mixed question types (15 questions)
 
 ---
 
-### Frontend - Mini Calendar Enhancement
+### Course 2: Advanced Mathematics
 
-#### [MODIFY] [mini-calendar.tsx](<file:///home/kevin/Coding%20(WSL)/bi-learning/resources/js/components/calendar/mini-calendar.tsx>)
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
 
-No major changes needed - the component already supports custom markers. Just ensure:
+**Course Details**:
 
-- Course event markers use a distinct color (e.g., purple/violet) to differentiate from meetings, assessments, and tasks
-- Add a 4th category for 'course' events if needed
+- Title: "Advanced Mathematics"
+- Description: Advanced high school mathematics including calculus and advanced topics
+- Category: AdvancedMathematics (or Mathematics if advanced doesn't exist)
+- Difficulty: advanced
+- Duration: ~420 minutes (7 hours total)
+- Instructor: Fixed Tutor
+
+**Course Structure** (7 lessons):
+
+1. **Lesson 1: Introduction to Calculus**
+
+   - Description: Limits and continuity concepts
+   - Duration: 60 minutes
+   - Content: Link to calculus resources
+
+2. **Lesson 2: Derivatives**
+
+   - Description: Understanding and computing derivatives
+   - Duration: 60 minutes
+   - Content: YouTube video on derivatives
+
+3. **Lesson 3: Integration Basics**
+
+   - Description: Fundamental theorem of calculus and basic integration
+   - Duration: 60 minutes
+   - Content: Educational video on integration
+
+4. **Lesson 4: Applications of Calculus**
+
+   - Description: Real-world applications and problem solving
+   - Duration: 60 minutes
+   - Content: PDF resource on calculus applications
+
+5. **Lesson 5: Quiz - Calculus Fundamentals**
+
+   - Description: Test your calculus knowledge
+   - Duration: 45 minutes
+   - Content: Quiz with 10 questions
+
+6. **Lesson 6: Practice - Advanced Problems**
+
+   - Description: Practice complex calculus problems
+   - Duration: 60 minutes
+   - Content: Practice assessment with 8 questions
+
+7. **Lesson 7: Final Exam - Advanced Mathematics**
+   - Description: Comprehensive final examination
+   - Duration: 75 minutes
+   - Content: Final exam with 20 questions
+
+---
+
+### Enrollments and Schedules
+
+#### [MODIFY] [FixedScenarioSeeder.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/database/seeders/FixedScenarioSeeder.php>)
+
+**Student Enrollments**:
+
+- Original student (`student@gmail.com`): Enrolled in Basic Mathematics (0% progress)
+- New student (`student1@gmail.com`): Enrolled in both courses
+  - Basic Mathematics: 50% progress
+  - Advanced Mathematics: 0% progress
+
+**Meeting Schedules**:
+
+- Create realistic meeting schedules for all enrolled students
+- Use sequential dates for sessions
+- Generate realistic Zoom-style meeting URLs
 
 ## Verification Plan
 
 ### Automated Tests
 
-1. **Update existing calendar tests** (Lines to add in [CalendarTest.php](<file:///home/kevin/Coding%20(WSL)/bi-learning/tests/Feature/CalendarTest.php>)):
+Since there are no existing tests for `FixedScenarioSeeder`, I will create a new feature test:
 
 ```bash
-php artisan test tests/Feature/CalendarTest.php
+php artisan make:test --pest FixedScenarioSeederTest
 ```
 
-Add new test cases:
+The test will verify:
 
-- `it('shows all courses to admin users')` - Verify admin sees all courses, not just taught ones
-- `it('paginates admin course list')` - Check pagination works correctly
-- `it('includes course markers in admin calendar')` - Verify course events appear as markers
-- `it('includes instructor info for admin courses')` - Check instructor data is present
+1. Superadmin user is created with correct role
+2. Additional student is created with correct credentials
+3. Both courses are created with correct titles and properties
+4. All lessons are created with descriptions and appropriate durations
+5. All assessments contain mathematics-related questions
+6. Enrollments are created correctly
+7. Meeting schedules are generated for all students
 
-2. **Create new admin calendar test file** (if needed):
-
-```bash
-php artisan make:test AdminCalendarTest --pest
-php artisan test tests/Feature/AdminCalendarTest.php
-```
-
-3. **Run code formatter:**
+Run with:
 
 ```bash
-vendor/bin/pint --dirty
+php artisan test --filter=FixedScenarioSeederTest
 ```
 
 ### Manual Verification
 
-1. **Login as admin user** and navigate to `/calendar`
-2. **Verify course list appears** below the calendar overview (right side)
-3. **Check pagination:**
-   - Scroll to bottom of course list
-   - Click "Next page" button
-   - Verify new courses load without page refresh (Inertia)
-4. **Verify course markers:**
-   - Look at the mini calendar
-   - Dates with course events should have visual indicators
-   - Click on a marked date to filter events
-5. **Test course cards:**
-   - Each course should show: thumbnail, title, instructor, student count
-   - Next meeting date/time should display if available
-   - "View course" and "Manage course" buttons should work
-6. **Verify performance:**
-   - With 50+ courses, pagination should prevent lag
-   - Calendar should load within 2 seconds
+After running the seeder, verify in the database:
+
+1. Run the seeder:
+
+   ```bash
+   php artisan db:seed --class=FixedScenarioSeeder
+   ```
+
+2. Verify users exist by logging in:
+
+   - Login as `superadmin@gmail.com` / `password` - should have admin access
+   - Login as `student@gmail.com` / `password` - should see Basic Mathematics course
+   - Login as `student1@gmail.com` / `password` - should see both courses
+
+3. Check course content in the UI:
+
+   - Navigate to courses page
+   - Verify "Basic Mathematics" and "Advanced Mathematics" are visible
+   - Open each course and verify all lessons have descriptions
+   - Verify assessments contain mathematics questions (not Laravel questions)
+
+4. Database verification using tinker:
+
+   ```bash
+   php artisan tinker
+   ```
+
+   ```php
+   // Check users
+   User::whereIn('email', ['superadmin@gmail.com', 'student1@gmail.com'])->get(['email', 'name']);
+
+   // Check courses
+   Course::whereIn('title', ['Basic Mathematics', 'Advanced Mathematics'])->get(['title', 'description', 'duration_minutes']);
+
+   // Check lesson descriptions
+   Course::where('title', 'Basic Mathematics')->first()->lessons->pluck('title', 'description');
+
+   // Check quiz questions
+   Assessment::where('title', 'Quiz - Algebra & Geometry Basics')->first()->questions->pluck('question');
+   ```

@@ -24,7 +24,7 @@ export function SessionSelector({
           <Badge variant="secondary">{lessons.length} total</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Jump to a session to review materials and meeting details.
+          Jump to a session to review materials and session notes.
         </p>
       </CardHeader>
       <CardContent className="pt-0">

@@ -1,5 +1,6 @@
 import { PowerupSelector } from '@/components/courses/quiz/powerup-selector';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker24h } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,8 +13,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { CourseContent, Powerup } from '@/types';
 import { useForm } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 const contentTypes = [
@@ -65,29 +66,44 @@ export function NewContentForm({
     allowed_powerups: [],
   });
 
-  const [isAssessment, setIsAssessment] = useState(false);
+  const isAssessment = newContentForm.data.type === 'assessment';
 
-  useEffect(() => {
-    const isAssessmentType = newContentForm.data.type === 'assessment';
-    setIsAssessment(isAssessmentType);
+  const handleTypeChange = (newType: CourseContent['type']) => {
+    newContentForm.setData('type', newType);
 
-    // Reset powerups when switching to final exam or away from assessment
-    if (
-      isAssessmentType &&
-      newContentForm.data.assessment_type === 'final_exam'
-    ) {
-      newContentForm.setData('allowed_powerups', []);
-      newContentForm.setData('allow_powerups', false);
-      newContentForm.setData('weight_percentage', '');
-    } else if (!isAssessmentType) {
-      newContentForm.setData('allowed_powerups', []);
-      newContentForm.setData('allow_powerups', true);
-      newContentForm.setData('weight_percentage', '');
-      newContentForm.setData('max_score', 100);
-    } else {
-      newContentForm.setData('max_score', 100);
+    // Reset assessment-specific fields when switching away from assessment
+    if (newType !== 'assessment') {
+      newContentForm.setData({
+        ...newContentForm.data,
+        type: newType,
+        allowed_powerups: [],
+        allow_powerups: true,
+        weight_percentage: '',
+        max_score: 100,
+      });
     }
-  }, [newContentForm.data.type, newContentForm.data.assessment_type]);
+  };
+
+  const handleAssessmentTypeChange = (
+    newAssessmentType: 'practice' | 'quiz' | 'final_exam',
+  ) => {
+    // Reset powerups and weight when switching to/from final exam
+    if (newAssessmentType === 'final_exam') {
+      newContentForm.setData({
+        ...newContentForm.data,
+        assessment_type: newAssessmentType,
+        allowed_powerups: [],
+        allow_powerups: false,
+        weight_percentage: '',
+      });
+    } else {
+      newContentForm.setData({
+        ...newContentForm.data,
+        assessment_type: newAssessmentType,
+        max_score: 100,
+      });
+    }
+  };
 
   const submitNewContent = () => {
     newContentForm.post(
@@ -125,23 +141,23 @@ export function NewContentForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`new-content-type-${lessonId}`}>Type</Label>
-          <select
-            id={`new-content-type-${lessonId}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          <Select
             value={newContentForm.data.type}
-            onChange={(e) =>
-              newContentForm.setData(
-                'type',
-                e.target.value as CourseContent['type'],
-              )
+            onValueChange={(value) =>
+              handleTypeChange(value as CourseContent['type'])
             }
           >
-            {contentTypes.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id={`new-content-type-${lessonId}`}>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {contentTypes.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {newContentForm.errors.type ? (
             <p className="text-xs text-destructive">
               {newContentForm.errors.type}
@@ -186,8 +202,7 @@ export function NewContentForm({
             <Select
               value={newContentForm.data.assessment_type}
               onValueChange={(value) =>
-                newContentForm.setData(
-                  'assessment_type',
+                handleAssessmentTypeChange(
                   value as 'practice' | 'quiz' | 'final_exam',
                 )
               }
@@ -206,13 +221,18 @@ export function NewContentForm({
         {isAssessment && (
           <div className="space-y-2">
             <Label htmlFor={`new-content-due-${lessonId}`}>Due date</Label>
-            <Input
-              id={`new-content-due-${lessonId}`}
-              type="datetime-local"
-              value={newContentForm.data.due_date ?? ''}
-              onChange={(e) =>
-                newContentForm.setData('due_date', e.target.value)
-              }
+            <DateTimePicker24h
+              value={newContentForm.data.due_date}
+              onChange={(date) => {
+                if (date) {
+                  newContentForm.setData(
+                    'due_date',
+                    format(date, 'yyyy-MM-dd HH:mm:ss'),
+                  );
+                } else {
+                  newContentForm.setData('due_date', '');
+                }
+              }}
             />
             {newContentForm.errors.due_date ? (
               <p className="text-xs text-destructive">

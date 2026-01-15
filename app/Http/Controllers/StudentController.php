@@ -16,6 +16,8 @@ class StudentController extends Controller
         $filters = $request->validated();
         $user = Auth::user();
         $isAdmin = $user?->hasRole('admin');
+        $isTutor = $user?->hasRole('tutor');
+        $isAdminOrTutor = $isAdmin || $isTutor;
 
         $courseIds = Course::query()
             ->where('instructor_id', $user?->id)
@@ -33,9 +35,23 @@ class StudentController extends Controller
 
         if ($isAdmin) {
             $query->role('student')
-                ->withCount(['enrollments', 'activeEnrollments']);
+                ->withCount(['enrollments', 'activeEnrollments'])
+                ->with(['enrollments' => function ($query) {
+                    $query->with('course:id,title,thumbnail')
+                        ->select('id', 'user_id', 'course_id', 'progress_percentage', 'status')
+                        ->latest();
+                }]);
         } else {
             $query->whereIn('id', $studentIds);
+
+            if ($isTutor) {
+                $query->with(['enrollments' => function ($query) use ($courseIds) {
+                    $query->with('course:id,title,thumbnail')
+                        ->whereIn('course_id', $courseIds)
+                        ->select('id', 'user_id', 'course_id', 'progress_percentage', 'status')
+                        ->latest();
+                }]);
+            }
         }
 
         if (! empty($filters['search'])) {
@@ -44,7 +60,24 @@ class StudentController extends Controller
 
         $students = $query->paginate(12)->withQueryString();
 
-        $students = $students->through(function ($student) use ($isAdmin) {
+        $students = $students->through(function ($student) use ($isAdmin, $isAdminOrTutor) {
+            $enrollmentData = null;
+
+            if ($isAdminOrTutor && $student->enrollments) {
+                $enrollmentData = $student->enrollments->map(function ($enrollment) {
+                    return [
+                        'id' => $enrollment->id,
+                        'course' => [
+                            'id' => $enrollment->course->id,
+                            'title' => $enrollment->course->title,
+                            'thumbnail' => $enrollment->course->thumbnail,
+                        ],
+                        'progress_percentage' => $enrollment->progress_percentage,
+                        'status' => $enrollment->status,
+                    ];
+                });
+            }
+
             return [
                 'id' => $student->id,
                 'name' => $student->name,
@@ -55,6 +88,7 @@ class StudentController extends Controller
                 'total_xp' => $isAdmin ? ($student->total_xp ?? 0) : null,
                 'enrollments_count' => $isAdmin ? ($student->enrollments_count ?? 0) : null,
                 'active_enrollments_count' => $isAdmin ? ($student->active_enrollments_count ?? 0) : null,
+                'enrollments' => $enrollmentData,
             ];
         });
 

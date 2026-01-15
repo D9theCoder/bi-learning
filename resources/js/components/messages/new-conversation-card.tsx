@@ -1,6 +1,13 @@
 import type { ContactUser } from '@/components/messages/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface NewConversationCardProps {
   contacts: ContactUser[];
@@ -34,21 +41,30 @@ export function NewConversationCard({
                 ? 'Select a tutor'
                 : 'Select a student'}
             </label>
-            <select
-              id="new-partner"
-              className="w-full rounded-md border border-input bg-background p-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary md:max-w-sm"
-              value={selectedContactId}
-              onChange={(e) =>
-                onContactChange(e.target.value ? Number(e.target.value) : '')
+            <Select
+              value={selectedContactId ? String(selectedContactId) : ''}
+              onValueChange={(value) =>
+                onContactChange(value ? Number(value) : '')
               }
             >
-              {contacts.map((contact) => (
-                <option key={contact.id} value={contact.id}>
-                  {contact.name}{' '}
-                  {contact.role === 'tutor' ? '(Tutor)' : '(Student)'}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="new-partner" className="md:max-w-sm">
+                <SelectValue
+                  placeholder={
+                    contacts[0]?.role === 'tutor'
+                      ? 'Select a tutor'
+                      : 'Select a student'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {contacts.map((contact) => (
+                  <SelectItem key={contact.id} value={String(contact.id)}>
+                    {contact.name}{' '}
+                    {contact.role === 'tutor' ? '(Tutor)' : '(Student)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               type="submit"
               className="md:w-auto"

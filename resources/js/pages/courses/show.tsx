@@ -12,11 +12,19 @@ import {
   Course,
   CourseContent,
   Lesson,
+  StudentMeetingSchedule,
+  StudentWithSubmissions,
   User,
 } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { AssessmentTab, AttendanceTab, GradebookTab, ScoringTab } from './tabs';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  AssessmentTab,
+  AttendanceTab,
+  GradebookTab,
+  ScheduleTab,
+  ScoringTab,
+} from './tabs';
 
 interface CourseShowProps {
   course: Course & {
@@ -27,9 +35,10 @@ interface CourseShowProps {
   };
   isEnrolled: boolean;
   isTutor?: boolean;
-  students?: any[];
+  students?: StudentWithSubmissions[];
   assessments?: Assessment[];
   submissions?: AssessmentSubmission[];
+  meetingSchedules?: StudentMeetingSchedule[];
 }
 
 export default function CourseShow({
@@ -39,9 +48,10 @@ export default function CourseShow({
   students = [],
   assessments = [],
   submissions = [],
+  meetingSchedules = [],
 }: CourseShowProps) {
   // Read initial session from URL query parameter
-  const getInitialSessionId = (): string => {
+  const getInitialSessionId = useCallback((): string => {
     if (typeof window === 'undefined')
       return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
 
@@ -56,7 +66,7 @@ export default function CourseShow({
     }
 
     return course.lessons.length > 0 ? course.lessons[0].id.toString() : '';
-  };
+  }, [course]);
 
   const [activeSessionId, setActiveSessionId] =
     useState<string>(getInitialSessionId);
@@ -99,7 +109,7 @@ export default function CourseShow({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [getInitialSessionId]);
 
   const activeSession = course.lessons.find(
     (l) => l.id.toString() === activeSessionId,
@@ -139,7 +149,18 @@ export default function CourseShow({
               assessments={assessments}
               isAdmin={isAdmin}
               isTutor={isTutor}
+              meetingSchedules={meetingSchedules}
               onEnrollClick={() => setIsEnrollModalOpen(true)}
+            />
+          }
+          scheduleContent={
+            <ScheduleTab
+              course={course}
+              lessons={course.lessons}
+              isEnrolled={isEnrolled}
+              isTutor={isTutor}
+              students={students}
+              meetingSchedules={meetingSchedules}
             />
           }
           assessmentContent={

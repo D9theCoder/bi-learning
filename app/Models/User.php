@@ -71,6 +71,11 @@ class User extends Authenticatable
         return $this->hasMany(Enrollment::class);
     }
 
+    public function studentMeetingSchedules(): HasMany
+    {
+        return $this->hasMany(StudentMeetingSchedule::class, 'student_id');
+    }
+
     public function activeEnrollments(): HasMany
     {
         return $this->enrollments()->where('status', 'active');

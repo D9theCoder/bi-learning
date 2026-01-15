@@ -15,9 +15,6 @@ class UpdateLessonRequest extends FormRequest
             'order' => $this->input('order') === '' ? null : $this->input('order'),
             'video_url' => $this->input('video_url') === '' ? null : $this->input('video_url'),
             'description' => $this->input('description') === '' ? null : $this->input('description'),
-            'meeting_url' => $this->input('meeting_url') === '' ? null : $this->input('meeting_url'),
-            'meeting_start_time' => $this->input('meeting_start_time') === '' ? null : $this->input('meeting_start_time'),
-            'meeting_end_time' => $this->input('meeting_end_time') === '' ? null : $this->input('meeting_end_time'),
         ]);
     }
 
@@ -48,9 +45,6 @@ class UpdateLessonRequest extends FormRequest
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'order' => ['nullable', 'integer', 'min:1'],
             'video_url' => ['nullable', 'string', 'max:255'],
-            'meeting_url' => ['nullable', 'string', 'max:255'],
-            'meeting_start_time' => ['nullable', 'date'],
-            'meeting_end_time' => ['nullable', 'date', 'after:meeting_start_time'],
         ];
     }
 }

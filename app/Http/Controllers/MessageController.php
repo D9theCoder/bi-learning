@@ -10,8 +10,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,10 +24,10 @@ class MessageController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        
+
         // Check if user has admin role (RBAC permission check)
         $isAdmin = $user->hasRole('admin');
-        
+
         // Query params for navigation: partner (for regular users), tutor_id/student_id (for admins)
         $partnerId = $request->query('partner');
         $tutorId = $request->query('tutor_id');
@@ -59,10 +59,10 @@ class MessageController extends Controller
     public function poll(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Check admin role for permission-based data filtering
         $isAdmin = $user->hasRole('admin');
-        
+
         $partnerId = $request->query('partner');
         $tutorId = $request->query('tutor_id');
         $studentId = $request->query('student_id');
@@ -97,7 +97,7 @@ class MessageController extends Controller
         }
 
         $partner = User::findOrFail($partnerId);
-        
+
         // Validate that one is a tutor and one is a student
         $this->ensureParticipantsAreTutorAndStudent($user, $partner);
 
@@ -150,18 +150,27 @@ class MessageController extends Controller
      */
     private function threadsForParticipant(User $user): Collection
     {
+        $adminIds = $this->adminIds();
+
         // Raw query to find all conversations involving this user
         // partner_id = the other person in the conversation
         $threads = DB::table('tutor_messages')
-            ->select(
-                DB::raw('CASE WHEN tutor_id = ? THEN user_id ELSE tutor_id END as partner_id'),
-                DB::raw('MAX(sent_at) as latest_message_at'),
-                DB::raw('SUM(CASE WHEN user_id = ? AND is_read = 0 THEN 1 ELSE 0 END) as unread_count')
+            ->selectRaw(
+                'CASE WHEN tutor_id = ? THEN user_id ELSE tutor_id END as partner_id',
+                [$user->id]
             )
-            ->setBindings([$user->id, $user->id])
+            ->selectRaw('MAX(sent_at) as latest_message_at')
+            ->selectRaw(
+                'SUM(CASE WHEN user_id = ? AND is_read = 0 THEN 1 ELSE 0 END) as unread_count',
+                [$user->id]
+            )
             ->where(function ($q) use ($user) {
                 $q->where('tutor_id', $user->id)
                     ->orWhere('user_id', $user->id);
+            })
+            ->when($adminIds->isNotEmpty(), function ($query) use ($adminIds) {
+                $query->whereNotIn('tutor_id', $adminIds)
+                    ->whereNotIn('user_id', $adminIds);
             })
             ->groupBy('partner_id')
             ->orderByDesc('latest_message_at')
@@ -191,11 +200,17 @@ class MessageController extends Controller
      */
     private function threadsForAdmin(): Collection
     {
+        $adminIds = $this->adminIds();
+
         // Group by tutor_id and user_id to get unique conversations
         $threads = TutorMessage::query()
             ->select('tutor_id', 'user_id')
             ->selectRaw('MAX(sent_at) as latest_message_at')
             ->selectRaw('SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread_count')
+            ->when($adminIds->isNotEmpty(), function ($query) use ($adminIds) {
+                $query->whereNotIn('tutor_id', $adminIds)
+                    ->whereNotIn('user_id', $adminIds);
+            })
             ->groupBy('tutor_id', 'user_id')
             ->orderByDesc('latest_message_at')
             ->get();
@@ -290,6 +305,10 @@ class MessageController extends Controller
         $student = User::find($studentId);
 
         if (! $tutor || ! $student) {
+            return null;
+        }
+
+        if ($tutor->hasRole('admin') || $student->hasRole('admin')) {
             return null;
         }
 
@@ -435,5 +454,10 @@ class MessageController extends Controller
     private function isStudentUser(User $user): bool
     {
         return $user->hasRole('student');
+    }
+
+    private function adminIds(): Collection
+    {
+        return User::role('admin')->pluck('id');
     }
 }

@@ -16,12 +16,11 @@ class DatabaseSeeder extends Seeder
             AchievementSeeder::class,
             RewardSeeder::class,
             PowerupSeeder::class,
-            InstructorSeeder::class,
-            CourseSeeder::class,
-            FixedScenarioSeeder::class,
-            CourseContentSeeder::class,
             TestUserSeeder::class,
+            CourseSeeder::class,
+            CourseContentSeeder::class,
             StudentSeeder::class,
+            StudentMeetingScheduleSeeder::class,
         ]);
     }
 }

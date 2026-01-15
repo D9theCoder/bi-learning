@@ -6,7 +6,12 @@ import {
   SessionSelector,
   SessionTodoList,
 } from '@/components/courses/show';
-import type { Assessment, CourseContent, Lesson } from '@/types';
+import type {
+  Assessment,
+  CourseContent,
+  Lesson,
+  StudentMeetingSchedule,
+} from '@/types';
 
 interface SessionTabContentProps {
   lessons: (Lesson & { contents: CourseContent[] })[];
@@ -20,6 +25,7 @@ interface SessionTabContentProps {
   assessments: Assessment[];
   isAdmin: boolean;
   isTutor: boolean;
+  meetingSchedules: StudentMeetingSchedule[];
   onEnrollClick: () => void;
 }
 
@@ -35,6 +41,7 @@ export function SessionTabContent({
   assessments,
   isAdmin,
   isTutor,
+  meetingSchedules,
   onEnrollClick,
 }: SessionTabContentProps) {
   const sessionContentCount = activeSession
@@ -45,6 +52,31 @@ export function SessionTabContent({
     ? assessments.filter((assessment) => assessment.lesson_id === activeSession.id)
         .length
     : 0;
+  const canShowMeeting = !isTutor && isEnrolled;
+  const relevantSchedules =
+    activeSession && canShowMeeting
+      ? meetingSchedules
+          .filter((schedule) => schedule.lesson_id === activeSession.id)
+          .sort(
+            (a, b) =>
+              new Date(a.scheduled_at).getTime() -
+              new Date(b.scheduled_at).getTime(),
+          )
+      : [];
+  const preferredSchedule = canShowMeeting
+    ? relevantSchedules.find((schedule) => schedule.status === 'scheduled') ??
+      relevantSchedules[0] ??
+      null
+    : null;
+  const meetingStatus = canShowMeeting
+    ? preferredSchedule
+      ? preferredSchedule.status === 'cancelled'
+        ? 'Meeting cancelled'
+        : preferredSchedule.status === 'completed'
+          ? 'Meeting completed'
+          : 'Meeting scheduled'
+      : 'No meeting scheduled'
+    : 'See Schedule tab for meeting details';
 
   return (
     <div className="space-y-6">
@@ -61,14 +93,13 @@ export function SessionTabContent({
               session={activeSession}
               contentCount={sessionContentCount}
               assessmentCount={sessionAssessmentCount}
+              meetingStatus={meetingStatus}
             />
 
-            {activeSession.meeting_url && (
+            {preferredSchedule && (
               <MeetingCard
                 lessonId={activeSession.id}
-                meetingUrl={activeSession.meeting_url}
-                meetingStartTime={activeSession.meeting_start_time ?? null}
-                meetingEndTime={activeSession.meeting_end_time ?? null}
+                schedule={preferredSchedule}
                 hasAttended={activeSession.has_attended}
                 isAdmin={isAdmin}
                 isTutor={isTutor}

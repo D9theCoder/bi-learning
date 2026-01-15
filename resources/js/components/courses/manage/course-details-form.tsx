@@ -86,20 +86,24 @@ export function CourseDetailsForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <select
-              id="category"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
+            <Select
               value={form.data.category}
-              onChange={(e) => form.setData('category', e.target.value)}
-              aria-invalid={Boolean(form.errors.category)}
+              onValueChange={(value) => form.setData('category', value)}
             >
-              <option value="">Select category</option>
-              {categories.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="category"
+                aria-invalid={Boolean(form.errors.category)}
+              >
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {form.errors.category ? (
               <p className="text-xs text-destructive">{form.errors.category}</p>
             ) : null}
@@ -109,13 +113,9 @@ export function CourseDetailsForm({
               <Label htmlFor="instructor_id">Assign tutor *</Label>
               <Select
                 value={
-                  form.data.instructor_id
-                    ? String(form.data.instructor_id)
-                    : ''
+                  form.data.instructor_id ? String(form.data.instructor_id) : ''
                 }
-                onValueChange={(value) =>
-                  form.setData('instructor_id', value)
-                }
+                onValueChange={(value) => form.setData('instructor_id', value)}
               >
                 <SelectTrigger
                   id="instructor_id"
@@ -160,20 +160,24 @@ export function CourseDetailsForm({
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="difficulty">Difficulty</Label>
-            <select
-              id="difficulty"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
+            <Select
               value={form.data.difficulty ?? ''}
-              onChange={(e) => form.setData('difficulty', e.target.value)}
-              aria-invalid={Boolean(form.errors.difficulty)}
+              onValueChange={(value) => form.setData('difficulty', value)}
             >
-              <option value="">Select difficulty</option>
-              {difficulties.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="difficulty"
+                aria-invalid={Boolean(form.errors.difficulty)}
+              >
+                <SelectValue placeholder="Select difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                {difficulties.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {form.errors.difficulty ? (
               <p className="text-xs text-destructive">
                 {form.errors.difficulty}

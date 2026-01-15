@@ -12,6 +12,7 @@ import {
 import { useRoles } from '@/hooks/use-roles';
 import {
   achievements,
+  adminMessages,
   calendar,
   courses,
   dashboard,
@@ -30,6 +31,7 @@ import {
   GraduationCap,
   LayoutGrid,
   MessageSquare,
+  Shield,
   Trophy,
   Users,
 } from 'lucide-react';
@@ -98,7 +100,8 @@ const tutorNavItems: NavItem[] = [
 
 export function AppSidebar() {
   const { isAdmin, isStudent, isTutor } = useRoles();
-  const { url } = usePage();
+  const page = usePage<{ auth?: { adminTutorChatAvailable?: boolean } }>();
+  const { url } = page;
 
   const showStudentView = isStudent;
   const baseNavItems = showStudentView ? studentNavItems : tutorNavItems;
@@ -139,6 +142,14 @@ export function AppSidebar() {
   }
 
   const homeHref = navItems[0]?.href ?? home().url;
+
+  if (isTutor && page.props.auth?.adminTutorChatAvailable) {
+    navItems.push({
+      title: 'Admin Messages',
+      href: adminMessages().url,
+      icon: Shield,
+    });
+  }
 
   return (
     <Sidebar collapsible="icon" variant="inset">

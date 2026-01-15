@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\DailyTask;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\StudentMeetingSchedule;
 use App\Models\User;
 use App\Services\DailyTaskGeneratorService;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -178,8 +179,15 @@ test('dashboard student calendar exposes course metadata', function () {
 
     $lesson = Lesson::factory()->create([
         'course_id' => $course->id,
-        'meeting_start_time' => now()->addDay(),
+    ]);
+
+    $schedule = StudentMeetingSchedule::factory()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'student_id' => $user->id,
+        'scheduled_at' => now()->addDay(),
         'meeting_url' => 'https://example.com/session',
+        'status' => 'scheduled',
     ]);
 
     $this->actingAs($user)
@@ -188,7 +196,7 @@ test('dashboard student calendar exposes course metadata', function () {
             fn (Assert $page) => $page
                 ->where('student_calendar.0.course_id', $course->id)
                 ->where('student_calendar.0.lesson_id', $lesson->id)
-                ->where('student_calendar.0.meeting_url', $lesson->meeting_url)
+                ->where('student_calendar.0.meeting_url', $schedule->meeting_url)
         );
 });
 
@@ -260,8 +268,6 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
     $lesson = Lesson::factory()->create([
         'course_id' => $course->id,
         'order' => 1,
-        'meeting_start_time' => now()->addDay(),
-        'meeting_url' => 'https://example.com/meet',
     ]);
 
     // Create assessments with future due dates for the calendar
@@ -286,6 +292,15 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
         'progress_percentage' => 60,
     ]);
 
+    $schedule = StudentMeetingSchedule::factory()->create([
+        'course_id' => $course->id,
+        'lesson_id' => $lesson->id,
+        'student_id' => $student->id,
+        'scheduled_at' => now()->addDay(),
+        'meeting_url' => 'https://example.com/meet',
+        'status' => 'scheduled',
+    ]);
+
     $this->actingAs($tutor)
         ->get(route('dashboard'))
         ->assertInertia(
@@ -297,7 +312,7 @@ test('tutor dashboard includes tutor data and chart metrics', function () {
                 ->has('tutor_dashboard.courses', 1)
                 ->where('tutor_dashboard.calendar.0.lesson_id', $lesson->id)
                 ->where('tutor_dashboard.calendar.0.course_id', $course->id)
-                ->where('tutor_dashboard.calendar.0.meeting_url', $lesson->meeting_url)
+                ->where('tutor_dashboard.calendar.0.meeting_url', $schedule->meeting_url)
         );
 });
 

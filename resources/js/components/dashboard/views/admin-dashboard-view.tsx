@@ -1,5 +1,5 @@
-import { StatCard } from '@/components/dashboard/stat-card';
 import { DashboardWelcomeHeader } from '@/components/dashboard/sections';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,8 +90,10 @@ export function AdminDashboardView({
                 key={course.id}
                 className="flex items-center justify-between gap-3"
               >
-                <div>
-                  <p className="text-sm font-semibold">{course.title}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    {course.title}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {course.instructor?.name ?? 'Unassigned'}
                   </p>

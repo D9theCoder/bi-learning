@@ -20,9 +20,6 @@ class Lesson extends Model
         'duration_minutes',
         'order',
         'video_url',
-        'meeting_url',
-        'meeting_start_time',
-        'meeting_end_time',
     ];
 
     protected function casts(): array
@@ -30,8 +27,6 @@ class Lesson extends Model
         return [
             'duration_minutes' => 'integer',
             'order' => 'integer',
-            'meeting_start_time' => 'datetime',
-            'meeting_end_time' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

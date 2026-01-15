@@ -66,24 +66,10 @@ export const AdminCourseListSection = memo(
               key={course.id}
               className="group relative overflow-hidden"
             >
-              <CardContent className="flex gap-4 p-0">
-                <div className="relative w-32 shrink-0 self-stretch overflow-hidden">
-                  {course.thumbnail ? (
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-muted">
-                      <BookOpen className="size-10 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-1 flex-col justify-center gap-2 py-3 pr-4">
+              <CardContent className="p-0">
+                <div className="flex flex-1 flex-col justify-center gap-2 p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-2 text-base font-semibold text-foreground">
+                    <h3 className="line-clamp-2 min-w-0 flex-1 text-base font-semibold break-words text-foreground">
                       {course.title}
                     </h3>
                     <span

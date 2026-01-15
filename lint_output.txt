@@ -1,0 +1,84 @@
+
+> lint
+> eslint . --fix
+
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/actions/App/Http/Controllers/Settings/ProfileController.ts
+  217:34  error  Parsing error: ';' expected
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/manage/content-row.tsx
+   93:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/manage/content-row.tsx:93:5
+  91 |   useEffect(() => {
+  92 |     const isAssessmentType = contentForm.data.type === 'assessment';
+> 93 |     setIsAssessment(isAssessmentType);
+     |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  94 |
+  95 |     // Reset powerups when switching to final exam or away from assessment
+  96 |     if (isAssessmentType && contentForm.data.assessment_type === 'final_exam') {  react-hooks/set-state-in-effect
+  108:6  warning  React Hook useEffect has a missing dependency: 'contentForm'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/manage/new-content-form.tsx
+  72:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/manage/new-content-form.tsx:72:5
+  70 |   useEffect(() => {
+  71 |     const isAssessmentType = newContentForm.data.type === 'assessment';
+> 72 |     setIsAssessment(isAssessmentType);
+     |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  73 |
+  74 |     // Reset powerups when switching to final exam or away from assessment
+  75 |     if (  react-hooks/set-state-in-effect
+  90:6  warning  React Hook useEffect has a missing dependency: 'newContentForm'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/show/course-tabs.tsx
+  96:6  warning  React Hook useEffect has a missing dependency: 'getInitialTab'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/tabs/attendance/attendance-tutor-matrix.tsx
+   8:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/tabs/scoring/grading-assessment-card.tsx
+   9:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/courses/tabs/scoring/grading-student-row.tsx
+  9:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/landing/live-progress-dashboard.tsx
+  285:9  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/students/student-card.tsx
+  7:3  error  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/components/tutors/tutor-card.tsx
+  7:3  error  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/pages/courses/manage/index.tsx
+  29:6  warning  React Hook useEffect has a missing dependency: 'filters?.search'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/pages/courses/show.tsx
+   30:14  error    Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  102:6   warning  React Hook useEffect has a missing dependency: 'getInitialSessionId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/pages/courses/tabs/attendance-tab.tsx
+  19:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/kevin/Coding (WSL)/bi-learning/resources/js/pages/courses/tabs/scoring-tab.tsx
+  21:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 19 problems (14 errors, 5 warnings)
+
