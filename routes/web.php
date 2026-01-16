@@ -16,6 +16,7 @@ use App\Http\Controllers\RewardRedemptionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentMeetingScheduleController;
 use App\Http\Controllers\TutorController;
+use App\Http\Controllers\UserManagementController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,8 +61,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Course management routes (admin/tutor)
     Route::middleware('role:admin|tutor')->prefix('courses/manage')->name('courses.manage.')->group(function () {
         Route::get('/', [CourseManagementController::class, 'index'])->name('index');
-        Route::get('/create', [CourseManagementController::class, 'create'])->name('create');
-        Route::post('/', [CourseManagementController::class, 'store'])->name('store');
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/create', [CourseManagementController::class, 'create'])->name('create');
+            Route::post('/', [CourseManagementController::class, 'store'])->name('store');
+        });
         Route::get('/{course}/edit', [CourseManagementController::class, 'edit'])->name('edit');
         Route::put('/{course}', [CourseManagementController::class, 'update'])->name('update');
         Route::post('/{course}/lessons', [CourseManagementController::class, 'storeLesson'])->name('lessons.store');
@@ -161,6 +164,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('students', [StudentController::class, 'index'])
         ->middleware('role:tutor|admin')
         ->name('students');
+
+    // Admin user management routes
+    Route::middleware('role:admin')->prefix('admin/users')->name('admin.users.')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/create', [UserManagementController::class, 'create'])->name('create');
+        Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
+        Route::post('/', [UserManagementController::class, 'store'])->name('store');
+        Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
+    });
 });
 
 require __DIR__.'/settings.php';

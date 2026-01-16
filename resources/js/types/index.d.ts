@@ -47,6 +47,24 @@ export interface User {
   [key: string]: unknown; // This allows for additional properties...
 }
 
+export interface PaginatedData<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  links: Array<{
+    url: string | null;
+    label: string;
+    active: boolean;
+  }>;
+}
+
+export interface UserWithRole extends User {
+  roles: Array<{ id: number; name: string }>;
+  can_delete?: boolean;
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -700,5 +718,25 @@ export interface StudentsPageProps {
     last_page: number;
     per_page: number;
     total: number;
+  };
+}
+
+export interface UserManagementPageProps {
+  users: PaginatedData<UserWithRole>;
+  filters: {
+    search?: string;
+    role?: 'admin' | 'tutor' | 'student';
+    sort_by?: 'name' | 'email' | 'created_at';
+    sort_dir?: 'asc' | 'desc';
+  };
+}
+
+export interface EditUserPageProps {
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+    role?: 'admin' | 'tutor' | 'student';
   };
 }

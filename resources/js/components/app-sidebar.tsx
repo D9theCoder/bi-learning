@@ -34,6 +34,7 @@ import {
   Shield,
   Trophy,
   Users,
+  UsersRound,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -128,6 +129,24 @@ export function AppSidebar() {
       } else {
         navItems.unshift(manageLink);
       }
+    }
+  }
+
+  if (isAdmin) {
+    const adminUsersLink: NavItem = {
+      title: 'User Management',
+      href: '/admin/users',
+      icon: UsersRound,
+    };
+
+    const manageIndex = navItems.findIndex(
+      (item) => item.title === 'Manage Courses',
+    );
+
+    if (manageIndex >= 0) {
+      navItems.splice(manageIndex + 1, 0, adminUsersLink);
+    } else {
+      navItems.push(adminUsersLink);
     }
   }
 
