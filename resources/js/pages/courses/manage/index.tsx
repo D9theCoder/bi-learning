@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useRoles } from '@/hooks/use-roles';
 import AppLayout from '@/layouts/app-layout';
 import { ManageCoursesPageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -13,6 +14,7 @@ export default function ManageCourses({
   courses,
   filters,
 }: ManageCoursesPageProps) {
+  const { isAdmin } = useRoles();
   const [search, setSearch] = useState(filters?.search || '');
 
   useEffect(() => {
@@ -53,12 +55,14 @@ export default function ManageCourses({
               onChange={(e) => setSearch(e.target.value)}
               className="w-full sm:w-64"
             />
-            <Link href="/courses/manage/create">
-              <Button className="inline-flex items-center gap-2">
-                <Plus className="size-4" />
-                New Course
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link href="/courses/manage/create">
+                <Button className="inline-flex items-center gap-2">
+                  <Plus className="size-4" />
+                  New Course
+                </Button>
+              </Link>
+            )}
           </div>
         </header>
 
@@ -78,14 +82,18 @@ export default function ManageCourses({
               {courses.data.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
                   <p className="text-base font-semibold text-foreground">
-                    No courses yet
+                    {isAdmin ? 'No courses yet' : 'No courses assigned'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Create your first course to get started.
+                    {isAdmin
+                      ? 'Create your first course to get started.'
+                      : 'Courses assigned to you by an admin will appear here.'}
                   </p>
-                  <Link href="/courses/manage/create">
-                    <Button size="sm">Create course</Button>
-                  </Link>
+                  {isAdmin && (
+                    <Link href="/courses/manage/create">
+                      <Button size="sm">Create course</Button>
+                    </Link>
+                  )}
                 </div>
               )}
 

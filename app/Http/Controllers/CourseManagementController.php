@@ -68,16 +68,13 @@ class CourseManagementController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->hasAnyRole(['admin', 'tutor'])) {
+        if (! $user->hasRole('admin')) {
             abort(403);
         }
 
-        $availableTutors = [];
-        if ($user->hasRole('admin')) {
-            $availableTutors = User::role('tutor')
-                ->orderBy('name')
-                ->get(['id', 'name', 'avatar']);
-        }
+        $availableTutors = User::role('tutor')
+            ->orderBy('name')
+            ->get(['id', 'name', 'avatar']);
 
         return Inertia::render('courses/manage/edit', [
             'course' => null,
@@ -90,12 +87,7 @@ class CourseManagementController extends Controller
 
     public function store(StoreCourseRequest $request): RedirectResponse
     {
-        $user = $request->user();
         $data = $request->validated();
-
-        if (! $user->hasRole('admin')) {
-            $data['instructor_id'] = $user->id;
-        }
 
         $data['difficulty'] = $data['difficulty'] ?? 'beginner';
         $data['is_published'] = $request->boolean('is_published');

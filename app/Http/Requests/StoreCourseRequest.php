@@ -24,12 +24,12 @@ class StoreCourseRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user?->hasAnyRole(['admin', 'tutor']) ?? false;
+        return $user?->hasRole('admin') ?? false;
     }
 
     public function rules(): array
     {
-        $rules = [
+        return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'thumbnail' => ['nullable', 'string', 'max:255'],
@@ -38,11 +38,7 @@ class StoreCourseRequest extends FormRequest
             // !Locked STEM categories only.
             'category' => ['required', Rule::enum(CourseCategory::class)],
             'is_published' => ['sometimes', 'boolean'],
-            'instructor_id' => ['nullable', 'exists:users,id'],
-        ];
-
-        if ($this->user()?->hasRole('admin')) {
-            $rules['instructor_id'] = [
+            'instructor_id' => [
                 'required',
                 'exists:users,id',
                 function (string $attribute, mixed $value, $fail) {
@@ -51,10 +47,8 @@ class StoreCourseRequest extends FormRequest
                         $fail('The selected instructor must have the tutor role.');
                     }
                 },
-            ];
-        }
-
-        return $rules;
+            ],
+        ];
     }
 
     public function messages(): array
