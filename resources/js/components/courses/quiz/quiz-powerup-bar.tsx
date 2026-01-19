@@ -52,7 +52,7 @@ export function QuizPowerupBar({
   });
 
   return (
-    <div className="mb-4 rounded-xl border bg-white/70 p-4 shadow-sm backdrop-blur dark:bg-gray-950/40">
+    <div className="mx-auto mb-4 max-w-3xl rounded-xl border bg-white/70 p-4 shadow-sm backdrop-blur dark:bg-gray-950/40">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">Powerups</p>
